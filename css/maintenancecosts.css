@@ -1,0 +1,328 @@
+.plugin-maintenancecosts-page {
+   max-width: 1680px;
+   margin: 0 auto;
+}
+
+.plugin-maintenancecosts-actions {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 8px;
+   justify-content: center;
+   margin: 12px 0 18px;
+}
+
+.plugin-maintenancecosts-shell {
+   display: grid;
+   grid-template-columns: 230px minmax(0, 1fr);
+   gap: 18px;
+   align-items: start;
+}
+
+.plugin-maintenancecosts-side-tabs {
+   border: 1px solid #d8dee9;
+   background: #fff;
+}
+
+.plugin-maintenancecosts-side-tabs a {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   min-height: 38px;
+   padding: 9px 12px;
+   color: #334155;
+   text-decoration: none;
+   border-bottom: 1px solid #d8dee9;
+}
+
+.plugin-maintenancecosts-side-tabs a:hover,
+.plugin-maintenancecosts-side-tabs a.active {
+   color: #001b3f;
+   background: #eef2f7;
+   font-weight: 700;
+}
+
+.plugin-maintenancecosts-main {
+   min-width: 0;
+}
+
+.plugin-maintenancecosts-panel {
+   background: #fff;
+   border: 1px solid #d8dee9;
+   border-radius: 4px;
+   margin: 14px 0;
+}
+
+.plugin-maintenancecosts-panel-header {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   border-bottom: 1px solid #d8dee9;
+   padding: 12px 14px;
+   font-weight: 600;
+}
+
+.plugin-maintenancecosts-panel-body {
+   padding: 14px;
+}
+
+.plugin-maintenancecosts-grid {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+   gap: 14px;
+}
+
+.plugin-maintenancecosts-option {
+   border: 1px solid #d8dee9;
+   border-radius: 4px;
+   padding: 12px;
+   min-height: 96px;
+}
+
+.plugin-maintenancecosts-option-title {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   font-weight: 600;
+   margin-bottom: 8px;
+}
+
+.plugin-maintenancecosts-help {
+   color: #536271;
+   font-size: 12px;
+   margin-top: 4px;
+}
+
+.plugin-maintenancecosts-compare {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+   gap: 12px;
+}
+
+.plugin-maintenancecosts-good,
+.plugin-maintenancecosts-warn {
+   border-radius: 4px;
+   padding: 12px;
+}
+
+.plugin-maintenancecosts-good {
+   border: 1px solid #52b788;
+   background: #eefaf2;
+}
+
+.plugin-maintenancecosts-warn {
+   border: 1px solid #f06449;
+   background: #fff1ef;
+}
+
+.plugin-maintenancecosts-sortable th[data-sort] {
+   cursor: pointer;
+   user-select: none;
+}
+
+.plugin-maintenancecosts-sortable th[data-sort]::after {
+   content: "  \2195";
+   color: #6b778c;
+   font-size: 11px;
+}
+
+.plugin-maintenancecosts-sortable th[data-sort][data-dir="asc"]::after {
+   content: "  \2191";
+}
+
+.plugin-maintenancecosts-sortable th[data-sort][data-dir="desc"]::after {
+   content: "  \2193";
+}
+
+.plugin-maintenancecosts-table th,
+.plugin-maintenancecosts-table td {
+   text-align: center;
+   vertical-align: middle;
+}
+
+.plugin-maintenancecosts-table td.text-start,
+.plugin-maintenancecosts-table th.text-start {
+   text-align: left;
+}
+
+.plugin-maintenancecosts-view-controls {
+   display: flex;
+   flex-wrap: wrap;
+   align-items: center;
+   gap: 10px;
+   margin: 10px 0 8px;
+   padding: 8px 10px;
+   border: 1px solid #d8dee9;
+   border-radius: 4px;
+   background: #fff;
+   font-size: 12px;
+}
+
+.plugin-maintenancecosts-view-title {
+   font-weight: 700;
+}
+
+.plugin-maintenancecosts-view-controls label {
+   display: inline-flex;
+   align-items: center;
+   gap: 5px;
+   margin: 0;
+}
+
+.plugin-maintenancecosts-column-list {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 8px 12px;
+   width: 100%;
+}
+
+.plugin-maintenancecosts-column-list label {
+   white-space: nowrap;
+   cursor: grab;
+   padding: 2px 4px;
+   border-radius: 4px;
+}
+
+.plugin-maintenancecosts-column-list label.dragging {
+   opacity: 0.55;
+   background: #eef2f7;
+}
+
+.plugin-maintenancecosts-drag-handle {
+   color: #6b778c;
+}
+
+.plugin-maintenancecosts-section-title {
+   font-size: 14px;
+   font-weight: 700;
+   margin: 18px 0 8px;
+}
+
+.plugin-maintenancecosts-summary {
+   display: grid;
+   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+   gap: 12px;
+   margin: 12px 0;
+}
+
+.plugin-maintenancecosts-summary-card {
+   border: 1px solid #d8dee9;
+   background: #fff;
+   border-radius: 4px;
+   padding: 14px;
+}
+
+.plugin-maintenancecosts-summary-card span {
+   display: block;
+   color: #536271;
+   font-size: 12px;
+}
+
+.plugin-maintenancecosts-summary-card strong {
+   display: block;
+   margin-top: 6px;
+   font-size: 22px;
+}
+
+.plugin-maintenancecosts-bar-row {
+   display: grid;
+   grid-template-columns: minmax(220px, 1.4fr) 3fr 150px;
+   gap: 10px;
+   align-items: center;
+   margin: 8px 0;
+   text-align: center;
+}
+
+.plugin-maintenancecosts-bar-row > div:first-child {
+   white-space: normal;
+   overflow-wrap: anywhere;
+}
+
+.plugin-maintenancecosts-bar-row > div:nth-child(2) {
+   background: #eef2f7;
+   height: 12px;
+   border-radius: 4px;
+   overflow: hidden;
+}
+
+.plugin-maintenancecosts-bar-row span {
+   display: block;
+   height: 12px;
+   background: #4f6fa8;
+}
+
+.plugin-maintenancecosts-vertical-chart {
+   display: flex;
+   align-items: flex-end;
+   justify-content: center;
+   gap: 18px;
+   min-height: 250px;
+   overflow-x: auto;
+   padding: 12px 0;
+}
+
+.plugin-maintenancecosts-vertical-chart > div {
+   width: 130px;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   gap: 8px;
+   text-align: center;
+}
+
+.plugin-maintenancecosts-vertical-chart span {
+   width: 42px;
+   background: #4f6fa8;
+   border-radius: 5px 5px 0 0;
+}
+
+.plugin-maintenancecosts-vertical-chart small {
+   line-height: 1.2;
+   overflow-wrap: anywhere;
+}
+
+.plugin-maintenancecosts-pie-wrap {
+   display: grid;
+   grid-template-columns: minmax(220px, 300px) 1fr;
+   gap: 24px;
+   align-items: center;
+}
+
+.plugin-maintenancecosts-pie {
+   width: 260px;
+   height: 260px;
+   border-radius: 50%;
+   margin: auto;
+}
+
+.plugin-maintenancecosts-pie-item {
+   display: grid;
+   grid-template-columns: 18px 1fr 150px 60px;
+   gap: 8px;
+   align-items: center;
+   margin: 8px 0;
+   text-align: center;
+}
+
+.plugin-maintenancecosts-pie-item span {
+   width: 14px;
+   height: 14px;
+   display: inline-block;
+   border-radius: 3px;
+}
+
+.plugin-maintenancecosts-pie-item div {
+   overflow-wrap: anywhere;
+}
+
+li.plugin[data-key="maintenancecosts"] .main > .icon img {
+   width: 50px;
+   height: 50px;
+   object-fit: contain;
+   border-radius: 0;
+}
+
+@media (max-width: 900px) {
+   .plugin-maintenancecosts-shell {
+      grid-template-columns: 1fr;
+   }
+}

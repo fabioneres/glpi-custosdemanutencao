@@ -1,0 +1,9 @@
+DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_ticketmaterials`;
+DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_prices`;
+DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_pricehistories`;
+DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_costcenters`;
+DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_materialorigins`;
+DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_materials`;
+DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_importbatches`;
+DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_auditlogs`;
+DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_configs`;
