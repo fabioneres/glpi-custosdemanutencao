@@ -16,12 +16,16 @@ global $DB;
 
 $search = trim((string) ($_GET['q'] ?? ''));
 $priceType = Config::normalizePriceType((string) ($_GET['price_type'] ?? 'sinapi'));
-$showAllTypes = isset($_GET['price_type']) && (string) $_GET['price_type'] === 'all';
+$isQuote = $priceType === 'cotacao_mercado';
+$activeTab = $isQuote ? 'quotes' : 'prices';
+$pageTitle = $isQuote ? __('Cotação/Mercado', 'maintenancecosts') : Price::getTypeName(Session::getPluralNumber());
+$quoteNumber = static function(float $value): string {
+   return abs($value - round($value)) < 0.000001
+      ? (string) (int) round($value)
+      : rtrim(rtrim(number_format($value, 2, ',', '.'), '0'), ',');
+};
 
-$where = [];
-if (!$showAllTypes) {
-   $where[Price::getTable() . '.price_type'] = $priceType;
-}
+$where = [Price::getTable() . '.price_type' => $priceType];
 if ($search !== '') {
    $where[] = [
       'OR' => [
@@ -47,55 +51,64 @@ $criteria = [
          'FKEY' => [Price::getTable() => 'plugin_maintenancecosts_materials_id', Material::getTable() => 'id'],
       ],
    ],
+   'WHERE' => $where,
    'ORDER' => [Price::getTable() . '.competence DESC', Price::getTable() . '.id DESC'],
    'LIMIT' => 300,
 ];
-if (count($where)) {
-   $criteria['WHERE'] = $where;
-}
 
-Html::header(Price::getTypeName(Session::getPluralNumber()), $_SERVER['PHP_SELF'], 'plugins', Menu::class);
-Config::renderPluginLayoutStart('prices');
+Html::header($pageTitle, $_SERVER['PHP_SELF'], 'plugins', Menu::class);
+Config::renderPluginLayoutStart($activeTab);
 
 echo "<div class='center mb-3'>";
 if (Config::canManagePrices()) {
-   echo "<a class='btn btn-primary' href='" . Html::clean(Price::getFormURL() . '?price_type=sinapi') . "'>" . __('Adicionar preço SINAPI', 'maintenancecosts') . "</a> ";
-   echo "<a class='btn btn-primary' href='" . Html::clean(Price::getFormURL() . '?price_type=cotacao_mercado') . "'>" . __('Adicionar preço cotação', 'maintenancecosts') . "</a> ";
-   echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/import.form.php?price_type=sinapi')) . "'>" . __('Importar SINAPI', 'maintenancecosts') . "</a> ";
-   echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/import.form.php?price_type=cotacao_mercado')) . "'>" . __('Importar Cotação', 'maintenancecosts') . "</a> ";
+   echo "<a class='btn btn-primary' href='" . Html::clean(Price::getFormURL() . '?price_type=' . $priceType) . "'>"
+      . Html::clean($isQuote ? __('Adicionar preço cotação', 'maintenancecosts') : __('Adicionar preço SINAPI', 'maintenancecosts')) . "</a> ";
+   echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/import.form.php?price_type=' . $priceType)) . "'>"
+      . Html::clean($isQuote ? __('Importar Cotação', 'maintenancecosts') : __('Importar SINAPI', 'maintenancecosts')) . "</a> ";
 }
-echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/pricehistory.php')) . "'>" . __('Histórico de preços', 'maintenancecosts') . "</a> ";
-echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/export.php?type=prices&price_type=' . ($showAllTypes ? 'all' : $priceType))) . "'>" . __('Exportar CSV', 'maintenancecosts') . "</a> ";
-echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/export.php?type=prices&format=pdf&price_type=' . ($showAllTypes ? 'all' : $priceType))) . "'>" . __('Exportar PDF', 'maintenancecosts') . "</a>";
+echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/pricehistory.php?price_type=' . $priceType)) . "'>" . __('Histórico de preços', 'maintenancecosts') . "</a> ";
+echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/export.php?type=prices&price_type=' . $priceType)) . "'>" . __('Exportar CSV', 'maintenancecosts') . "</a> ";
+echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/export.php?type=prices&format=pdf&price_type=' . $priceType)) . "'>" . __('Exportar PDF', 'maintenancecosts') . "</a>";
 echo "</div>";
 
 echo "<div class='plugin-maintenancecosts-panel mb-3'>";
-echo "<div class='plugin-maintenancecosts-panel-header'><i class='ti ti-info-circle'></i> " . __('Materiais SINAPI x Preços SINAPI', 'maintenancecosts') . "</div>";
+echo "<div class='plugin-maintenancecosts-panel-header'><i class='ti ti-info-circle'></i> "
+   . Html::clean($isQuote ? __('Cotação/Mercado', 'maintenancecosts') : __('Materiais SINAPI x Preços SINAPI', 'maintenancecosts')) . "</div>";
 echo "<div class='plugin-maintenancecosts-panel-body'>";
-echo "<p><strong>" . Material::getTypeName(2) . ":</strong> " . __('cadastro do item: código, nome, unidade e categoria.', 'maintenancecosts') . "</p>";
-echo "<p><strong>" . Price::getTypeName(2) . ":</strong> " . __('valores por competência. Aqui ficam os preços SINAPI importados e os preços por cotação de mercado cadastrados manualmente.', 'maintenancecosts') . "</p>";
+if ($isQuote) {
+   echo "<p><strong>" . __('Cotação/Mercado', 'maintenancecosts') . ":</strong> "
+      . __('tabela de preços obtidos por cotação ou pesquisa de mercado. O campo Valor é o preço aplicado, e Cotação 1, Cotação 2 e Cotação 3 guardam as propostas comparadas.', 'maintenancecosts') . "</p>";
+} else {
+   echo "<p><strong>" . Material::getTypeName(2) . ":</strong> " . __('cadastro do item: código, nome, unidade e categoria.', 'maintenancecosts') . "</p>";
+   echo "<p><strong>" . Price::getTypeName(2) . ":</strong> "
+      . __('valores SINAPI por competência. Reimportações atualizam o preço vigente e registram histórico sem alterar lançamentos já gravados no chamado.', 'maintenancecosts') . "</p>";
+}
 echo "</div></div>";
 
 echo "<form method='get' class='mb-3'>";
 echo "<div class='d-flex gap-2 flex-wrap'>";
-echo "<select name='price_type' class='form-select' style='max-width:220px'>";
-foreach (['sinapi' => __('Somente SINAPI', 'maintenancecosts'), 'cotacao_mercado' => __('Somente cotação', 'maintenancecosts'), 'all' => __('Todos os tipos', 'maintenancecosts')] as $value => $label) {
-   $selected = ($showAllTypes && $value === 'all') || (!$showAllTypes && $value === $priceType) ? ' selected' : '';
-   echo "<option value='" . Html::clean($value) . "'{$selected}>" . Html::clean($label) . "</option>";
-}
-echo "</select>";
-echo "<input type='text' name='q' value='" . Html::cleanInputText($search) . "' class='form-control' placeholder='" . Html::clean(__('Pesquisar por material, código, unidade, competência ou origem', 'maintenancecosts')) . "'>";
+echo Html::hidden('price_type', ['value' => $priceType]);
+echo "<input type='text' name='q' value='" . Html::cleanInputText($search) . "' class='form-control' placeholder='"
+   . Html::clean(__('Pesquisar por material, código, unidade, competência ou origem', 'maintenancecosts')) . "'>";
 echo "<button class='btn btn-primary' type='submit'>" . __('Pesquisar', 'maintenancecosts') . "</button>";
 echo "</div></form>";
 
 echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
 echo "<thead><tr>";
-echo "<th data-sort='text'>" . __('Código SINAPI', 'maintenancecosts') . "</th>";
-echo "<th data-sort='text'>" . Material::getTypeName(1) . "</th>";
+echo "<th data-sort='text'>" . Html::clean($isQuote ? __('Código', 'maintenancecosts') : __('Código SINAPI', 'maintenancecosts')) . "</th>";
+echo "<th data-sort='text'>" . Html::clean($isQuote ? __('Material', 'maintenancecosts') : Material::getTypeName(1)) . "</th>";
 echo "<th data-sort='text'>" . __('Unidade', 'maintenancecosts') . "</th>";
+if ($isQuote) {
+   echo "<th data-sort='number'>" . __('Quantidade', 'maintenancecosts') . "</th>";
+   echo "<th data-sort='currency'>" . __('Valor', 'maintenancecosts') . "</th>";
+   echo "<th data-sort='currency'>" . __('Cotação 1', 'maintenancecosts') . "</th>";
+   echo "<th data-sort='currency'>" . __('Cotação 2', 'maintenancecosts') . "</th>";
+   echo "<th data-sort='currency'>" . __('Cotação 3', 'maintenancecosts') . "</th>";
+} else {
+   echo "<th data-sort='text'>" . __('Tipo de preço', 'maintenancecosts') . "</th>";
+   echo "<th data-sort='currency'>" . __('Valor unitário', 'maintenancecosts') . "</th>";
+}
 echo "<th data-sort='text'>" . __('Competência', 'maintenancecosts') . "</th>";
-echo "<th data-sort='text'>" . __('Tipo de preço', 'maintenancecosts') . "</th>";
-echo "<th data-sort='currency'>" . __('Valor unitário', 'maintenancecosts') . "</th>";
 echo "<th data-sort='text'>" . __('Origem', 'maintenancecosts') . "</th>";
 echo "<th>" . __('Ações', 'maintenancecosts') . "</th>";
 echo "</tr></thead><tbody>";
@@ -108,19 +121,27 @@ foreach ($iterator as $row) {
    echo "<td class='center' data-value='" . Html::clean($sortCode) . "'>" . Html::clean($code) . "</td>";
    echo "<td style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['material_name'] ?? '') . "</td>";
    echo "<td class='center'>" . Html::clean($row['material_unit'] ?? '') . "</td>";
+   if ($isQuote) {
+      echo "<td class='center' data-value='" . Html::clean((string) (float) ($row['quote_quantity'] ?? 0)) . "'>" . Html::clean($quoteNumber((float) ($row['quote_quantity'] ?? 0))) . "</td>";
+      echo "<td class='center' data-value='" . Html::clean((string) (float) $row['unit_price']) . "'>" . Config::formatCurrency((float) $row['unit_price']) . "</td>";
+      echo "<td class='center' data-value='" . Html::clean((string) (float) ($row['quote_price_1'] ?? 0)) . "'>" . Config::formatCurrency((float) ($row['quote_price_1'] ?? 0)) . "</td>";
+      echo "<td class='center' data-value='" . Html::clean((string) (float) ($row['quote_price_2'] ?? 0)) . "'>" . Config::formatCurrency((float) ($row['quote_price_2'] ?? 0)) . "</td>";
+      echo "<td class='center' data-value='" . Html::clean((string) (float) ($row['quote_price_3'] ?? 0)) . "'>" . Config::formatCurrency((float) ($row['quote_price_3'] ?? 0)) . "</td>";
+   } else {
+      echo "<td class='center'>" . Html::clean(Config::getPriceTypeLabel((string) ($row['price_type'] ?? 'sinapi'))) . "</td>";
+      echo "<td class='center' data-value='" . Html::clean((string) (float) $row['unit_price']) . "'>" . Config::formatCurrency((float) $row['unit_price']) . "</td>";
+   }
    echo "<td class='center'>" . Html::clean($row['competence']) . "</td>";
-   echo "<td class='center'>" . Html::clean(Config::getPriceTypeLabel((string) ($row['price_type'] ?? 'sinapi'))) . "</td>";
-   echo "<td class='center' data-value='" . Html::clean((string) (float) $row['unit_price']) . "'>" . Config::formatCurrency((float) $row['unit_price']) . "</td>";
    echo "<td class='center'>" . Html::clean($row['source']) . "</td>";
    echo "<td class='center'>";
    echo "<a class='btn btn-sm btn-secondary' href='" . Html::clean(Price::getFormURL() . '?id=' . (int) $row['id']) . "'>" . __('Editar', 'maintenancecosts') . "</a> ";
-   echo "<a class='btn btn-sm btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/pricehistory.php?materials_id=' . (int) $row['plugin_maintenancecosts_materials_id'])) . "'>" . __('Histórico', 'maintenancecosts') . "</a>";
+   echo "<a class='btn btn-sm btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/pricehistory.php?materials_id=' . (int) $row['plugin_maintenancecosts_materials_id'] . '&price_type=' . $priceType)) . "'>" . __('Histórico', 'maintenancecosts') . "</a>";
    echo "</td>";
    echo "</tr>";
 }
 
 if ($iterator->count() === 0) {
-   echo "<tr class='tab_bg_1'><td colspan='8' class='center'>" . __('Nenhum preço encontrado.', 'maintenancecosts') . "</td></tr>";
+   echo "<tr class='tab_bg_1'><td colspan='" . ($isQuote ? 11 : 8) . "' class='center'>" . __('Nenhum preço encontrado.', 'maintenancecosts') . "</td></tr>";
 }
 
 echo "</tbody></table>";

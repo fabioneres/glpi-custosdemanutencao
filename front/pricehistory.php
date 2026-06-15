@@ -15,12 +15,15 @@ Config::checkRight(Config::RIGHT_PRICES, READ);
 global $DB;
 
 $materials_id = (int) ($_GET['materials_id'] ?? 0);
+$priceType = Config::normalizePriceType((string) ($_GET['price_type'] ?? 'sinapi'));
+$isQuote = $priceType === 'cotacao_mercado';
 
 Html::header(__('Histórico de preços', 'maintenancecosts'), $_SERVER['PHP_SELF'], 'plugins', Menu::class);
-Config::renderPluginLayoutStart('prices');
+Config::renderPluginLayoutStart($isQuote ? 'quotes' : 'prices');
 
 echo "<div class='spaced'>";
 echo "<form method='get' action='" . Html::clean($_SERVER['PHP_SELF']) . "'>";
+echo Html::hidden('price_type', ['value' => $priceType]);
 echo "<table class='tab_cadre_fixe'>";
 echo "<tr class='tab_bg_2'><th colspan='2'>" . __('Histórico de preços', 'maintenancecosts') . "</th></tr>";
 echo "<tr class='tab_bg_1'><td>" . Material::getTypeName(1) . "</td><td>";
@@ -41,7 +44,7 @@ echo "</td></tr></table>";
 Html::closeForm();
 echo "</div>";
 
-$where = [];
+$where = ['price_type' => $priceType];
 if ($materials_id > 0) {
    $where['plugin_maintenancecosts_materials_id'] = $materials_id;
 }

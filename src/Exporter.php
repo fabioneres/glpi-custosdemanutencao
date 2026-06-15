@@ -134,9 +134,36 @@ class Exporter
             $materialUnit = (string) ($material->fields['unit'] ?? '');
             $materialCode = (string) ($material->fields['code'] ?? '');
          }
+         if (Config::normalizePriceType((string) ($row['price_type'] ?? 'sinapi')) === 'cotacao_mercado') {
+            $rows[] = [
+               $materialCode,
+               $materialName,
+               $materialUnit,
+               self::formatPlainNumber((float) ($row['quote_quantity'] ?? 0)),
+               Config::formatCurrency((float) $row['unit_price']),
+               Config::formatCurrency((float) ($row['quote_price_1'] ?? 0)),
+               Config::formatCurrency((float) ($row['quote_price_2'] ?? 0)),
+               Config::formatCurrency((float) ($row['quote_price_3'] ?? 0)),
+               $row['competence'],
+               $row['source'],
+               $row['date_creation'],
+            ];
+            continue;
+         }
+
          $rows[] = [$materialCode, $materialName, $materialUnit, $row['competence'], Config::getPriceTypeLabel((string) ($row['price_type'] ?? 'sinapi')), Config::formatCurrency((float) $row['unit_price']), $row['source'], $row['date_creation']];
       }
-      self::sendTable('maintenancecosts-precos', ['codigo_sinapi', 'material', 'unidade', 'competencia', 'tipo_preco', 'valor_unitario', 'fonte', 'data_criacao'], $rows, $format);
+      $headers = $priceType === 'cotacao_mercado'
+         ? ['codigo', 'material', 'unidade', 'quantidade', 'valor', 'cotacao_1', 'cotacao_2', 'cotacao_3', 'competencia', 'fonte', 'data_criacao']
+         : ['codigo_sinapi', 'material', 'unidade', 'competencia', 'tipo_preco', 'valor_unitario', 'fonte', 'data_criacao'];
+      self::sendTable('maintenancecosts-precos', $headers, $rows, $format);
+   }
+
+   private static function formatPlainNumber(float $value): string
+   {
+      return abs($value - round($value)) < 0.000001
+         ? (string) (int) round($value)
+         : rtrim(rtrim(number_format($value, 2, ',', '.'), '0'), ',');
    }
 
    public static function exportCostCenters(string $format = 'csv'): void

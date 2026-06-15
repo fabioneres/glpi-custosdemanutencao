@@ -132,6 +132,9 @@ class Importer
       }
 
       $map = self::buildHeaderMap($header);
+      if ($priceType === 'cotacao_mercado' && !self::hasRequiredPriceColumns($map)) {
+         $map = self::buildDefaultQuoteMap();
+      }
       foreach (['code', 'name', 'unit', 'unit_price'] as $required) {
          if (!isset($map[$required])) {
             fclose($handle);
@@ -159,6 +162,9 @@ class Importer
       while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
          $summary['total_rows']++;
          $data = self::rowToData($row, $map, $summary['competence']);
+         if (self::isRepeatedQuoteHeader($data)) {
+            continue;
+         }
          $error = self::validateRow($data);
          if ($error !== '') {
             $summary['invalid_rows']++;
@@ -302,6 +308,10 @@ class Importer
          'name'       => ['descricao', 'description', 'material', 'name', 'nome'],
          'unit'       => ['unidade', 'un', 'unit', 'unidade de medida'],
          'unit_price' => ['valor', 'valor unitario', 'preco', 'price', 'unit_price'],
+         'quote_quantity' => ['qdt', 'qtd', 'quantidade', 'quantity'],
+         'quote_price_1' => ['cot1', 'cot 1', 'cotacao 1', 'cotacao1'],
+         'quote_price_2' => ['cot 2', 'cot. 2', 'cotacao 2', 'cotacao2'],
+         'quote_price_3' => ['cot 3', 'cot. 3', 'cotacao 3', 'cotacao3'],
          'competence' => ['competencia', 'mes', 'month'],
          'category'   => ['categoria', 'category'],
       ];
@@ -319,6 +329,30 @@ class Importer
       return $map;
    }
 
+   private static function hasRequiredPriceColumns(array $map): bool
+   {
+      foreach (['code', 'name', 'unit', 'unit_price'] as $required) {
+         if (!isset($map[$required])) {
+            return false;
+         }
+      }
+      return true;
+   }
+
+   private static function buildDefaultQuoteMap(): array
+   {
+      return [
+         'code'           => 0,
+         'name'           => 1,
+         'unit'           => 2,
+         'quote_quantity' => 3,
+         'unit_price'     => 4,
+         'quote_price_1'  => 5,
+         'quote_price_2'  => 6,
+         'quote_price_3'  => 7,
+      ];
+   }
+
    private static function normalizeHeader(string $value): string
    {
       $value = trim(strtolower($value));
@@ -327,6 +361,14 @@ class Importer
          ['a', 'a', 'a', 'a', 'a', 'e', 'e', 'e', 'i', 'o', 'o', 'o', 'o', 'u', 'u', 'c'],
          $value
       );
+      $value = strtr($value, [
+         'á' => 'a', 'à' => 'a', 'ã' => 'a', 'â' => 'a', 'ä' => 'a',
+         'é' => 'e', 'ê' => 'e', 'ë' => 'e',
+         'í' => 'i',
+         'ó' => 'o', 'ô' => 'o', 'õ' => 'o', 'ö' => 'o',
+         'ú' => 'u', 'ü' => 'u',
+         'ç' => 'c',
+      ]);
       return preg_replace('/\s+/', ' ', $value);
    }
 
@@ -344,9 +386,22 @@ class Importer
          'description' => $description,
          'unit'        => self::cleanImportedText($get('unit'), 32),
          'unit_price' => self::parseDecimal($get('unit_price')),
+         'quote_quantity' => self::parseDecimal($get('quote_quantity')),
+         'quote_price_1'  => self::parseDecimal($get('quote_price_1')),
+         'quote_price_2'  => self::parseDecimal($get('quote_price_2')),
+         'quote_price_3'  => self::parseDecimal($get('quote_price_3')),
          'competence' => Config::normalizeCompetence($get('competence') !== '' ? $get('competence') : $defaultCompetence),
          'category'   => self::cleanImportedText($get('category'), 255),
       ];
+   }
+
+   private static function isRepeatedQuoteHeader(array $data): bool
+   {
+      $code = strtoupper(trim((string) ($data['code'] ?? '')));
+      $name = strtoupper(trim((string) ($data['name'] ?? '')));
+      return (strpos($code, 'DIGO') !== false && strpos($name, 'DESCRI') !== false)
+         || self::normalizeHeader((string) ($data['code'] ?? '')) === 'codigo'
+         || self::normalizeHeader((string) ($data['name'] ?? '')) === 'descricao produto';
    }
 
    private static function cleanImportedText(string $value, int $maxLength = 0): string
@@ -366,6 +421,8 @@ class Importer
       $value = trim(str_replace(['R$', ' '], '', $value));
       if (strpos($value, ',') !== false && strpos($value, '.') !== false) {
          $value = str_replace('.', '', $value);
+      } elseif (substr_count($value, '.') > 1 && preg_match('/^(.*)\.(\d{1,6})$/', $value, $matches)) {
+         $value = str_replace('.', '', $matches[1]) . '.' . $matches[2];
       }
       return (float) str_replace(',', '.', $value);
    }
@@ -397,8 +454,18 @@ class Importer
 
       return [
          'material_status' => $material ? 'existing' : 'new',
-         'price_status'    => ($price && abs((float) $price['unit_price'] - (float) $data['unit_price']) < 0.000001) ? 'repeated' : 'new',
+         'price_status'    => ($price && !self::priceRowChanged($price, $data)) ? 'repeated' : 'new',
       ];
+   }
+
+   private static function priceRowChanged(array $price, array $data): bool
+   {
+      foreach (['unit_price', 'quote_quantity', 'quote_price_1', 'quote_price_2', 'quote_price_3'] as $field) {
+         if (abs((float) ($price[$field] ?? 0) - (float) ($data[$field] ?? 0)) > 0.000001) {
+            return true;
+         }
+      }
+      return false;
    }
 
    private static function saveRow(array $data, int $importBatchId, string $priceType): void
@@ -435,7 +502,7 @@ class Importer
       }
 
       $price = Price::getForMaterialCompetenceAndType($materialId, $data['competence'], $priceType);
-      if ($price && abs((float) $price['unit_price'] - (float) $data['unit_price']) < 0.000001) {
+      if ($price && !self::priceRowChanged($price, $data)) {
          return;
       }
 
@@ -444,6 +511,10 @@ class Importer
          'plugin_maintenancecosts_materials_id'     => $materialId,
          'competence'                               => $data['competence'],
          'unit_price'                               => $data['unit_price'],
+         'quote_quantity'                           => $data['quote_quantity'] ?? 0,
+         'quote_price_1'                            => $data['quote_price_1'] ?? 0,
+         'quote_price_2'                            => $data['quote_price_2'] ?? 0,
+         'quote_price_3'                            => $data['quote_price_3'] ?? 0,
          'price_type'                               => $priceType,
          'source'                                   => $priceType === 'sinapi' ? 'CSV/XLSX SINAPI' : 'CSV/XLSX Cotacao/Mercado',
          'plugin_maintenancecosts_importbatches_id' => $importBatchId,

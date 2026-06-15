@@ -75,6 +75,7 @@ class TicketMaterial extends CommonDBTM
       AuditLog::record(self::class, (int) $this->getID(), 'consumption_add', [], $this->fields, '', (int) ($this->fields['entities_id'] ?? 0));
       $this->ensureTicketContractLink();
       $this->syncContractCost();
+      $this->syncTicketCost();
    }
 
    public function post_updateItem($history = true)
@@ -82,6 +83,7 @@ class TicketMaterial extends CommonDBTM
       AuditLog::record(self::class, (int) $this->getID(), 'consumption_update', [], $this->fields, '', (int) ($this->fields['entities_id'] ?? 0));
       $this->ensureTicketContractLink();
       $this->syncContractCost();
+      $this->syncTicketCost();
    }
 
    private function normalizeInput(array $input): array
@@ -209,11 +211,18 @@ class TicketMaterial extends CommonDBTM
          }
       }
 
-      $price = !empty($input['plugin_maintenancecosts_materials_id'])
-         ? Price::getLatestForMaterial((int) $input['plugin_maintenancecosts_materials_id'])
-         : null;
+      $price = null;
+      if (!empty($input['plugin_maintenancecosts_materials_id'])) {
+         $price = Price::getLatestForMaterialAndType(
+            (int) $input['plugin_maintenancecosts_materials_id'],
+            Config::normalizePriceType((string) ($input['price_type'] ?? 'sinapi'))
+         );
+         if (!$price) {
+            $price = Price::getLatestForMaterial((int) $input['plugin_maintenancecosts_materials_id']);
+         }
+      }
 
-      return $price ? (string) $price['competence'] : date('Y-m');
+      return $price ? (string) $price['competence'] : Price::getLatestCompetence();
    }
 
    public static function cancel(int $id, string $reason): bool
@@ -324,6 +333,80 @@ class TicketMaterial extends CommonDBTM
       }
    }
 
+   private function syncTicketCost(): void
+   {
+      global $DB;
+
+      if (!class_exists('TicketCost') || !$DB->tableExists('glpi_ticketcosts')) {
+         return;
+      }
+
+      $tickets_id = (int) ($this->fields['tickets_id'] ?? 0);
+      if ($tickets_id <= 0) {
+         return;
+      }
+
+      $ticket = new Ticket();
+      if (!$ticket->getFromDB($tickets_id)) {
+         return;
+      }
+
+      $date = (string) ($this->fields['consumption_date'] ?? date('Y-m-d'));
+      if ($date === '') {
+         $date = date('Y-m-d');
+      }
+
+      $material = new Material();
+      $materialName = $material->getFromDB((int) ($this->fields['plugin_maintenancecosts_materials_id'] ?? 0))
+         ? $material->getName()
+         : Material::getTypeName(1);
+
+      $isDeleted = (int) ($this->fields['is_deleted'] ?? 0) === 1;
+      $cost = $isDeleted ? 0 : (float) ($this->fields['total_price'] ?? 0);
+      $comment = sprintf(
+         '%s #%d | %s | %s: %s | %s: %s | %s: %s',
+         self::getTypeName(1),
+         (int) $this->getID(),
+         sprintf(__('Chamado %d', 'maintenancecosts'), $tickets_id),
+         __('Material', 'maintenancecosts'),
+         $materialName,
+         __('Origem', 'maintenancecosts'),
+         Config::getPriceTypeLabel((string) ($this->fields['price_type'] ?? 'sinapi')),
+         __('Status', 'maintenancecosts'),
+         $isDeleted ? __('Cancelado', 'maintenancecosts') : __('Ativo', 'maintenancecosts')
+      );
+
+      if ($isDeleted && !empty($this->fields['delete_reason'])) {
+         $comment .= ' | ' . __('Motivo', 'maintenancecosts') . ': ' . (string) $this->fields['delete_reason'];
+      }
+
+      $input = [
+         'tickets_id'     => $tickets_id,
+         'entities_id'    => (int) ($this->fields['entities_id'] ?? ($ticket->fields['entities_id'] ?? 0)),
+         'name'           => sprintf(__('Consumo de material - item %d', 'maintenancecosts'), (int) $this->getID()),
+         'comment'        => $comment,
+         'begin_date'     => $date,
+         'end_date'       => $date,
+         'actiontime'     => 0,
+         'cost_time'      => 0,
+         'cost_fixed'     => 0,
+         'cost_material'  => $cost,
+      ];
+
+      $ticketCost = new \TicketCost();
+      $ticketcosts_id = (int) ($this->fields['ticketcosts_id'] ?? 0);
+      if ($ticketcosts_id > 0 && $ticketCost->getFromDB($ticketcosts_id)) {
+         $ticketCost->update(['id' => $ticketcosts_id] + $input);
+         return;
+      }
+
+      $newId = (int) $ticketCost->add($input);
+      if ($newId > 0) {
+         $DB->update(self::getTable(), ['ticketcosts_id' => $newId], ['id' => (int) $this->getID()]);
+         $this->fields['ticketcosts_id'] = $newId;
+      }
+   }
+
    private function ensureTicketContractLink(): void
    {
       global $DB;
@@ -383,6 +466,34 @@ class TicketMaterial extends CommonDBTM
       ])->current();
 
       return (float) ($result['total'] ?? 0);
+   }
+
+   public static function syncAllTicketCosts(): void
+   {
+      global $DB;
+
+      if (!class_exists('TicketCost')
+         || !$DB->tableExists('glpi_ticketcosts')
+         || !$DB->fieldExists(self::getTable(), 'ticketcosts_id')
+      ) {
+         return;
+      }
+
+      $iterator = $DB->request([
+         'SELECT' => ['id'],
+         'FROM'   => self::getTable(),
+         'WHERE'  => [
+            'tickets_id'  => ['>', 0],
+            'is_deleted' => 0,
+         ],
+      ]);
+
+      foreach ($iterator as $row) {
+         $item = new self();
+         if ($item->getFromDB((int) $row['id'])) {
+            $item->syncTicketCost();
+         }
+      }
    }
 
    public static function showForTicket(Ticket $ticket): void
@@ -465,6 +576,11 @@ class TicketMaterial extends CommonDBTM
       $tickets_id = (int) ($this->fields['tickets_id'] ?? ($options['tickets_id'] ?? 0));
       $is_new = (int) $ID <= 0;
       $embedded = !empty($options['embedded']);
+      $priceType = Config::normalizePriceType((string) ($this->fields['price_type'] ?? 'sinapi'));
+      $competenceValue = Config::normalizeCompetence((string) ($this->fields['competence'] ?? ''));
+      if ($is_new && $competenceValue === '') {
+         $competenceValue = Price::getLatestCompetence($priceType);
+      }
 
       echo "<div class='" . ($embedded ? 'plugin-maintenancecosts-inline-form' : 'asset') . "'>";
       echo "<form name='plugin_maintenancecosts_ticketmaterial_form' method='post' action='" . self::escape(self::getFormURL()) . "' data-submit-once>";
@@ -500,7 +616,7 @@ class TicketMaterial extends CommonDBTM
       echo "</td><td>" . __('Tipo de preço', 'maintenancecosts') . "</td><td>";
       echo "<select name='price_type' class='form-select'>";
       foreach (Config::getPriceTypes() as $value => $label) {
-         $selected = Config::normalizePriceType((string) ($this->fields['price_type'] ?? 'sinapi')) === $value ? ' selected' : '';
+         $selected = $priceType === $value ? ' selected' : '';
          echo "<option value='" . self::escape($value) . "'$selected>" . self::escape($label) . "</option>";
       }
       echo "</select></td></tr>";
@@ -514,7 +630,7 @@ class TicketMaterial extends CommonDBTM
       echo "<tr class='tab_bg_1'><td>" . CostCenter::getTypeName(1) . "</td><td>";
       $this->showPluginDropdown('costcenter', 'plugin_maintenancecosts_costcenters_id', (int) ($this->fields['plugin_maintenancecosts_costcenters_id'] ?? 0));
       echo "</td><td>" . __('Competência', 'maintenancecosts') . "</td>";
-      echo "<td><input type='text' name='competence' placeholder='AAAA-MM' maxlength='7' value='" . self::escape(Config::normalizeCompetence((string) ($this->fields['competence'] ?? ''))) . "' class='form-control plugin-maintenancecosts-competence'></td></tr>";
+      echo "<td><input type='text' name='competence' placeholder='AAAA-MM' maxlength='7' value='" . self::escape($competenceValue) . "' class='form-control plugin-maintenancecosts-competence'></td></tr>";
 
       echo "<tr class='tab_bg_1'><td>" . __('Quantidade', 'maintenancecosts') . "</td>";
       echo "<td><input type='number' step='1' min='0' name='quantity' value='" . self::escape(self::formatQuantity((float) ($this->fields['quantity'] ?? 0))) . "' class='form-control'></td>";

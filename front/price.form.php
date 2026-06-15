@@ -25,12 +25,28 @@ if (isset($_POST['update'])) {
 
 if (isset($_POST['delete']) || isset($_POST['purge'])) {
    Config::checkRight(Config::RIGHT_PRICES, PURGE);
+   $redirectType = 'sinapi';
+   if (!empty($_POST['id']) && $item->getFromDB((int) $_POST['id'])) {
+      $redirectType = Config::normalizePriceType((string) ($item->fields['price_type'] ?? 'sinapi'));
+   }
    $item->delete($_POST, isset($_POST['purge']));
-   Html::redirect(Price::getSearchURL());
+   Html::redirect($redirectType === 'cotacao_mercado'
+      ? Config::pluginUrl('/front/quotationprice.php')
+      : Price::getSearchURL());
 }
 
 Config::checkRight(Config::RIGHT_PRICES, READ);
 
-Html::header(Price::getTypeName(1), $_SERVER['PHP_SELF'], 'plugins', Menu::class);
-$item->display(['id' => (int) ($_GET['id'] ?? 0)]);
+$id = (int) ($_GET['id'] ?? 0);
+$priceType = Config::normalizePriceType((string) ($_GET['price_type'] ?? 'sinapi'));
+if ($id > 0 && $item->getFromDB($id)) {
+   $priceType = Config::normalizePriceType((string) ($item->fields['price_type'] ?? 'sinapi'));
+   $item = new Price();
+}
+
+$title = $priceType === 'cotacao_mercado'
+   ? __('Preço Cotação/Mercado', 'maintenancecosts')
+   : Price::getTypeName(1);
+Html::header($title, $_SERVER['PHP_SELF'], 'plugins', Menu::class);
+$item->display(['id' => $id, 'price_type' => $priceType]);
 Html::footer();

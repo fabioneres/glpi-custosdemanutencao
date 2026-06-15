@@ -57,7 +57,6 @@ function plugin_init_maintenancecosts(): void {
    Plugin::registerClass(TicketTab::class, ['addtabon' => [\Ticket::class]]);
 
    $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['maintenancecosts'][] = 'js/ticketmaterial.js';
-   $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['maintenancecosts'][] = 'js/pluginicon.js';
    $PLUGIN_HOOKS[Hooks::ADD_CSS]['maintenancecosts'][] = 'css/maintenancecosts.css';
 
    if (Session::getLoginUserID()) {

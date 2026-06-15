@@ -1,5 +1,14 @@
 # Changelog
 
+## v0.5.3 - Cotacao Mercado e custos do chamado
+
+- Separa Cotacao/Mercado em tab propria, com acoes de adicionar preco, importar e consultar historico no mesmo contexto.
+- Adequa Cotacao/Mercado ao layout da planilha de cotacoes com quantidade, valor aplicado e tres cotacoes comparativas.
+- Adiciona a tab Materiais Cotacao abaixo de Materiais SINAPI, listando materiais com precos de cotacao/mercado.
+- Ajusta os fluxos Adicionar preco cotacao e Importar Cotacao para exibirem labels, campos e orientacoes proprias de cotacao.
+- Preenche a competencia do lancamento de material com a ultima competencia cadastrada, mantendo edicao manual.
+- Sincroniza materiais consumidos com a aba nativa Chamado > Custos por meio de TicketCost idempotente.
+
 ## v0.5.2 - Icone, campus e correcoes visuais
 
 - Ajusta o cadastro de centros de custo para usar Campus como localizacao GLPI de nivel 1.

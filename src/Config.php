@@ -248,6 +248,8 @@ class Config extends CommonDBTM
       if (strpos($value, ',') !== false && strpos($value, '.') !== false) {
          $value = str_replace('.', '', $value);
          $value = str_replace(',', '.', $value);
+      } elseif (substr_count($value, '.') > 1 && preg_match('/^(.*)\.(\d{1,6})$/', $value, $matches)) {
+         $value = str_replace('.', '', $matches[1]) . '.' . $matches[2];
       } else {
          $value = str_replace(',', '.', $value);
       }
@@ -316,6 +318,12 @@ class Config extends CommonDBTM
             'icon'  => 'ti ti-package',
             'show'  => self::canViewMaterials(),
          ],
+         'quote_materials' => [
+            'label' => __('Materiais Cotação', 'maintenancecosts'),
+            'url'   => self::pluginUrl('/front/quotationmaterial.php'),
+            'icon'  => 'ti ti-packages',
+            'show'  => self::canViewMaterials(),
+         ],
          'origins' => [
             'label' => MaterialOrigin::getTypeName(2),
             'url'   => self::pluginUrl('/front/materialorigin.php'),
@@ -332,6 +340,12 @@ class Config extends CommonDBTM
             'label' => Price::getTypeName(2),
             'url'   => self::pluginUrl('/front/price.php'),
             'icon'  => 'ti ti-cash',
+            'show'  => self::canViewPrices(),
+         ],
+         'quotes' => [
+            'label' => __('Cotação/Mercado', 'maintenancecosts'),
+            'url'   => self::pluginUrl('/front/quotationprice.php'),
+            'icon'  => 'ti ti-receipt',
             'show'  => self::canViewPrices(),
          ],
          'reports' => [

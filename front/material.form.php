@@ -31,6 +31,10 @@ if (isset($_POST['delete']) || isset($_POST['purge'])) {
 
 Config::checkRight(Config::RIGHT_MATERIALS, READ);
 
-Html::header(Material::getTypeName(1), $_SERVER['PHP_SELF'], 'plugins', Menu::class);
-$item->display(['id' => (int) ($_GET['id'] ?? 0)]);
+$context = (string) ($_GET['context'] ?? $_POST['context'] ?? '');
+$title = $context === 'quote'
+   ? __('Material Cotação', 'maintenancecosts')
+   : Material::getTypeName(1);
+Html::header($title, $_SERVER['PHP_SELF'], 'plugins', Menu::class);
+$item->display(['id' => (int) ($_GET['id'] ?? 0), 'context' => $context]);
 Html::footer();

@@ -45,6 +45,11 @@ class Menu extends CommonDBTM
             'page'  => Config::pluginUrl('/front/material.php', false),
             'icon'  => Material::getIcon(),
          ];
+         $menu['options']['quotationmaterials'] = [
+            'title' => __('Materiais Cotação', 'maintenancecosts'),
+            'page'  => Config::pluginUrl('/front/quotationmaterial.php', false),
+            'icon'  => 'ti ti-packages',
+         ];
          $menu['options']['materialorigins'] = [
             'title' => MaterialOrigin::getTypeName(2),
             'page'  => Config::pluginUrl('/front/materialorigin.php', false),
@@ -57,6 +62,11 @@ class Menu extends CommonDBTM
             'title' => Price::getTypeName(2),
             'page'  => Config::pluginUrl('/front/price.php', false),
             'icon'  => Price::getIcon(),
+         ];
+         $menu['options']['quotes'] = [
+            'title' => __('Cotação/Mercado', 'maintenancecosts'),
+            'page'  => Config::pluginUrl('/front/quotationprice.php', false),
+            'icon'  => 'ti ti-receipt',
          ];
          $menu['options']['pricehistory'] = [
             'title' => __('Histórico de preços', 'maintenancecosts'),

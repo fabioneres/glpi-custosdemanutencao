@@ -35,6 +35,7 @@ class Installer
          self::ensureSchema();
          Config::ensureDefaultConfig();
          self::ensureDefaultCostCenter();
+         TicketMaterial::syncAllTicketCosts();
       } catch (Throwable $e) {
          Toolbox::logInFile(
             'plugin_maintenancecosts',
@@ -79,6 +80,10 @@ class Installer
 
       if ($DB->tableExists(Price::getTable())) {
          self::ensureField($migration, Price::getTable(), 'comment', 'text NULL');
+         self::ensureField($migration, Price::getTable(), 'quote_quantity', 'decimal(20,6) NOT NULL DEFAULT 0.000000');
+         self::ensureField($migration, Price::getTable(), 'quote_price_1', 'decimal(20,6) NOT NULL DEFAULT 0.000000');
+         self::ensureField($migration, Price::getTable(), 'quote_price_2', 'decimal(20,6) NOT NULL DEFAULT 0.000000');
+         self::ensureField($migration, Price::getTable(), 'quote_price_3', 'decimal(20,6) NOT NULL DEFAULT 0.000000');
          self::ensureField($migration, Price::getTable(), 'price_type', "varchar(32) NOT NULL DEFAULT 'sinapi'");
          self::ensureField($migration, Price::getTable(), 'date_mod', 'timestamp NULL DEFAULT NULL');
       }
@@ -112,6 +117,7 @@ class Installer
          self::ensureField($migration, TicketMaterial::getTable(), 'plugin_maintenancecosts_materialorigins_id', 'int unsigned NOT NULL DEFAULT 0');
          self::ensureField($migration, TicketMaterial::getTable(), 'contracts_id', 'int unsigned NOT NULL DEFAULT 0');
          self::ensureField($migration, TicketMaterial::getTable(), 'contractcosts_id', 'int unsigned NOT NULL DEFAULT 0');
+         self::ensureField($migration, TicketMaterial::getTable(), 'ticketcosts_id', 'int unsigned NOT NULL DEFAULT 0');
          self::ensureField($migration, TicketMaterial::getTable(), 'price_type', "varchar(32) NOT NULL DEFAULT 'sinapi'");
          self::ensureField($migration, TicketMaterial::getTable(), 'deleted_at', 'timestamp NULL DEFAULT NULL');
          self::ensureField($migration, TicketMaterial::getTable(), 'deleted_by', 'int unsigned NOT NULL DEFAULT 0');

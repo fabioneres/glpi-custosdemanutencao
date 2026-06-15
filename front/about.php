@@ -20,7 +20,7 @@ echo "<div class='plugin-maintenancecosts-panel-body'>";
 echo "<div class='plugin-maintenancecosts-section-title'>" . __('Problema que resolve', 'maintenancecosts') . "</div>";
 echo "<p>" . __('O plugin centraliza o custo de materiais usados em chamados de manutenção, vinculando cada lançamento ao material, centro de custo, origem do preço, competência, técnico e chamado.', 'maintenancecosts') . "</p>";
 echo "<div class='plugin-maintenancecosts-compare'>";
-echo "<div class='plugin-maintenancecosts-warn'><strong>" . __('Sem controle estruturado', 'maintenancecosts') . "</strong><ul>";
+echo "<div class='plugin-maintenancecosts-warn'><strong>" . __('Sem Custos de Manutenção', 'maintenancecosts') . "</strong><ul>";
 echo "<li>" . __('Custos ficam espalhados em comentários ou planilhas.', 'maintenancecosts') . "</li>";
 echo "<li>" . __('Atualizações de preço podem confundir valores antigos.', 'maintenancecosts') . "</li>";
 echo "<li>" . __('Relatórios por centro de custo e contrato exigem consolidação manual.', 'maintenancecosts') . "</li>";
