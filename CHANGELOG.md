@@ -1,5 +1,15 @@
 # Changelog
 
+## v0.5.5 - Centros de custo institucionais e origem manual
+
+- Adequa centros de custo ao layout da planilha institucional, com codigo, unidade gestora, unidade academica, departamento, divisao, secao, codigo SIORG, sigla SIORG, endereco e responsavel.
+- Vincula Unidade gestora a localizacao GLPI de nivel 1 quando houver correspondencia de nome.
+- Adiciona importacao XLSX/CSV de centros de custo com reconhecimento de cabecalhos acentuados em maiusculas.
+- Remove a criacao automatica de origens do material; origens passam a ser somente cadastros manuais.
+- Remove origens padrao legadas sem uso durante upgrade idempotente.
+- Mantem a coluna Acoes sempre visivel, nao ocultavel e nao ordenavel nas tabelas customizaveis do plugin.
+- Atualiza exportacao CSV/PDF de centros de custo para seguir a nova estrutura.
+
 ## v0.5.4 - Compatibilidade de instalacao no GLPI 10.0.24
 
 - Corrige a instalacao/habilitacao pela interface em ambientes GLPI 10.0.24, usando a classe global `\QueryExpression` em vez do namespace `Glpi\DBAL\QueryExpression`.
@@ -29,38 +39,38 @@
 - Cria o vinculo chamado-contrato ao selecionar contrato no lancamento de material.
 - Melhora exportacao PDF de relatorios com resumo, grafico e tabela em layout visual.
 
-## v0.5.0 - EvoluÃ§Ã£o de centros, preÃ§os e relatÃ³rios
+## v0.5.0 - Evolução de centros, preços e relatórios
 
-- Reorganiza centros de custo com cÃ³digo, nome, endereÃ§o, piso, campus, departamento/disciplina/setor e utilizaÃ§Ã£o.
-- Adiciona importaÃ§Ã£o CSV/XLSX de centros de custo com prÃ©-validaÃ§Ã£o.
-- Move importaÃ§Ãµes SINAPI para a Ã¡rea de PreÃ§os SINAPI.
-- Adiciona fluxo de preÃ§os por cotaÃ§Ã£o/mercado e filtro por tipo de preÃ§o.
-- Adiciona unidade e histÃ³rico por item em PreÃ§os SINAPI.
-- Reestrutura relatÃ³rios para exibir uma visÃ£o por vez, com grÃ¡ficos configurÃ¡veis.
-- Adiciona relatÃ³rios por origem do material, tipo de preÃ§o e contrato.
-- Adiciona vÃ­nculo explÃ­cito de material consumido com contrato e sincronizaÃ§Ã£o do custo do contrato.
-- Adiciona exportaÃ§Ã£o PDF simples para tabelas e relatÃ³rios.
-- MantÃ©m navegaÃ§Ã£o por tabs laterais em todas as telas principais do plugin.
+- Reorganiza centros de custo com código, nome, endereço, piso, campus, departamento/disciplina/setor e utilização.
+- Adiciona importação CSV/XLSX de centros de custo com pré-validação.
+- Move importações SINAPI para a área de Preços SINAPI.
+- Adiciona fluxo de preços por cotação/mercado e filtro por tipo de preço.
+- Adiciona unidade e histórico por item em Preços SINAPI.
+- Reestrutura relatórios para exibir uma visão por vez, com gráficos configuráveis.
+- Adiciona relatórios por origem do material, tipo de preço e contrato.
+- Adiciona vínculo explícito de material consumido com contrato e sincronização do custo do contrato.
+- Adiciona exportação PDF simples para tabelas e relatórios.
+- Mantém navegação por tabs laterais em todas as telas principais do plugin.
 
 ## v0.4.1 - Consolidada
 
-- Consolida a entrega aplicada na VM apÃ³s validaÃ§Ã£o visual e tÃ©cnica.
-- MantÃ©m o menu em Plug-ins, telas revisadas, relatÃ³rios pesquisÃ¡veis/ordenÃ¡veis e correÃ§Ãµes de dropdowns.
-- Confirma congelamento de valores em chamados, histÃ³rico de preÃ§os e suporte a SINAPI/CotaÃ§Ã£o.
+- Consolida a entrega aplicada na VM após validação visual e técnica.
+- Mantém o menu em Plug-ins, telas revisadas, relatórios pesquisáveis/ordenáveis e correções de dropdowns.
+- Confirma congelamento de valores em chamados, histórico de preços e suporte a SINAPI/Cotação.
 
-## v0.4.0 - Base da evoluÃ§Ã£o
+## v0.4.0 - Base da evolução
 
-- Adiciona histÃ³rico formal de alteraÃ§Ãµes de preÃ§os, com material, competÃªncia, tipo de preÃ§o, valor anterior, valor novo, usuÃ¡rio, origem, lote de importaÃ§Ã£o e justificativa.
-- Prepara a importaÃ§Ã£o SINAPI para atualizar preÃ§o existente por material, competÃªncia e tipo de preÃ§o, evitando duplicidade de preÃ§os da mesma competÃªncia.
+- Adiciona histórico formal de alterações de preços, com material, competência, tipo de preço, valor anterior, valor novo, usuário, origem, lote de importação e justificativa.
+- Prepara a importação SINAPI para atualizar preço existente por material, competência e tipo de preço, evitando duplicidade de preços da mesma competência.
 - Move o menu principal do plugin para a secao Plug-ins do GLPI.
 - Amplia o cadastro de centros de custo com campo de endereco e listagem propria com pesquisa.
 
 ## v0.3.19 - Release base
 
-- Estabiliza cadastro de materiais SINAPI, centros de custo, origens de material, preÃ§os, importaÃ§Ãµes, consumo em chamados, relatÃ³rios e pÃ¡gina Sobre.
+- Estabiliza cadastro de materiais SINAPI, centros de custo, origens de material, preços, importações, consumo em chamados, relatórios e página Sobre.
 - Corrige dropdowns de material e centro de custo no lancamento de materiais consumidos em chamados.
 - Adiciona origem do material e tipo de preco no lancamento de consumo.
-- MantÃ©m o valor unitÃ¡rio aplicado no consumo gravado em `unit_price_applied`, preservando os custos jÃ¡ lanÃ§ados.
+- Mantém o valor unitário aplicado no consumo gravado em `unit_price_applied`, preservando os custos já lançados.
 - Melhora exibicao de valores em reais e quantidades inteiras nas telas operacionais e relatorios.
-- Corrige listagens de materiais, preÃ§os e importaÃ§Ãµes para evitar linhas em branco.
+- Corrige listagens de materiais, preços e importações para evitar linhas em branco.
 

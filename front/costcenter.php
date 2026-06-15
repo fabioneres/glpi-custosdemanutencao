@@ -40,11 +40,15 @@ if ($search !== '') {
       'OR' => [
          ['code' => ['LIKE', '%' . $search . '%']],
          ['name' => ['LIKE', '%' . $search . '%']],
-         ['address' => ['LIKE', '%' . $search . '%']],
-         ['floor' => ['LIKE', '%' . $search . '%']],
          ['campus' => ['LIKE', '%' . $search . '%']],
+         ['academic_unit' => ['LIKE', '%' . $search . '%']],
          ['department' => ['LIKE', '%' . $search . '%']],
-         ['usage_type' => ['LIKE', '%' . $search . '%']],
+         ['division' => ['LIKE', '%' . $search . '%']],
+         ['section' => ['LIKE', '%' . $search . '%']],
+         ['siorg_code' => ['LIKE', '%' . $search . '%']],
+         ['siorg_acronym' => ['LIKE', '%' . $search . '%']],
+         ['address' => ['LIKE', '%' . $search . '%']],
+         ['responsible' => ['LIKE', '%' . $search . '%']],
       ],
    ];
 }
@@ -81,7 +85,7 @@ if (Config::canManageCostCenters()) {
    echo "<label><input type='checkbox' name='dry_run' value='1' checked> " . __('Validar sem gravar', 'maintenancecosts') . "</label>";
    echo Html::submit(__('Processar arquivo', 'maintenancecosts'), ['name' => 'import_costcenters', 'class' => 'btn btn-primary']);
    echo "</div>";
-   echo "<div class='plugin-maintenancecosts-help mt-2'>" . __('Colunas reconhecidas: código, nome, endereço, piso, campus, departamento/disciplina/setor e utilização.', 'maintenancecosts') . "</div>";
+   echo "<div class='plugin-maintenancecosts-help mt-2'>" . __('Colunas reconhecidas: Código, Unidade gestora, Unidade acadêmica, Departamento, Divisão, Seção, Código SIORG, Sigla SIORG, Endereço e Responsável.', 'maintenancecosts') . "</div>";
    Html::closeForm();
    echo "</div></div>";
 }
@@ -109,40 +113,46 @@ if (is_array($summary)) {
 
 echo "<form method='get' class='mb-3'>";
 echo "<div class='d-flex gap-2'>";
-echo "<input type='text' name='q' value='" . Html::cleanInputText($search) . "' class='form-control' placeholder='" . Html::clean(__('Pesquisar por código, nome, endereço, piso, campus, setor ou utilização', 'maintenancecosts')) . "'>";
+echo "<input type='text' name='q' value='" . Html::cleanInputText($search) . "' class='form-control' placeholder='" . Html::clean(__('Pesquisar por código, unidade gestora, unidade acadêmica, departamento, SIORG, endereço ou responsável', 'maintenancecosts')) . "'>";
 echo "<button class='btn btn-primary' type='submit'>" . __('Pesquisar', 'maintenancecosts') . "</button>";
 echo "</div></form>";
 
 echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
 echo "<thead><tr>";
 echo "<th data-sort='text'>" . __('Código', 'maintenancecosts') . "</th>";
-echo "<th data-sort='text'>" . __('Nome', 'maintenancecosts') . "</th>";
+echo "<th data-sort='text'>" . __('Unidade gestora', 'maintenancecosts') . "</th>";
+echo "<th data-sort='text'>" . __('Unidade acadêmica', 'maintenancecosts') . "</th>";
+echo "<th data-sort='text'>" . __('Departamento', 'maintenancecosts') . "</th>";
+echo "<th data-sort='text'>" . __('Divisão', 'maintenancecosts') . "</th>";
+echo "<th data-sort='text'>" . __('Seção', 'maintenancecosts') . "</th>";
+echo "<th data-sort='text'>" . __('Código SIORG', 'maintenancecosts') . "</th>";
+echo "<th data-sort='text'>" . __('Sigla SIORG', 'maintenancecosts') . "</th>";
 echo "<th data-sort='text'>" . __('Endereço', 'maintenancecosts') . "</th>";
-echo "<th data-sort='text'>" . __('Piso', 'maintenancecosts') . "</th>";
-echo "<th data-sort='text'>" . __('Campus', 'maintenancecosts') . "</th>";
-echo "<th data-sort='text'>" . __('Departamento / disciplina / setor', 'maintenancecosts') . "</th>";
-echo "<th data-sort='text'>" . __('Utilização', 'maintenancecosts') . "</th>";
+echo "<th data-sort='text'>" . __('Responsável', 'maintenancecosts') . "</th>";
 echo "<th data-sort='text'>" . __('Ativo', 'maintenancecosts') . "</th>";
-echo "<th>" . __('Ações', 'maintenancecosts') . "</th>";
+echo "<th data-maintenancecosts-fixed-column='1'>" . __('Ações', 'maintenancecosts') . "</th>";
 echo "</tr></thead><tbody>";
 
 $iterator = $DB->request($criteria);
 foreach ($iterator as $row) {
    echo "<tr class='tab_bg_1'>";
    echo "<td class='center'>" . Html::clean($row['code']) . "</td>";
-   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['name']) . "</td>";
-   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['address'] ?? '') . "</td>";
-   echo "<td class='center'>" . Html::clean($row['floor'] ?? '') . "</td>";
-   echo "<td class='center'>" . Html::clean($row['campus'] ?? '') . "</td>";
+   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['campus'] ?? '') . "</td>";
+   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['academic_unit'] ?? '') . "</td>";
    echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['department'] ?? '') . "</td>";
-   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['usage_type'] ?? '') . "</td>";
+   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['division'] ?? '') . "</td>";
+   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['section'] ?? '') . "</td>";
+   echo "<td class='center'>" . Html::clean($row['siorg_code'] ?? '') . "</td>";
+   echo "<td class='center'>" . Html::clean($row['siorg_acronym'] ?? '') . "</td>";
+   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['address'] ?? '') . "</td>";
+   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['responsible'] ?? '') . "</td>";
    echo "<td class='center'>" . ((int) $row['is_active'] ? __('Yes') : __('No')) . "</td>";
    echo "<td class='center'><a class='btn btn-sm btn-secondary' href='" . Html::clean(CostCenter::getFormURL() . '?id=' . (int) $row['id']) . "'>" . __('Edit') . "</a></td>";
    echo "</tr>";
 }
 
 if ($iterator->count() === 0) {
-   echo "<tr class='tab_bg_1'><td colspan='9' class='center'>" . __('Nenhum centro de custo encontrado.', 'maintenancecosts') . "</td></tr>";
+   echo "<tr class='tab_bg_1'><td colspan='12' class='center'>" . __('Nenhum centro de custo encontrado.', 'maintenancecosts') . "</td></tr>";
 }
 
 echo "</tbody></table>";

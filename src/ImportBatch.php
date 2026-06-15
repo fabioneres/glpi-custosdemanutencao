@@ -92,7 +92,7 @@ class ImportBatch extends CommonDBTM
       $tab[3] = ['id' => 3, 'table' => self::getTable(), 'field' => 'status', 'name' => __('Status'), 'datatype' => 'string'];
       $tab[4] = ['id' => 4, 'table' => self::getTable(), 'field' => 'imported_rows', 'name' => __('Linhas importadas', 'maintenancecosts'), 'datatype' => 'number'];
       $tab[5] = ['id' => 5, 'table' => self::getTable(), 'field' => 'error_rows', 'name' => __('Linhas com erro', 'maintenancecosts'), 'datatype' => 'number'];
-      $tab[6] = ['id' => 6, 'table' => self::getTable(), 'field' => 'price_type', 'name' => __('Tipo de preÃ§o', 'maintenancecosts'), 'datatype' => 'string'];
+      $tab[6] = ['id' => 6, 'table' => self::getTable(), 'field' => 'price_type', 'name' => __('Tipo de preço', 'maintenancecosts'), 'datatype' => 'string'];
       return $tab;
    }
 

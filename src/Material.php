@@ -116,7 +116,7 @@ class Material extends CommonDBTM
          'id'       => 2,
          'table'    => self::getTable(),
          'field'    => 'code',
-         'name'     => __('CÃ³digo SINAPI', 'maintenancecosts'),
+         'name'     => __('Código SINAPI', 'maintenancecosts'),
          'datatype' => 'string',
       ];
 

@@ -69,7 +69,21 @@ class CostCenter extends CommonDBTM
 
    private function normalizeInput(array $input): array
    {
-      foreach (['code', 'name', 'address', 'floor', 'campus', 'department', 'usage_type'] as $field) {
+      foreach ([
+         'code',
+         'name',
+         'address',
+         'floor',
+         'campus',
+         'academic_unit',
+         'department',
+         'division',
+         'section',
+         'siorg_code',
+         'siorg_acronym',
+         'responsible',
+         'usage_type',
+      ] as $field) {
          if (isset($input[$field])) {
             $input[$field] = trim((string) $input[$field]);
          }
@@ -83,9 +97,15 @@ class CostCenter extends CommonDBTM
 
       if (isset($input['locations_id'])) {
          $input['locations_id'] = self::getRootLocationId((int) $input['locations_id']);
-         $input['campus'] = self::getLocationLabel((int) $input['locations_id']);
+         $locationLabel = self::getLocationLabel((int) $input['locations_id']);
+         if ($locationLabel !== '') {
+            $input['campus'] = $locationLabel;
+         }
+      } elseif (!empty($input['campus'])) {
+         $input['locations_id'] = self::getRootLocationIdByLabel((string) $input['campus']);
       }
 
+      $input['name'] = self::deriveDisplayName($input);
       $input['is_active'] = isset($input['is_active']) ? (int) $input['is_active'] : 0;
       $input['is_recursive'] = isset($input['is_recursive']) ? (int) $input['is_recursive'] : 0;
 
@@ -96,14 +116,17 @@ class CostCenter extends CommonDBTM
    {
       $tab = [];
       $tab[] = ['id' => 'common', 'name' => self::getTypeName(1)];
-      $tab[1] = ['id' => 1, 'table' => self::getTable(), 'field' => 'name', 'name' => __('Nome', 'maintenancecosts'), 'datatype' => 'itemlink'];
-      $tab[2] = ['id' => 2, 'table' => self::getTable(), 'field' => 'code', 'name' => __('Código', 'maintenancecosts'), 'datatype' => 'string'];
-      $tab[3] = ['id' => 3, 'table' => self::getTable(), 'field' => 'address', 'name' => __('Endereço', 'maintenancecosts'), 'datatype' => 'text'];
-      $tab[4] = ['id' => 4, 'table' => self::getTable(), 'field' => 'floor', 'name' => __('Piso', 'maintenancecosts'), 'datatype' => 'string'];
-      $tab[5] = ['id' => 5, 'table' => self::getTable(), 'field' => 'campus', 'name' => __('Campus', 'maintenancecosts'), 'datatype' => 'string'];
-      $tab[6] = ['id' => 6, 'table' => self::getTable(), 'field' => 'department', 'name' => __('Departamento / disciplina / setor', 'maintenancecosts'), 'datatype' => 'string'];
-      $tab[7] = ['id' => 7, 'table' => self::getTable(), 'field' => 'usage_type', 'name' => __('Utilização', 'maintenancecosts'), 'datatype' => 'string'];
-      $tab[8] = ['id' => 8, 'table' => self::getTable(), 'field' => 'is_active', 'name' => __('Ativo', 'maintenancecosts'), 'datatype' => 'bool'];
+      $tab[1] = ['id' => 1, 'table' => self::getTable(), 'field' => 'code', 'name' => __('Código', 'maintenancecosts'), 'datatype' => 'itemlink'];
+      $tab[2] = ['id' => 2, 'table' => self::getTable(), 'field' => 'campus', 'name' => __('Unidade gestora', 'maintenancecosts'), 'datatype' => 'string'];
+      $tab[3] = ['id' => 3, 'table' => self::getTable(), 'field' => 'academic_unit', 'name' => __('Unidade acadêmica', 'maintenancecosts'), 'datatype' => 'string'];
+      $tab[4] = ['id' => 4, 'table' => self::getTable(), 'field' => 'department', 'name' => __('Departamento', 'maintenancecosts'), 'datatype' => 'string'];
+      $tab[5] = ['id' => 5, 'table' => self::getTable(), 'field' => 'division', 'name' => __('Divisão', 'maintenancecosts'), 'datatype' => 'string'];
+      $tab[6] = ['id' => 6, 'table' => self::getTable(), 'field' => 'section', 'name' => __('Seção', 'maintenancecosts'), 'datatype' => 'string'];
+      $tab[7] = ['id' => 7, 'table' => self::getTable(), 'field' => 'siorg_code', 'name' => __('Código SIORG', 'maintenancecosts'), 'datatype' => 'string'];
+      $tab[8] = ['id' => 8, 'table' => self::getTable(), 'field' => 'siorg_acronym', 'name' => __('Sigla SIORG', 'maintenancecosts'), 'datatype' => 'string'];
+      $tab[9] = ['id' => 9, 'table' => self::getTable(), 'field' => 'address', 'name' => __('Endereço', 'maintenancecosts'), 'datatype' => 'text'];
+      $tab[10] = ['id' => 10, 'table' => self::getTable(), 'field' => 'responsible', 'name' => __('Responsável', 'maintenancecosts'), 'datatype' => 'string'];
+      $tab[11] = ['id' => 11, 'table' => self::getTable(), 'field' => 'is_active', 'name' => __('Ativo', 'maintenancecosts'), 'datatype' => 'bool'];
       $tab[80] = ['id' => 80, 'table' => 'glpi_entities', 'field' => 'completename', 'linkfield' => 'entities_id', 'name' => \Entity::getTypeName(1), 'datatype' => 'dropdown'];
       return $tab;
    }
@@ -118,30 +141,38 @@ class CostCenter extends CommonDBTM
       echo "<tr class='tab_bg_1'>";
       echo "<td>" . __('Código', 'maintenancecosts') . "</td>";
       echo "<td><input type='text' name='code' value='" . Html::cleanInputText($this->fields['code'] ?? '') . "' class='form-control'></td>";
-      echo "<td>" . __('Nome', 'maintenancecosts') . "</td>";
-      echo "<td><input type='text' name='name' value='" . Html::cleanInputText($this->fields['name'] ?? '') . "' class='form-control'></td>";
+      echo "<td>" . __('Unidade gestora', 'maintenancecosts') . " <span class='plugin-maintenancecosts-help'>(" . __('Localização nível 1', 'maintenancecosts') . ")</span></td><td>";
+      self::showRootLocationDropdown('locations_id', $locationId);
+      echo "</td></tr>";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>" . __('Unidade acadêmica', 'maintenancecosts') . "</td>";
+      echo "<td><input type='text' name='academic_unit' value='" . Html::cleanInputText($this->fields['academic_unit'] ?? '') . "' class='form-control'></td>";
+      echo "<td>" . __('Departamento', 'maintenancecosts') . "</td>";
+      echo "<td><input type='text' name='department' value='" . Html::cleanInputText($this->fields['department'] ?? '') . "' class='form-control'></td>";
+      echo "</tr>";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>" . __('Divisão', 'maintenancecosts') . "</td>";
+      echo "<td><input type='text' name='division' value='" . Html::cleanInputText($this->fields['division'] ?? '') . "' class='form-control'></td>";
+      echo "<td>" . __('Seção', 'maintenancecosts') . "</td>";
+      echo "<td><input type='text' name='section' value='" . Html::cleanInputText($this->fields['section'] ?? '') . "' class='form-control'></td>";
+      echo "</tr>";
+
+      echo "<tr class='tab_bg_1'>";
+      echo "<td>" . __('Código SIORG', 'maintenancecosts') . "</td>";
+      echo "<td><input type='text' name='siorg_code' value='" . Html::cleanInputText($this->fields['siorg_code'] ?? '') . "' class='form-control'></td>";
+      echo "<td>" . __('Sigla SIORG', 'maintenancecosts') . "</td>";
+      echo "<td><input type='text' name='siorg_acronym' value='" . Html::cleanInputText($this->fields['siorg_acronym'] ?? '') . "' class='form-control'></td>";
       echo "</tr>";
 
       echo "<tr class='tab_bg_1'><td>" . __('Endereço', 'maintenancecosts') . "</td>";
       echo "<td colspan='3'><textarea name='address' class='form-control' rows='2'>" . Html::cleanInputText($this->fields['address'] ?? '') . "</textarea></td></tr>";
 
       echo "<tr class='tab_bg_1'>";
-      echo "<td>" . __('Piso', 'maintenancecosts') . "</td>";
-      echo "<td><input type='text' name='floor' value='" . Html::cleanInputText($this->fields['floor'] ?? '') . "' class='form-control'></td>";
-      echo "<td>" . __('Campus', 'maintenancecosts') . " <span class='plugin-maintenancecosts-help'>(" . __('Localização nível 1', 'maintenancecosts') . ")</span></td><td>";
-      self::showRootLocationDropdown('locations_id', $locationId);
-      echo "</td></tr>";
-
-      echo "<tr class='tab_bg_1'>";
-      echo "<td>" . __('Departamento / disciplina / setor', 'maintenancecosts') . "</td>";
-      echo "<td><input type='text' name='department' value='" . Html::cleanInputText($this->fields['department'] ?? '') . "' class='form-control'></td>";
-      echo "<td>" . __('Utilização', 'maintenancecosts') . "</td>";
-      echo "<td><input type='text' name='usage_type' value='" . Html::cleanInputText($this->fields['usage_type'] ?? '') . "' class='form-control'></td>";
-      echo "</tr>";
-
-      echo "<tr class='tab_bg_1'><td>" . __('Responsible') . "</td><td>";
-      \User::dropdown(['name' => 'users_id', 'value' => (int) ($this->fields['users_id'] ?? 0), 'right' => 'all']);
-      echo "</td><td>" . __('Ativo', 'maintenancecosts') . "</td><td>";
+      echo "<td>" . __('Responsável', 'maintenancecosts') . "</td>";
+      echo "<td><input type='text' name='responsible' value='" . Html::cleanInputText($this->fields['responsible'] ?? '') . "' class='form-control'></td>";
+      echo "<td>" . __('Ativo', 'maintenancecosts') . "</td><td>";
       \Dropdown::showYesNo('is_active', (int) ($this->fields['is_active'] ?? 1));
       echo "</td></tr>";
 
@@ -158,6 +189,41 @@ class CostCenter extends CommonDBTM
 
       $this->showFormButtons($options);
       return true;
+   }
+
+   public static function getRootLocationIdByLabel(string $label): int
+   {
+      global $DB;
+      $label = trim($label);
+      if ($label === '' || !$DB->tableExists('glpi_locations')) {
+         return 0;
+      }
+
+      $row = $DB->request([
+         'SELECT' => ['id'],
+         'FROM'   => 'glpi_locations',
+         'WHERE'  => [
+            'locations_id' => 0,
+            'OR'           => [
+               ['name' => $label],
+               ['completename' => $label],
+            ],
+         ],
+         'LIMIT'  => 1,
+      ])->current();
+
+      return is_array($row) ? (int) $row['id'] : 0;
+   }
+
+   private static function deriveDisplayName(array $input): string
+   {
+      foreach (['section', 'division', 'department', 'academic_unit', 'campus', 'name', 'code'] as $field) {
+         $value = trim((string) ($input[$field] ?? ''));
+         if ($value !== '') {
+            return $value;
+         }
+      }
+      return '';
    }
 
    private static function showRootLocationDropdown(string $name, int $value): void

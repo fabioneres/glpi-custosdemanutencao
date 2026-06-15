@@ -51,7 +51,7 @@ class Importer
       }
 
       $map = self::buildCostCenterHeaderMap($header);
-      foreach (['code', 'name'] as $required) {
+      foreach (['code'] as $required) {
          if (!isset($map[$required])) {
             fclose($handle);
             $summary['errors'][] = sprintf(__('Coluna obrigatória ausente: %s', 'maintenancecosts'), $required);
@@ -62,6 +62,10 @@ class Importer
       while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
          $summary['total_rows']++;
          $data = self::costCenterRowToData($row, $map);
+         if (self::isEmptyCostCenterRow($data)) {
+            $summary['total_rows']--;
+            continue;
+         }
          $error = self::validateCostCenterRow($data);
          if ($error !== '') {
             $summary['invalid_rows']++;
@@ -234,13 +238,19 @@ class Importer
    private static function buildCostCenterHeaderMap(array $header): array
    {
       $aliases = [
-         'code'       => ['codigo', 'código', 'codigo centro de custo', 'centro de custo', 'code'],
-         'name'       => ['nome', 'local', 'nome do local', 'name'],
-         'address'    => ['endereco', 'endereço', 'address'],
-         'floor'      => ['piso', 'andar', 'floor'],
-         'campus'     => ['campus', 'unidade'],
-         'department' => ['departamento', 'disciplina', 'setor', 'departamento disciplina setor', 'departamento / disciplina / setor'],
-         'usage_type' => ['utilizacao', 'utilização', 'uso', 'usage', 'utilization'],
+         'code'          => ['codigo', 'código', 'codigo centro de custo', 'código centro de custo', 'centro de custo', 'code'],
+         'name'          => ['nome', 'local', 'nome do local', 'name'],
+         'campus'        => ['unidade gestora', 'unidade', 'campus'],
+         'academic_unit' => ['unidade academica', 'unidade acadêmica'],
+         'department'    => ['departamento'],
+         'division'      => ['divisao', 'divisão'],
+         'section'       => ['secao', 'seção'],
+         'siorg_code'    => ['codigo siorg', 'código siorg'],
+         'siorg_acronym' => ['sigla siorg'],
+         'address'       => ['endereco', 'endereço', 'address'],
+         'responsible'   => ['responsavel', 'responsável'],
+         'floor'         => ['piso', 'andar', 'floor'],
+         'usage_type'    => ['utilizacao', 'utilização', 'uso', 'usage', 'utilization'],
       ];
 
       $map = [];
@@ -262,15 +272,24 @@ class Importer
          return isset($map[$field], $row[$map[$field]]) ? trim((string) $row[$map[$field]]) : '';
       };
 
-      return [
-         'code'       => self::cleanImportedText($get('code'), 64),
-         'name'       => self::cleanImportedText($get('name'), 255),
-         'address'    => self::cleanImportedText($get('address')),
-         'floor'      => self::cleanImportedText($get('floor'), 64),
-         'campus'     => self::cleanImportedText($get('campus'), 255),
-         'department' => self::cleanImportedText($get('department'), 255),
-         'usage_type' => self::cleanImportedText($get('usage_type'), 255),
+      $data = [
+         'code'          => self::cleanImportedText($get('code'), 64),
+         'name'          => self::cleanImportedText($get('name'), 255),
+         'campus'        => self::cleanImportedText($get('campus'), 255),
+         'academic_unit' => self::cleanImportedText($get('academic_unit'), 255),
+         'department'    => self::cleanImportedText($get('department'), 255),
+         'division'      => self::cleanImportedText($get('division'), 255),
+         'section'       => self::cleanImportedText($get('section'), 255),
+         'siorg_code'    => self::cleanImportedText($get('siorg_code'), 64),
+         'siorg_acronym' => self::cleanImportedText($get('siorg_acronym'), 64),
+         'address'       => self::cleanImportedText($get('address')),
+         'responsible'   => self::cleanImportedText($get('responsible'), 255),
+         'floor'         => self::cleanImportedText($get('floor'), 64),
+         'usage_type'    => self::cleanImportedText($get('usage_type'), 255),
       ];
+      $data['locations_id'] = $data['campus'] !== '' ? CostCenter::getRootLocationIdByLabel($data['campus']) : 0;
+
+      return $data;
    }
 
    private static function validateCostCenterRow(array $data): string
@@ -278,12 +297,21 @@ class Importer
       if ($data['code'] === '') {
          return __('código vazio', 'maintenancecosts');
       }
-      if ($data['name'] === '') {
-         return __('nome vazio', 'maintenancecosts');
-      }
       return '';
    }
 
+   private static function isEmptyCostCenterRow(array $data): bool
+   {
+      foreach ($data as $key => $value) {
+         if ($key === 'locations_id') {
+            continue;
+         }
+         if (trim((string) $value) !== '') {
+            return false;
+         }
+      }
+      return true;
+   }
    private static function saveCostCenterRow(array $data, ?array $existing): void
    {
       $costCenter = new CostCenter();
@@ -355,7 +383,7 @@ class Importer
 
    private static function normalizeHeader(string $value): string
    {
-      $value = trim(strtolower($value));
+      $value = trim(function_exists('mb_strtolower') ? mb_strtolower($value, 'UTF-8') : strtolower($value));
       $value = str_replace(
          ['á', 'à', 'ã', 'â', 'ä', 'é', 'ê', 'ë', 'í', 'ó', 'ô', 'õ', 'ö', 'ú', 'ü', 'ç'],
          ['a', 'a', 'a', 'a', 'a', 'e', 'e', 'e', 'i', 'o', 'o', 'o', 'o', 'u', 'u', 'c'],
@@ -442,7 +470,7 @@ class Importer
          return __('competencia invalida', 'maintenancecosts');
       }
       if ((float) $data['unit_price'] < 0) {
-         return __('valor unitário inválido', 'maintenancecosts');
+         return __('valor unitÃ¡rio invÃ¡lido', 'maintenancecosts');
       }
       return '';
    }
@@ -520,8 +548,8 @@ class Importer
          'plugin_maintenancecosts_importbatches_id' => $importBatchId,
          'users_id'                                 => (int) ($_SESSION['glpiID'] ?? 0),
          'comment'                                  => $priceType === 'sinapi'
-            ? __('Atualização por importação SINAPI.', 'maintenancecosts')
-            : __('Atualização por importação de cotação/mercado.', 'maintenancecosts'),
+            ? __('AtualizaÃ§Ã£o por importaÃ§Ã£o SINAPI.', 'maintenancecosts')
+            : __('AtualizaÃ§Ã£o por importaÃ§Ã£o de cotaÃ§Ã£o/mercado.', 'maintenancecosts'),
       ];
 
       if ($price) {

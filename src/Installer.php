@@ -96,6 +96,7 @@ class Installer
 
       self::ensureMaterialOriginTable();
       MaterialOrigin::ensureDefaults();
+      MaterialOrigin::removeLegacyDefaults();
 
       if ($DB->tableExists(CostCenter::getTable())) {
          self::ensureField($migration, CostCenter::getTable(), 'entities_id', 'int unsigned NOT NULL DEFAULT 0');
@@ -103,7 +104,13 @@ class Installer
          self::ensureField($migration, CostCenter::getTable(), 'address', 'text NULL');
          self::ensureField($migration, CostCenter::getTable(), 'floor', "varchar(64) NOT NULL DEFAULT ''");
          self::ensureField($migration, CostCenter::getTable(), 'campus', "varchar(255) NOT NULL DEFAULT ''");
+         self::ensureField($migration, CostCenter::getTable(), 'academic_unit', "varchar(255) NOT NULL DEFAULT ''");
          self::ensureField($migration, CostCenter::getTable(), 'department', "varchar(255) NOT NULL DEFAULT ''");
+         self::ensureField($migration, CostCenter::getTable(), 'division', "varchar(255) NOT NULL DEFAULT ''");
+         self::ensureField($migration, CostCenter::getTable(), 'section', "varchar(255) NOT NULL DEFAULT ''");
+         self::ensureField($migration, CostCenter::getTable(), 'siorg_code', "varchar(64) NOT NULL DEFAULT ''");
+         self::ensureField($migration, CostCenter::getTable(), 'siorg_acronym', "varchar(64) NOT NULL DEFAULT ''");
+         self::ensureField($migration, CostCenter::getTable(), 'responsible', "varchar(255) NOT NULL DEFAULT ''");
          self::ensureField($migration, CostCenter::getTable(), 'usage_type', "varchar(255) NOT NULL DEFAULT ''");
          self::ensureField($migration, CostCenter::getTable(), 'comment', 'text NULL');
          self::ensureField($migration, CostCenter::getTable(), 'date_creation', 'timestamp NULL DEFAULT NULL');

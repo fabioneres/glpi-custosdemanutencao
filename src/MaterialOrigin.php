@@ -81,27 +81,34 @@ class MaterialOrigin extends CommonDBTM
 
    public static function ensureDefaults(): void
    {
+      // Origens devem ser cadastradas manualmente conforme a regra operacional local.
+   }
+
+   public static function removeLegacyDefaults(): void
+   {
       global $DB;
 
-      if (!$DB->tableExists(self::getTable())) {
+      if (!$DB->tableExists(self::getTable()) || !$DB->tableExists(TicketMaterial::getTable())) {
          return;
       }
 
       foreach (['Almoxarifado', 'Técnico', 'Cotação/Mercado', 'Outro'] as $name) {
-         $exists = $DB->request([
+         $row = $DB->request([
             'FROM'  => self::getTable(),
             'WHERE' => ['name' => $name],
             'LIMIT' => 1,
          ])->current();
+         if (!$row) {
+            continue;
+         }
 
-         if (!$exists) {
-            $DB->insert(self::getTable(), [
-               'name'          => $name,
-               'is_active'     => 1,
-               'comment'       => '',
-               'date_creation' => date('Y-m-d H:i:s'),
-               'date_mod'      => date('Y-m-d H:i:s'),
-            ]);
+         $used = $DB->request([
+            'COUNT' => 'cpt',
+            'FROM'  => TicketMaterial::getTable(),
+            'WHERE' => ['plugin_maintenancecosts_materialorigins_id' => (int) $row['id']],
+         ])->current();
+         if ((int) ($used['cpt'] ?? 0) === 0) {
+            $DB->delete(self::getTable(), ['id' => (int) $row['id']]);
          }
       }
    }

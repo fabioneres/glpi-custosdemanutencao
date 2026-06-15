@@ -22,7 +22,7 @@ if (isset($_POST['import_csv'])) {
    $delimiter = in_array($delimiter, ['auto', ';', ','], true) ? $delimiter : 'auto';
 
    if (!isset($_FILES['csv_file']) || !is_uploaded_file($_FILES['csv_file']['tmp_name'])) {
-      Session::addMessageAfterRedirect(__('Selecione um arquivo CSV ou XLSX vÃ¡lido.', 'maintenancecosts'), false, ERROR);
+      Session::addMessageAfterRedirect(__('Selecione um arquivo CSV ou XLSX válido.', 'maintenancecosts'), false, ERROR);
    } else {
       $summary = Importer::importFile(
          $_FILES['csv_file']['tmp_name'],
@@ -40,22 +40,22 @@ Config::renderPluginLayoutStart($isQuote ? 'quotes' : 'prices');
 
 echo "<div class='center mb-3'>";
 echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl($isQuote ? '/front/quotationprice.php' : '/front/price.php')) . "'>"
-   . Html::clean($isQuote ? __('Voltar para CotaÃ§Ã£o/Mercado', 'maintenancecosts') : __('Voltar para PreÃ§os SINAPI', 'maintenancecosts')) . "</a>";
+   . Html::clean($isQuote ? __('Voltar para Cotação/Mercado', 'maintenancecosts') : __('Voltar para Preços SINAPI', 'maintenancecosts')) . "</a>";
 echo "</div>";
 
 echo "<div class='spaced'>";
 echo "<form method='post' enctype='multipart/form-data' action='" . Html::clean($_SERVER['PHP_SELF']) . "'>";
 echo Html::hidden('price_type', ['value' => $priceType]);
 echo "<table class='tab_cadre_fixe'>";
-echo "<tr class='tab_bg_2'><th colspan='4'>" . Html::clean($isQuote ? __('Importar CotaÃ§Ã£o', 'maintenancecosts') : __('Importar tabela SINAPI', 'maintenancecosts')) . "</th></tr>";
+echo "<tr class='tab_bg_2'><th colspan='4'>" . Html::clean($isQuote ? __('Importar Cotação', 'maintenancecosts') : __('Importar tabela SINAPI', 'maintenancecosts')) . "</th></tr>";
 echo "<tr class='tab_bg_1'><td>" . __('Arquivo CSV/XLSX', 'maintenancecosts') . "</td><td><input type='file' name='csv_file' accept='.csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' required></td>";
-echo "<td>" . __('CompetÃªncia', 'maintenancecosts') . "</td><td><input type='text' name='competence' placeholder='AAAA-MM' value='" . Html::cleanInputText($_POST['competence'] ?? date('Y-m')) . "' class='form-control plugin-maintenancecosts-competence' required></td></tr>";
+echo "<td>" . __('Competência', 'maintenancecosts') . "</td><td><input type='text' name='competence' placeholder='AAAA-MM' value='" . Html::cleanInputText($_POST['competence'] ?? date('Y-m')) . "' class='form-control plugin-maintenancecosts-competence' required></td></tr>";
 echo "<tr class='tab_bg_1'><td>" . __('Separador CSV', 'maintenancecosts') . "</td><td><select name='delimiter' class='form-select'><option value='auto'>Auto</option><option value=';'>;</option><option value=','>,</option></select></td>";
-echo "<td>" . __('ValidaÃ§Ã£o', 'maintenancecosts') . "</td><td><label><input type='checkbox' name='dry_run' value='1' checked> " . __('Validar sem gravar', 'maintenancecosts') . "</label></td></tr>";
+echo "<td>" . __('Validação', 'maintenancecosts') . "</td><td><label><input type='checkbox' name='dry_run' value='1' checked> " . __('Validar sem gravar', 'maintenancecosts') . "</label></td></tr>";
 echo "<tr class='tab_bg_1'><td colspan='4' class='center'>";
 echo Html::submit(__('Processar arquivo', 'maintenancecosts'), ['name' => 'import_csv', 'class' => 'btn btn-primary']);
 echo "</td></tr>";
-echo "<tr class='tab_bg_1'><td colspan='4'>" . __('Use Validar sem gravar para conferir a prÃ©via. Para confirmar, envie o mesmo arquivo novamente com a opÃ§Ã£o desmarcada.', 'maintenancecosts') . "</td></tr>";
+echo "<tr class='tab_bg_1'><td colspan='4'>" . __('Use Validar sem gravar para conferir a prévia. Para confirmar, envie o mesmo arquivo novamente com a opção desmarcada.', 'maintenancecosts') . "</td></tr>";
 echo "</table>";
 Html::closeForm();
 echo "</div>";
@@ -80,18 +80,18 @@ if ($isQuote) {
 if (is_array($summary)) {
    echo "<div class='spaced'>";
    echo "<table class='tab_cadre_fixe'>";
-   echo "<tr class='tab_bg_2'><th colspan='2'>" . ($summary['dry_run'] ? __('PrÃ©via da importaÃ§Ã£o', 'maintenancecosts') : __('Resultado da importaÃ§Ã£o', 'maintenancecosts')) . "</th></tr>";
+   echo "<tr class='tab_bg_2'><th colspan='2'>" . ($summary['dry_run'] ? __('Prévia da importação', 'maintenancecosts') : __('Resultado da importação', 'maintenancecosts')) . "</th></tr>";
    foreach ([
       'filename' => __('Arquivo', 'maintenancecosts'),
-      'competence' => __('CompetÃªncia', 'maintenancecosts'),
-      'price_type' => __('Tipo de preÃ§o', 'maintenancecosts'),
+      'competence' => __('Competência', 'maintenancecosts'),
+      'price_type' => __('Tipo de preço', 'maintenancecosts'),
       'total_rows' => __('Total de linhas', 'maintenancecosts'),
-      'valid_rows' => __('Linhas vÃ¡lidas', 'maintenancecosts'),
-      'invalid_rows' => __('Linhas invÃ¡lidas', 'maintenancecosts'),
+      'valid_rows' => __('Linhas válidas', 'maintenancecosts'),
+      'invalid_rows' => __('Linhas inválidas', 'maintenancecosts'),
       'new_materials' => __('Novos materiais', 'maintenancecosts'),
       'updated_materials' => __('Materiais existentes', 'maintenancecosts'),
-      'new_prices' => __('PreÃ§os novos/atualizados', 'maintenancecosts'),
-      'repeated_prices' => __('PreÃ§os repetidos', 'maintenancecosts'),
+      'new_prices' => __('Preços novos/atualizados', 'maintenancecosts'),
+      'repeated_prices' => __('Preços repetidos', 'maintenancecosts'),
    ] as $key => $label) {
       $value = (string) ($summary[$key] ?? '');
       if ($key === 'price_type') {
@@ -115,8 +115,8 @@ $history = $DB->request([
 
 echo "<div class='spaced'>";
 echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
-echo "<thead><tr class='tab_bg_2'><th colspan='9'>" . Html::clean($isQuote ? __('HistÃ³rico de importaÃ§Ãµes de cotaÃ§Ã£o', 'maintenancecosts') : __('HistÃ³rico de importaÃ§Ãµes SINAPI', 'maintenancecosts')) . "</th></tr>";
-echo "<tr><th data-sort='text'>" . __('Arquivo', 'maintenancecosts') . "</th><th data-sort='text'>" . __('CompetÃªncia', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Tipo de preÃ§o', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Status') . "</th><th data-sort='number'>" . __('Linhas', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Linhas importadas', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Linhas com erro', 'maintenancecosts') . "</th><th data-sort='text'>" . __('UsuÃ¡rio', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Data') . "</th></tr></thead><tbody>";
+echo "<thead><tr class='tab_bg_2'><th colspan='9'>" . Html::clean($isQuote ? __('Histórico de importações de cotação', 'maintenancecosts') : __('Histórico de importações SINAPI', 'maintenancecosts')) . "</th></tr>";
+echo "<tr><th data-sort='text'>" . __('Arquivo', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Competência', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Tipo de preço', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Status') . "</th><th data-sort='number'>" . __('Linhas', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Linhas importadas', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Linhas com erro', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Usuário', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Data') . "</th></tr></thead><tbody>";
 foreach ($history as $row) {
    echo "<tr class='tab_bg_1'>";
    echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['filename']) . "</td>";
@@ -131,7 +131,7 @@ foreach ($history as $row) {
    echo "</tr>";
 }
 if ($history->count() === 0) {
-   echo "<tr class='tab_bg_1'><td colspan='9' class='center'>" . __('Nenhuma importaÃ§Ã£o encontrada.', 'maintenancecosts') . "</td></tr>";
+   echo "<tr class='tab_bg_1'><td colspan='9' class='center'>" . __('Nenhuma importação encontrada.', 'maintenancecosts') . "</td></tr>";
 }
 echo "</tbody></table></div>";
 

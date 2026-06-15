@@ -112,6 +112,10 @@
 
          var list = controls.querySelector('.plugin-maintenancecosts-column-list');
          headers.forEach(function(header, columnIndex) {
+            if (isFixedColumnHeader(header)) {
+               header.dataset.maintenancecostsFixedColumn = '1';
+               return;
+            }
             var label = (header.textContent || '').replace(/[↕↑↓]/g, '').trim() || ('Coluna ' + (columnIndex + 1));
             var item = document.createElement('label');
             item.draggable = true;
@@ -251,13 +255,20 @@
          Array.prototype.slice.call(row.children).forEach(function(cell) {
             var originalIndex = Number(cell.dataset.columnIndex);
             if (!isNaN(originalIndex)) {
-               cell.style.display = visible[originalIndex] ? '' : 'none';
+               cell.style.display = cell.dataset.maintenancecostsFixedColumn === '1' || visible[originalIndex] ? '' : 'none';
             }
          });
       });
    }
 
    function ensureColumnIndexes(table) {
+      var fixedColumns = {};
+      Array.prototype.slice.call(table.querySelectorAll('thead tr:last-child th')).forEach(function(header, index) {
+         if (isFixedColumnHeader(header)) {
+            fixedColumns[index] = true;
+            header.dataset.maintenancecostsFixedColumn = '1';
+         }
+      });
       table.querySelectorAll('thead tr:last-child, tbody tr').forEach(function(row) {
          var cells = Array.prototype.slice.call(row.children);
          if (!cells.length || cells.some(function(cell) { return Number(cell.colSpan || 1) > 1; })) {
@@ -266,6 +277,9 @@
          cells.forEach(function(cell, index) {
             if (!cell.dataset.columnIndex) {
                cell.dataset.columnIndex = String(index);
+            }
+            if (fixedColumns[index]) {
+               cell.dataset.maintenancecostsFixedColumn = '1';
             }
          });
       });
@@ -290,22 +304,40 @@
          if (!cells.length || cells.some(function(cell) { return Number(cell.colSpan || 1) > 1; })) {
             return;
          }
+         var fixedCells = cells.filter(function(cell) {
+            return cell.dataset.maintenancecostsFixedColumn === '1';
+         }).sort(function(a, b) {
+            return Number(a.dataset.columnIndex) - Number(b.dataset.columnIndex);
+         });
          order.forEach(function(columnIndex) {
             var cell = cells.find(function(candidate) {
                return Number(candidate.dataset.columnIndex) === Number(columnIndex);
             });
-            if (cell) {
+            if (cell && cell.dataset.maintenancecostsFixedColumn !== '1') {
                row.appendChild(cell);
             }
+         });
+         fixedCells.forEach(function(cell) {
+            row.appendChild(cell);
          });
       });
    }
 
    function restoreColumnOrder(table, controls) {
       var headers = Array.prototype.slice.call(table.querySelectorAll('thead tr:last-child th'));
-      var order = headers.map(function(header) { return Number(header.dataset.columnIndex); }).sort(function(a, b) { return a - b; });
+      var order = headers.filter(function(header) {
+         return header.dataset.maintenancecostsFixedColumn !== '1';
+      }).map(function(header) { return Number(header.dataset.columnIndex); }).sort(function(a, b) { return a - b; });
       reorderColumnControls(controls, order);
       reorderTableColumns(table, order);
+   }
+
+   function isFixedColumnHeader(header) {
+      if (header.dataset.maintenancecostsFixedColumn === '1') {
+         return true;
+      }
+      var label = (header.textContent || '').replace(/[↕↑↓]/g, '').trim().toLowerCase();
+      return label === 'ações' || label === 'acoes' || label === 'actions';
    }
 
    function escapeHtml(value) {

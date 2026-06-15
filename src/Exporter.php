@@ -172,11 +172,28 @@ class Exporter
       Config::checkRight(Config::RIGHT_COSTCENTERS, READ);
 
       $rows = [];
-      $iterator = $DB->request(['FROM' => CostCenter::getTable(), 'ORDER' => 'name ASC']);
+      $iterator = $DB->request(['FROM' => CostCenter::getTable(), 'ORDER' => 'code ASC']);
       foreach ($iterator as $row) {
-         $rows[] = [$row['code'], $row['name'], $row['address'] ?? '', $row['floor'] ?? '', $row['campus'] ?? '', $row['department'] ?? '', $row['usage_type'] ?? '', (int) $row['is_active']];
+         $rows[] = [
+            $row['code'],
+            $row['campus'] ?? '',
+            $row['academic_unit'] ?? '',
+            $row['department'] ?? '',
+            $row['division'] ?? '',
+            $row['section'] ?? '',
+            $row['siorg_code'] ?? '',
+            $row['siorg_acronym'] ?? '',
+            $row['address'] ?? '',
+            $row['responsible'] ?? '',
+            (int) $row['is_active'],
+         ];
       }
-      self::sendTable('maintenancecosts-centros-custo', ['codigo', 'nome', 'endereco', 'piso', 'campus', 'departamento_disciplina_setor', 'utilizacao', 'ativo'], $rows, $format);
+      self::sendTable(
+         'maintenancecosts-centros-custo',
+         ['codigo', 'unidade_gestora', 'unidade_academica', 'departamento', 'divisao', 'secao', 'codigo_siorg', 'sigla_siorg', 'endereco', 'responsavel', 'ativo'],
+         $rows,
+         $format
+      );
    }
 
    public static function exportReport(array $filters, string $format = 'csv'): void
