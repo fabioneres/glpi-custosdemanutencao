@@ -9,7 +9,6 @@ if (!defined('GLPI_ROOT')) {
 use CommonGLPI;
 use DBmysql;
 use DbUtils;
-use Glpi\DBAL\QueryExpression;
 use Html;
 use Profile as GlpiProfile;
 use ProfileRight;
@@ -124,7 +123,7 @@ class Profile extends GlpiProfile
       foreach ($requiredrights as $reqright => $reqvalue) {
          $where['OR'][] = [
             'name' => $reqright,
-            new QueryExpression($DB->quoteName('rights') . " & $reqvalue = $reqvalue"),
+            new \QueryExpression($DB->quoteName('rights') . " & $reqvalue = $reqvalue"),
          ];
       }
 

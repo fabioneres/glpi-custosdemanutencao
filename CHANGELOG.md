@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.4 - Compatibilidade de instalacao no GLPI 10.0.24
+
+- Corrige a instalacao/habilitacao pela interface em ambientes GLPI 10.0.24, usando a classe global `\QueryExpression` em vez do namespace `Glpi\DBAL\QueryExpression`.
+- Mantem a logica de direitos de perfil inalterada; a mudanca e restrita a compatibilidade da API DBAL do GLPI 10.0.x.
+
 ## v0.5.3 - Cotacao Mercado e custos do chamado
 
 - Separa Cotacao/Mercado em tab propria, com acoes de adicionar preco, importar e consultar historico no mesmo contexto.
