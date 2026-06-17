@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.9 - Preenchimento do valor unitario no chamado
+
+- Corrige o carregamento de dados do material no formulario de consumo usando fallback de AJAX quando `fetch` nao estiver disponivel.
+- Ao selecionar material, busca preco da competencia informada e, se nao existir, usa o ultimo preco cadastrado para o material e tipo de preco.
+- Mantem preenchimento automatico de unidade, competencia, valor unitario aplicado e total na aba Materiais Consumidos.
+
 ## v0.5.8 - Correcao de dropdowns em GLPI instalado na raiz
 
 - Corrige a montagem das URLs AJAX dos dropdowns em ambientes onde o GLPI roda na raiz do dominio, sem o prefixo `/glpi`.

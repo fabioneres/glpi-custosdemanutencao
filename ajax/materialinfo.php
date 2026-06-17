@@ -35,7 +35,11 @@ if ($materials_id <= 0 || !$material->getFromDB($materials_id)) {
 
 $price = $competence !== ''
    ? Price::getForMaterialCompetenceAndType($materials_id, $competence, $price_type)
-   : Price::getLatestForMaterialAndType($materials_id, $price_type);
+   : null;
+
+if (!$price) {
+   $price = Price::getLatestForMaterialAndType($materials_id, $price_type);
+}
 
 echo json_encode([
    'id'         => $materials_id,

@@ -387,16 +387,9 @@
 
    function fetchContractTickets() {
       var root = getRootDoc();
-      return fetch(root + '/plugins/maintenancecosts/ajax/contracttickets.php', {credentials: 'same-origin'})
-         .then(function(response) {
-            if (!response.ok) {
-               throw new Error('ajax endpoint unavailable');
-            }
-            return response.json();
-         })
+      return requestJson(root + '/plugins/maintenancecosts/ajax/contracttickets.php')
          .catch(function() {
-            return fetch(root + '/plugins/maintenancecosts/front/contracttickets.php', {credentials: 'same-origin'})
-               .then(function(response) { return response.ok ? response.json() : []; })
+            return requestJson(root + '/plugins/maintenancecosts/front/contracttickets.php')
                .catch(function() { return []; });
          });
    }
@@ -512,8 +505,7 @@
          + '&competence=' + encodeURIComponent(competence ? competence.value : '')
          + '&price_type=' + encodeURIComponent(priceType ? priceType.value : 'sinapi');
 
-      fetch(url)
-         .then(function(response) { return response.ok ? response.json() : null; })
+      requestJson(url)
          .then(function(data) {
             if (!data) {
                return;
@@ -530,7 +522,60 @@
                unitPrice.value = formatDecimal(data.unit_price);
             }
             updateTotal(form);
+         })
+         .catch(function() {
+            updateTotal(form);
          });
+   }
+
+   function requestJson(url) {
+      if (window.fetch) {
+         return window.fetch(url, {credentials: 'same-origin'})
+            .then(function(response) {
+               if (!response.ok) {
+                  throw new Error('Request failed');
+               }
+               return response.json();
+            });
+      }
+
+      if (window.jQuery && window.jQuery.ajax) {
+         return window.jQuery.ajax({
+            url: url,
+            method: 'GET',
+            dataType: 'json'
+         });
+      }
+
+      return new Promise(function(resolve, reject) {
+         if (!window.XMLHttpRequest) {
+            reject(new Error('No AJAX transport available'));
+            return;
+         }
+
+         var request = new XMLHttpRequest();
+         request.open('GET', url, true);
+         request.onreadystatechange = function() {
+            if (request.readyState !== 4) {
+               return;
+            }
+
+            if (request.status < 200 || request.status >= 300) {
+               reject(new Error('Request failed'));
+               return;
+            }
+
+            try {
+               resolve(JSON.parse(request.responseText || 'null'));
+            } catch (e) {
+               reject(e);
+            }
+         };
+         request.onerror = function() {
+            reject(new Error('Request failed'));
+         };
+         request.send();
+      });
    }
 
    function normalizeFormFields(form) {
