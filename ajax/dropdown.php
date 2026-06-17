@@ -18,12 +18,20 @@ header('Content-Type: application/json; charset=UTF-8');
 Session::checkLoginUser();
 
 $type = (string) ($_GET['type'] ?? $_POST['type'] ?? '');
-if ($type === 'material' && !Config::canViewConsumption()) {
+if ($type === 'material'
+   && !Config::canViewConsumption()
+   && !Config::canViewReports()
+   && !Config::canViewMaterials()
+) {
    http_response_code(403);
    echo json_encode(['results' => []]);
    exit;
 }
-if ($type === 'costcenter' && !Config::canViewCostCenters()) {
+if ($type === 'costcenter'
+   && !Config::canViewConsumption()
+   && !Config::canViewReports()
+   && !Config::canViewCostCenters()
+) {
    http_response_code(403);
    echo json_encode(['results' => []]);
    exit;
