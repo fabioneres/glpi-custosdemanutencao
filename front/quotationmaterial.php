@@ -3,6 +3,7 @@
 use GlpiPlugin\Maintenancecosts\Config;
 use GlpiPlugin\Maintenancecosts\Material;
 use GlpiPlugin\Maintenancecosts\Menu;
+use GlpiPlugin\Maintenancecosts\Pager;
 use GlpiPlugin\Maintenancecosts\Price;
 
 if (!defined('GLPI_ROOT')) {
@@ -15,6 +16,8 @@ Config::checkRight(Config::RIGHT_MATERIALS, READ);
 global $DB;
 
 $search = trim((string) ($_GET['q'] ?? ''));
+$page = Pager::page();
+$perPage = Pager::perPage();
 $priceTable = Price::getTable();
 $materialTable = Material::getTable();
 
@@ -32,9 +35,24 @@ if ($search !== '') {
    ];
 }
 
+$countCriteria = [
+   'SELECT' => [
+      'COUNT DISTINCT' => $materialTable . '.id AS cpt',
+   ],
+   'FROM' => $priceTable,
+   'LEFT JOIN' => [
+      $materialTable => [
+         'FKEY' => [$priceTable => 'plugin_maintenancecosts_materials_id', $materialTable => 'id'],
+      ],
+   ],
+   'WHERE' => $where,
+];
+$countRow = $DB->request($countCriteria)->current();
+$totalRows = (int) ($countRow['cpt'] ?? 0);
+$start = Pager::start($page, $perPage, $totalRows);
+
 $criteria = [
    'SELECT' => [
-      $priceTable . '.*',
       $materialTable . '.id AS material_id',
       $materialTable . '.code AS material_code',
       $materialTable . '.name AS material_name',
@@ -48,16 +66,26 @@ $criteria = [
       ],
    ],
    'WHERE' => $where,
-   'ORDER' => [$priceTable . '.competence DESC', $priceTable . '.id DESC'],
-   'LIMIT' => 1000,
+   'GROUPBY' => [
+      $materialTable . '.id',
+      $materialTable . '.code',
+      $materialTable . '.name',
+      $materialTable . '.unit',
+      $materialTable . '.is_active',
+   ],
+   'ORDER' => [$materialTable . '.code ASC', $materialTable . '.name ASC'],
+   'START' => $start,
+   'LIMIT' => $perPage,
 ];
 
 $materials = [];
 foreach ($DB->request($criteria) as $row) {
    $materialId = (int) ($row['material_id'] ?? 0);
-   if ($materialId <= 0 || isset($materials[$materialId])) {
+   if ($materialId <= 0) {
       continue;
    }
+   $latestPrice = Price::getLatestForMaterialAndType($materialId, 'cotacao_mercado') ?: [];
+   $row = $row + $latestPrice;
    $materials[$materialId] = $row;
 }
 
@@ -89,9 +117,11 @@ echo "</div></div>";
 echo "<form method='get' class='mb-3'>";
 echo "<div class='d-flex gap-2'>";
 echo "<input type='text' name='q' value='" . Html::cleanInputText($search) . "' class='form-control' placeholder='" . Html::clean(__('Pesquisar por código, nome, unidade, competência ou origem', 'maintenancecosts')) . "'>";
+echo Html::hidden('per_page', ['value' => $perPage]);
 echo "<button class='btn btn-primary' type='submit'>" . Html::clean(__('Pesquisar', 'maintenancecosts')) . "</button>";
 echo "</div></form>";
 
+Pager::render($totalRows, $page, $perPage, ['q' => $search]);
 echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
 echo "<thead><tr>";
 echo "<th data-sort='text'>" . Html::clean(__('Código', 'maintenancecosts')) . "</th>";
@@ -132,5 +162,6 @@ if (count($materials) === 0) {
 }
 
 echo "</tbody></table>";
+Pager::render($totalRows, $page, $perPage, ['q' => $search]);
 Config::renderPluginLayoutEnd();
 Html::footer();

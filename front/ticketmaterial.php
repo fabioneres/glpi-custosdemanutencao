@@ -5,6 +5,7 @@ use GlpiPlugin\Maintenancecosts\CostCenter;
 use GlpiPlugin\Maintenancecosts\Material;
 use GlpiPlugin\Maintenancecosts\MaterialOrigin;
 use GlpiPlugin\Maintenancecosts\Menu;
+use GlpiPlugin\Maintenancecosts\Pager;
 use GlpiPlugin\Maintenancecosts\TicketMaterial;
 
 if (!defined('GLPI_ROOT')) {
@@ -17,6 +18,8 @@ Config::checkRight(Config::RIGHT_CONSUMPTION, READ);
 global $DB;
 
 $search = trim((string) ($_GET['q'] ?? ''));
+$page = Pager::page();
+$perPage = Pager::perPage();
 $where = [TicketMaterial::getTable() . '.is_deleted' => 0];
 if ($search !== '') {
    $where[] = [
@@ -31,6 +34,33 @@ if ($search !== '') {
    ];
 }
 
+$joins = [
+   'glpi_tickets' => [
+      'FKEY' => [TicketMaterial::getTable() => 'tickets_id', 'glpi_tickets' => 'id'],
+   ],
+   Material::getTable() => [
+      'FKEY' => [TicketMaterial::getTable() => 'plugin_maintenancecosts_materials_id', Material::getTable() => 'id'],
+   ],
+   CostCenter::getTable() => [
+      'FKEY' => [TicketMaterial::getTable() => 'plugin_maintenancecosts_costcenters_id', CostCenter::getTable() => 'id'],
+   ],
+   MaterialOrigin::getTable() => [
+      'FKEY' => [TicketMaterial::getTable() => 'plugin_maintenancecosts_materialorigins_id', MaterialOrigin::getTable() => 'id'],
+   ],
+   'glpi_contracts' => [
+      'FKEY' => [TicketMaterial::getTable() => 'contracts_id', 'glpi_contracts' => 'id'],
+   ],
+];
+
+$countRow = $DB->request([
+   'COUNT' => 'cpt',
+   'FROM' => TicketMaterial::getTable(),
+   'LEFT JOIN' => $joins,
+   'WHERE' => $where,
+])->current();
+$totalRows = (int) ($countRow['cpt'] ?? 0);
+$start = Pager::start($page, $perPage, $totalRows);
+
 $iterator = $DB->request([
    'SELECT' => [
       TicketMaterial::getTable() . '.*',
@@ -43,26 +73,11 @@ $iterator = $DB->request([
       'glpi_contracts.name AS contract_name',
    ],
    'FROM' => TicketMaterial::getTable(),
-   'LEFT JOIN' => [
-      'glpi_tickets' => [
-         'FKEY' => [TicketMaterial::getTable() => 'tickets_id', 'glpi_tickets' => 'id'],
-      ],
-      Material::getTable() => [
-         'FKEY' => [TicketMaterial::getTable() => 'plugin_maintenancecosts_materials_id', Material::getTable() => 'id'],
-      ],
-      CostCenter::getTable() => [
-         'FKEY' => [TicketMaterial::getTable() => 'plugin_maintenancecosts_costcenters_id', CostCenter::getTable() => 'id'],
-      ],
-      MaterialOrigin::getTable() => [
-         'FKEY' => [TicketMaterial::getTable() => 'plugin_maintenancecosts_materialorigins_id', MaterialOrigin::getTable() => 'id'],
-      ],
-      'glpi_contracts' => [
-         'FKEY' => [TicketMaterial::getTable() => 'contracts_id', 'glpi_contracts' => 'id'],
-      ],
-   ],
+   'LEFT JOIN' => $joins,
    'WHERE' => $where,
    'ORDER' => [TicketMaterial::getTable() . '.consumption_date DESC', TicketMaterial::getTable() . '.id DESC'],
-   'LIMIT' => 300,
+   'START' => $start,
+   'LIMIT' => $perPage,
 ]);
 
 Html::header(TicketMaterial::getTypeName(Session::getPluralNumber()), $_SERVER['PHP_SELF'], 'plugins', Menu::class);
@@ -71,9 +86,11 @@ Config::renderPluginLayoutStart('consumption');
 echo "<form method='get' class='mb-3'>";
 echo "<div class='d-flex gap-2'>";
 echo "<input type='text' name='q' value='" . Html::cleanInputText($search) . "' class='form-control' placeholder='" . Html::clean(__('Pesquisar por chamado, material, centro de custo ou contrato', 'maintenancecosts')) . "'>";
+echo Html::hidden('per_page', ['value' => $perPage]);
 echo "<button class='btn btn-primary' type='submit'>" . __('Pesquisar', 'maintenancecosts') . "</button>";
 echo "</div></form>";
 
+Pager::render($totalRows, $page, $perPage, ['q' => $search]);
 echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
 echo "<thead><tr>";
 foreach ([
@@ -126,5 +143,6 @@ if ($iterator->count() === 0) {
 }
 
 echo "</tbody></table>";
+Pager::render($totalRows, $page, $perPage, ['q' => $search]);
 Config::renderPluginLayoutEnd();
 Html::footer();

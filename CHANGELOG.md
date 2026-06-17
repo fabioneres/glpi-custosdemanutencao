@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.6 - Paginacao das tabelas grandes
+
+- Adiciona paginacao server-side em Materiais SINAPI, Materiais Cotacao, Precos SINAPI, Precos Cotacao, Centros de custo e Materiais consumidos.
+- Substitui limites fixos e renderizacao massiva por contagem total, pagina atual e seletor de 20/50/100/200 linhas.
+- Mantem busca, filtros de tipo de preco e ordenacao visual, reduzindo carga em tabelas com milhares de itens.
+
 ## v0.5.5 - Centros de custo institucionais e origem manual
 
 - Adequa centros de custo ao layout da planilha institucional, com codigo, unidade gestora, unidade academica, departamento, divisao, secao, codigo SIORG, sigla SIORG, endereco e responsavel.

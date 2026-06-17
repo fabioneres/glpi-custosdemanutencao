@@ -3,6 +3,7 @@
 use GlpiPlugin\Maintenancecosts\Config;
 use GlpiPlugin\Maintenancecosts\Material;
 use GlpiPlugin\Maintenancecosts\Menu;
+use GlpiPlugin\Maintenancecosts\Pager;
 use GlpiPlugin\Maintenancecosts\Price;
 
 if (!defined('GLPI_ROOT')) {
@@ -15,6 +16,8 @@ Config::checkRight(Config::RIGHT_PRICES, READ);
 global $DB;
 
 $search = trim((string) ($_GET['q'] ?? ''));
+$page = Pager::page();
+$perPage = Pager::perPage();
 $priceType = Config::normalizePriceType((string) ($_GET['price_type'] ?? 'sinapi'));
 $isQuote = $priceType === 'cotacao_mercado';
 $activeTab = $isQuote ? 'quotes' : 'prices';
@@ -38,6 +41,20 @@ if ($search !== '') {
    ];
 }
 
+$countCriteria = [
+   'COUNT' => 'cpt',
+   'FROM' => Price::getTable(),
+   'LEFT JOIN' => [
+      Material::getTable() => [
+         'FKEY' => [Price::getTable() => 'plugin_maintenancecosts_materials_id', Material::getTable() => 'id'],
+      ],
+   ],
+   'WHERE' => $where,
+];
+$countRow = $DB->request($countCriteria)->current();
+$totalRows = (int) ($countRow['cpt'] ?? 0);
+$start = Pager::start($page, $perPage, $totalRows);
+
 $criteria = [
    'SELECT' => [
       Price::getTable() . '.*',
@@ -53,7 +70,8 @@ $criteria = [
    ],
    'WHERE' => $where,
    'ORDER' => [Price::getTable() . '.competence DESC', Price::getTable() . '.id DESC'],
-   'LIMIT' => 300,
+   'START' => $start,
+   'LIMIT' => $perPage,
 ];
 
 Html::header($pageTitle, $_SERVER['PHP_SELF'], 'plugins', Menu::class);
@@ -88,10 +106,14 @@ echo "</div></div>";
 echo "<form method='get' class='mb-3'>";
 echo "<div class='d-flex gap-2 flex-wrap'>";
 echo Html::hidden('price_type', ['value' => $priceType]);
+echo Html::hidden('per_page', ['value' => $perPage]);
 echo "<input type='text' name='q' value='" . Html::cleanInputText($search) . "' class='form-control' placeholder='"
    . Html::clean(__('Pesquisar por material, código, unidade, competência ou origem', 'maintenancecosts')) . "'>";
 echo "<button class='btn btn-primary' type='submit'>" . __('Pesquisar', 'maintenancecosts') . "</button>";
 echo "</div></form>";
+
+$pagerParams = ['q' => $search, 'price_type' => $priceType];
+Pager::render($totalRows, $page, $perPage, $pagerParams);
 
 echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
 echo "<thead><tr>";
@@ -145,5 +167,6 @@ if ($iterator->count() === 0) {
 }
 
 echo "</tbody></table>";
+Pager::render($totalRows, $page, $perPage, $pagerParams);
 Config::renderPluginLayoutEnd();
 Html::footer();

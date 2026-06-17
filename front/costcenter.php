@@ -4,6 +4,7 @@ use GlpiPlugin\Maintenancecosts\Config;
 use GlpiPlugin\Maintenancecosts\CostCenter;
 use GlpiPlugin\Maintenancecosts\Importer;
 use GlpiPlugin\Maintenancecosts\Menu;
+use GlpiPlugin\Maintenancecosts\Pager;
 
 if (!defined('GLPI_ROOT')) {
    require_once dirname(__DIR__, 3) . '/inc/includes.php';
@@ -34,6 +35,8 @@ if (isset($_POST['import_costcenters'])) {
 }
 
 $search = trim((string) ($_GET['q'] ?? ''));
+$page = Pager::page();
+$perPage = Pager::perPage();
 $where = [];
 if ($search !== '') {
    $where[] = [
@@ -53,10 +56,22 @@ if ($search !== '') {
    ];
 }
 
+$countCriteria = [
+   'COUNT' => 'cpt',
+   'FROM' => CostCenter::getTable(),
+];
+if (count($where)) {
+   $countCriteria['WHERE'] = $where;
+}
+$countRow = $DB->request($countCriteria)->current();
+$totalRows = (int) ($countRow['cpt'] ?? 0);
+$start = Pager::start($page, $perPage, $totalRows);
+
 $criteria = [
    'FROM'  => CostCenter::getTable(),
    'ORDER' => ['code ASC', 'name ASC'],
-   'LIMIT' => 500,
+   'START' => $start,
+   'LIMIT' => $perPage,
 ];
 if (count($where)) {
    $criteria['WHERE'] = $where;
@@ -114,9 +129,11 @@ if (is_array($summary)) {
 echo "<form method='get' class='mb-3'>";
 echo "<div class='d-flex gap-2'>";
 echo "<input type='text' name='q' value='" . Html::cleanInputText($search) . "' class='form-control' placeholder='" . Html::clean(__('Pesquisar por código, unidade gestora, unidade acadêmica, departamento, SIORG, endereço ou responsável', 'maintenancecosts')) . "'>";
+echo Html::hidden('per_page', ['value' => $perPage]);
 echo "<button class='btn btn-primary' type='submit'>" . __('Pesquisar', 'maintenancecosts') . "</button>";
 echo "</div></form>";
 
+Pager::render($totalRows, $page, $perPage, ['q' => $search]);
 echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
 echo "<thead><tr>";
 echo "<th data-sort='text'>" . __('Código', 'maintenancecosts') . "</th>";
@@ -156,5 +173,6 @@ if ($iterator->count() === 0) {
 }
 
 echo "</tbody></table>";
+Pager::render($totalRows, $page, $perPage, ['q' => $search]);
 Config::renderPluginLayoutEnd();
 Html::footer();

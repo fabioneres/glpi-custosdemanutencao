@@ -3,6 +3,7 @@
 use GlpiPlugin\Maintenancecosts\Config;
 use GlpiPlugin\Maintenancecosts\Material;
 use GlpiPlugin\Maintenancecosts\Menu;
+use GlpiPlugin\Maintenancecosts\Pager;
 
 if (!defined('GLPI_ROOT')) {
    require_once dirname(__DIR__, 3) . '/inc/includes.php';
@@ -14,6 +15,8 @@ Config::checkRight(Config::RIGHT_MATERIALS, READ);
 global $DB;
 
 $search = trim((string) ($_GET['q'] ?? ''));
+$page = Pager::page();
+$perPage = Pager::perPage();
 $where = [];
 if ($search !== '') {
    $where[] = [
@@ -26,10 +29,22 @@ if ($search !== '') {
    ];
 }
 
+$countCriteria = [
+   'COUNT' => 'cpt',
+   'FROM'  => Material::getTable(),
+];
+if (count($where)) {
+   $countCriteria['WHERE'] = $where;
+}
+$countRow = $DB->request($countCriteria)->current();
+$totalRows = (int) ($countRow['cpt'] ?? 0);
+$start = Pager::start($page, $perPage, $totalRows);
+
 $criteria = [
    'FROM'  => Material::getTable(),
    'ORDER' => ['code ASC', 'name ASC'],
-   'LIMIT' => 200,
+   'START' => $start,
+   'LIMIT' => $perPage,
 ];
 if (count($where)) {
    $criteria['WHERE'] = $where;
@@ -49,8 +64,11 @@ echo "</div>";
 echo "<form method='get' class='mb-3'>";
 echo "<div class='d-flex gap-2'>";
 echo "<input type='text' name='q' value='" . Html::cleanInputText($search) . "' class='form-control' placeholder='" . Html::clean(__('Pesquisar por codigo, nome, unidade ou categoria', 'maintenancecosts')) . "'>";
+echo Html::hidden('per_page', ['value' => $perPage]);
 echo "<button class='btn btn-primary' type='submit'>" . __('Pesquisar', 'maintenancecosts') . "</button>";
 echo "</div></form>";
+
+Pager::render($totalRows, $page, $perPage, ['q' => $search]);
 
 echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
 echo "<thead><tr><th data-sort='text'>" . __('Código SINAPI', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Nome', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Unidade', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Categoria', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Ativo', 'maintenancecosts') . "</th><th>" . __('Ações', 'maintenancecosts') . "</th></tr></thead><tbody>";
@@ -74,5 +92,6 @@ if ($iterator->count() === 0) {
 }
 
 echo "</tbody></table>";
+Pager::render($totalRows, $page, $perPage, ['q' => $search]);
 Config::renderPluginLayoutEnd();
 Html::footer();
