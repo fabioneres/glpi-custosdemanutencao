@@ -1,5 +1,10 @@
 # Changelog
 
+## v0.5.7 - Dropdowns no consumo do chamado
+
+- Ajusta permissoes do endpoint AJAX de dropdowns para permitir selecao de materiais e centros de custo nos fluxos autorizados de consumo, relatorios e cadastros.
+- Evita a mensagem "Os resultados nao puderam ser carregados" quando o usuario possui permissao para lancar consumo no chamado, mas nao administra diretamente o cadastro auxiliar.
+
 ## v0.5.6 - Paginacao das tabelas grandes
 
 - Adiciona paginacao server-side em Materiais SINAPI, Materiais Cotacao, Precos SINAPI, Precos Cotacao, Centros de custo e Materiais consumidos.
