@@ -18,7 +18,7 @@
          };
          var dropdownType = select.data('dropdown-type');
          if (dropdownType) {
-            var rootDoc = (window.CFG_GLPI && CFG_GLPI.root_doc) ? CFG_GLPI.root_doc : '/glpi';
+            var rootDoc = getRootDoc();
             options.minimumInputLength = dropdownType === 'contract' ? 0 : 1;
             options.ajax = {
                url: rootDoc + '/plugins/maintenancecosts/ajax/dropdown.php',
@@ -386,7 +386,7 @@
    }
 
    function fetchContractTickets() {
-      var root = (window.CFG_GLPI && CFG_GLPI.root_doc) ? CFG_GLPI.root_doc : '/glpi';
+      var root = getRootDoc();
       return fetch(root + '/plugins/maintenancecosts/ajax/contracttickets.php', {credentials: 'same-origin'})
          .then(function(response) {
             if (!response.ok) {
@@ -403,7 +403,7 @@
 
    function loadContractTicketsScript() {
       return new Promise(function(resolve) {
-         var root = (window.CFG_GLPI && CFG_GLPI.root_doc) ? CFG_GLPI.root_doc : '/glpi';
+         var root = getRootDoc();
          var script = document.createElement('script');
          script.src = root + '/plugins/maintenancecosts/front/contracttickets.js.php?ts=' + Date.now();
          script.onload = function() {
@@ -452,6 +452,35 @@
       return match[1] + '-' + String(month).padStart(2, '0');
    }
 
+   function getRootDoc() {
+      if (window.CFG_GLPI && typeof window.CFG_GLPI.root_doc === 'string') {
+         return normalizeRootDoc(window.CFG_GLPI.root_doc);
+      }
+
+      var scripts = document.getElementsByTagName('script');
+      for (var i = scripts.length - 1; i >= 0; i--) {
+         var src = scripts[i].getAttribute('src') || '';
+         var marker = '/plugins/maintenancecosts/js/ticketmaterial.js';
+         var markerPosition = src.indexOf(marker);
+         if (markerPosition !== -1) {
+            return normalizeRootDoc(src.substring(0, markerPosition));
+         }
+      }
+
+      return '';
+   }
+
+   function normalizeRootDoc(rootDoc) {
+      rootDoc = String(rootDoc || '').replace(/\/+$/, '');
+      if (!rootDoc || rootDoc === window.location.origin) {
+         return '';
+      }
+      if (rootDoc.indexOf(window.location.origin) === 0) {
+         rootDoc = rootDoc.substring(window.location.origin.length);
+      }
+      return rootDoc === '/' ? '' : rootDoc;
+   }
+
    function formatCurrency(value) {
       if (window.Intl && Intl.NumberFormat) {
          return new Intl.NumberFormat('pt-BR', {style: 'currency', currency: 'BRL'}).format(value);
@@ -478,7 +507,7 @@
          return;
       }
 
-      var url = CFG_GLPI.root_doc + '/plugins/maintenancecosts/ajax/materialinfo.php'
+      var url = getRootDoc() + '/plugins/maintenancecosts/ajax/materialinfo.php'
          + '?materials_id=' + encodeURIComponent(material.value)
          + '&competence=' + encodeURIComponent(competence ? competence.value : '')
          + '&price_type=' + encodeURIComponent(priceType ? priceType.value : 'sinapi');

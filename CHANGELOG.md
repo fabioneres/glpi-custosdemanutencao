@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.5.8 - Correcao de dropdowns em GLPI instalado na raiz
+
+- Corrige a montagem das URLs AJAX dos dropdowns em ambientes onde o GLPI roda na raiz do dominio, sem o prefixo `/glpi`.
+- Mantem compatibilidade com instalacoes em subdiretorio, como `/glpi`, calculando o caminho base a partir do script carregado quando `CFG_GLPI.root_doc` nao estiver disponivel.
+- Evita falha "Os resultados nao puderam ser carregados" nos dropdowns de material, centro de custo e contratos na aba Materiais Consumidos.
+
 ## v0.5.7 - Dropdowns no consumo do chamado
 
 - Ajusta permissoes do endpoint AJAX de dropdowns para permitir selecao de materiais e centros de custo nos fluxos autorizados de consumo, relatorios e cadastros.
