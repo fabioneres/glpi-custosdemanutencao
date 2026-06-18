@@ -30,6 +30,10 @@ class TicketTab extends CommonDBTM
          return '';
       }
 
+      if (!Config::isEnabledForEntity((int) $item->getEntityID())) {
+         return '';
+      }
+
       $count = 0;
       if (!empty($_SESSION['glpishow_count_on_tabs'])) {
          $count = countElementsInTable(TicketMaterial::getTable(), [
@@ -43,7 +47,7 @@ class TicketTab extends CommonDBTM
 
    public static function displayTabContentForItem(CommonGLPI $item, $tabnum = 1, $withtemplate = 0)
    {
-      if ($item instanceof Ticket) {
+      if ($item instanceof Ticket && Config::isEnabledForEntity((int) $item->getEntityID())) {
          TicketMaterial::showForTicket($item);
       }
 

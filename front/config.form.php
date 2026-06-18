@@ -28,6 +28,7 @@ echo Html::hidden('_glpi_csrf_token', ['value' => Session::getNewCSRFToken()]);
 echo "<div class='plugin-maintenancecosts-panel'>";
 echo "<div class='plugin-maintenancecosts-panel-header'><i class='ti ti-settings'></i> " . __('Configuração - Custos de Manutenção', 'maintenancecosts') . "</div>";
 echo "<div class='plugin-maintenancecosts-panel-body'>";
+
 echo "<div class='plugin-maintenancecosts-grid'>";
 
 echo "<div class='plugin-maintenancecosts-option'>";

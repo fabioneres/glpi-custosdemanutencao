@@ -8,6 +8,12 @@ if (!defined('GLPI_ROOT')) {
 require_once dirname(__DIR__) . '/bootstrap.php';
 
 Session::checkLoginUser();
+if (!Config::canViewConsumption() && !Config::canViewReports() && !Config::canAdminConfig()) {
+   http_response_code(403);
+   header('Content-Type: application/json; charset=UTF-8');
+   echo json_encode(['error' => 'forbidden']);
+   exit;
+}
 
 global $DB;
 

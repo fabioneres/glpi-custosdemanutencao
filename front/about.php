@@ -9,6 +9,9 @@ if (!defined('GLPI_ROOT')) {
 require_once dirname(__DIR__) . '/bootstrap.php';
 
 Session::checkLoginUser();
+if (!Config::canAdminConfig() && !Config::isEnabledForCurrentEntity()) {
+   Html::displayRightError(__('Plugin desabilitado para a entidade ativa.', 'maintenancecosts'));
+}
 
 Html::header(__('Sobre', 'maintenancecosts') . ' - ' . Config::getTypeName(), $_SERVER['PHP_SELF'], 'plugins', Menu::class);
 

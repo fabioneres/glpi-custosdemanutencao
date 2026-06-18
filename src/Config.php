@@ -7,6 +7,7 @@ if (!defined('GLPI_ROOT')) {
 }
 
 use CommonDBTM;
+use Entity;
 use Html;
 use Session;
 
@@ -60,6 +61,11 @@ class Config extends CommonDBTM
          'default_competence_mode' => 'latest',
          'allowed_itilcategories'  => '',
       ];
+   }
+
+   public static function getActiveEntityId(): int
+   {
+      return (int) Session::getActiveEntity();
    }
 
    public static function ensureDefaultConfig(): void
@@ -124,12 +130,229 @@ class Config extends CommonDBTM
 
       $ok = $DB->update(self::getTable(), $settings, ['id' => self::CONFIG_ID]);
       AuditLog::record(self::class, self::CONFIG_ID, 'config_update', $old, $settings, '', 0);
+      self::clearMenuCache();
 
       return (bool) $ok;
    }
 
+   public static function getEnabledEntityRows(): array
+   {
+      global $DB;
+
+      if (!$DB->tableExists(ConfigEntity::getTable())) {
+         return [];
+      }
+
+      return iterator_to_array($DB->request([
+         'FROM'  => ConfigEntity::getTable(),
+         'WHERE' => ['is_active' => 1],
+         'ORDER' => ['entities_id ASC', 'is_recursive DESC', 'id ASC'],
+      ]), false);
+   }
+
+   public static function getSelectableEntities(): array
+   {
+      global $DB;
+
+      $activeEntities = array_values(array_filter(array_map('intval', $_SESSION['glpiactiveentities'] ?? [])));
+      if (!$activeEntities) {
+         return [];
+      }
+
+      return iterator_to_array($DB->request([
+         'SELECT' => ['id', 'name', 'completename', 'level'],
+         'FROM'   => Entity::getTable(),
+         'WHERE'  => ['id' => $activeEntities],
+         'ORDER'  => ['completename ASC'],
+      ]), false);
+   }
+
+   public static function getEntityRule(int $entities_id): array
+   {
+      $entities_id = (int) $entities_id;
+      foreach (self::getEnabledEntityRows() as $row) {
+         if ((int) ($row['entities_id'] ?? 0) === $entities_id) {
+            return [
+               'enabled'     => true,
+               'recursive'   => (int) ($row['is_recursive'] ?? 0) === 1,
+               'inherited'   => false,
+               'inherited_id' => 0,
+            ];
+         }
+      }
+
+      $ancestors = array_reverse(array_map('intval', getAncestorsOf(Entity::getTable(), $entities_id)));
+      foreach (self::getEnabledEntityRows() as $row) {
+         $rowEntity = (int) ($row['entities_id'] ?? 0);
+         if ((int) ($row['is_recursive'] ?? 0) !== 1) {
+            continue;
+         }
+
+         if (in_array($rowEntity, $ancestors, true)) {
+            return [
+               'enabled'      => false,
+               'recursive'    => false,
+               'inherited'    => true,
+               'inherited_id' => $rowEntity,
+            ];
+         }
+      }
+
+      return [
+         'enabled'      => false,
+         'recursive'    => false,
+         'inherited'    => false,
+         'inherited_id' => 0,
+      ];
+   }
+
+   public static function saveEntityRule(int $entities_id, array $input): bool
+   {
+      global $DB;
+
+      $entities_id = (int) $entities_id;
+      if ($entities_id < 0 || !Session::haveAccessToEntity($entities_id, true)) {
+         return false;
+      }
+
+      if (!$DB->tableExists(ConfigEntity::getTable())) {
+         return false;
+      }
+
+      $old = self::getEntityRule($entities_id);
+      $enabled = (int) ($input['plugin_maintenancecosts_entity_enabled'] ?? 0) === 1;
+      $recursive = (int) ($input['plugin_maintenancecosts_entity_recursive'] ?? 0) === 1;
+      $now = date('Y-m-d H:i:s');
+      $userId = (int) Session::getLoginUserID();
+
+      $DB->delete(ConfigEntity::getTable(), ['entities_id' => $entities_id]);
+
+      if ($enabled) {
+         $DB->insert(ConfigEntity::getTable(), [
+            'entities_id'   => $entities_id,
+            'is_recursive'  => $recursive ? 1 : 0,
+            'is_active'     => 1,
+            'users_id'      => $userId,
+            'date_creation' => $now,
+            'date_mod'      => $now,
+         ]);
+      }
+
+      AuditLog::record(
+         self::class,
+         self::CONFIG_ID,
+         'config_entity_rule_update',
+         $old,
+         self::getEntityRule($entities_id),
+         'entities_id=' . $entities_id,
+         $entities_id
+      );
+      self::clearMenuCache();
+
+      return true;
+   }
+
+   public static function saveEnabledEntities(array $input): bool
+   {
+      global $DB;
+
+      if (!$DB->tableExists(ConfigEntity::getTable())) {
+         return false;
+      }
+
+      $old = self::getEnabledEntityRows();
+      $enabled = $input['enabled_entities'] ?? [];
+      $recursive = $input['recursive_entities'] ?? [];
+      $now = date('Y-m-d H:i:s');
+      $userId = (int) Session::getLoginUserID();
+      $selectable = self::getSelectableEntities();
+      $allowedIds = [];
+
+      foreach ($selectable as $entity) {
+         $allowedIds[(int) $entity['id']] = true;
+      }
+
+      $DB->delete(ConfigEntity::getTable(), ['id' => ['>', 0]]);
+
+      foreach ($enabled as $entityId => $flag) {
+         $entityId = (int) $entityId;
+         if ($entityId <= 0 || !isset($allowedIds[$entityId]) || (int) $flag !== 1) {
+            continue;
+         }
+
+         $DB->insert(ConfigEntity::getTable(), [
+            'entities_id'    => $entityId,
+            'is_recursive'   => isset($recursive[$entityId]) && (int) $recursive[$entityId] === 1 ? 1 : 0,
+            'is_active'      => 1,
+            'users_id'       => $userId,
+            'date_creation'  => $now,
+            'date_mod'       => $now,
+         ]);
+      }
+
+      AuditLog::record(self::class, self::CONFIG_ID, 'config_entities_update', $old, self::getEnabledEntityRows(), '', 0);
+      self::clearMenuCache();
+
+      return true;
+   }
+
+   public static function getEnabledEntityMap(): array
+   {
+      $map = [];
+      foreach (self::getEnabledEntityRows() as $row) {
+         $map[(int) ($row['entities_id'] ?? 0)] = (int) ($row['is_recursive'] ?? 0);
+      }
+
+      return $map;
+   }
+
+   public static function isEnabledForEntity(?int $entities_id = null): bool
+   {
+      $entities_id = $entities_id ?? self::getActiveEntityId();
+      if ($entities_id < 0) {
+         return false;
+      }
+
+      $rows = self::getEnabledEntityRows();
+      if (!$rows) {
+         return true;
+      }
+
+      $ancestors = getAncestorsOf(Entity::getTable(), $entities_id);
+      $ancestors[] = $entities_id;
+      $ancestors = array_map('intval', $ancestors);
+
+      foreach ($rows as $row) {
+         $rowEntity = (int) ($row['entities_id'] ?? -1);
+         $rowRecursive = (int) ($row['is_recursive'] ?? 0) === 1;
+
+         if ($rowEntity === $entities_id) {
+            return true;
+         }
+
+         if ($rowRecursive && in_array($rowEntity, $ancestors, true)) {
+            return true;
+         }
+      }
+
+      return false;
+   }
+
+   public static function isEnabledForCurrentEntity(): bool
+   {
+      return self::isEnabledForEntity(self::getActiveEntityId());
+   }
+
    public static function canViewAny(): bool
    {
+      if (self::canAdminConfig()) {
+         return true;
+      }
+
+      if (!self::isEnabledForCurrentEntity()) {
+         return false;
+      }
+
       foreach (self::getRightNames() as $right) {
          if (Session::haveRight($right, READ)
             || Session::haveRight($right, UPDATE)
@@ -139,67 +362,87 @@ class Config extends CommonDBTM
          }
       }
 
-      return self::canAdminConfig();
+      return false;
    }
 
    public static function canManageMaterials(): bool
    {
-      return Session::haveRight(self::RIGHT_MATERIALS, UPDATE)
-         || self::canAdminConfig();
+      return self::isEnabledForCurrentEntity()
+         && (Session::haveRight(self::RIGHT_MATERIALS, UPDATE)
+         || self::canAdminConfig());
    }
 
    public static function canViewMaterials(): bool
    {
-      return Session::haveRight(self::RIGHT_MATERIALS, READ)
-         || self::canManageMaterials();
+      return self::isEnabledForCurrentEntity()
+         && (
+            Session::haveRight(self::RIGHT_MATERIALS, READ)
+            || self::canManageMaterials()
+         );
    }
 
    public static function canManagePrices(): bool
    {
-      return Session::haveRight(self::RIGHT_PRICES, UPDATE)
-         || self::canAdminConfig();
+      return self::isEnabledForCurrentEntity()
+         && (Session::haveRight(self::RIGHT_PRICES, UPDATE)
+         || self::canAdminConfig());
    }
 
    public static function canViewPrices(): bool
    {
-      return Session::haveRight(self::RIGHT_PRICES, READ)
-         || self::canManagePrices();
+      return self::isEnabledForCurrentEntity()
+         && (
+            Session::haveRight(self::RIGHT_PRICES, READ)
+            || self::canManagePrices()
+         );
    }
 
    public static function canManageCostCenters(): bool
    {
-      return Session::haveRight(self::RIGHT_COSTCENTERS, UPDATE)
-         || self::canAdminConfig();
+      return self::isEnabledForCurrentEntity()
+         && (Session::haveRight(self::RIGHT_COSTCENTERS, UPDATE)
+         || self::canAdminConfig());
    }
 
    public static function canViewCostCenters(): bool
    {
-      return Session::haveRight(self::RIGHT_COSTCENTERS, READ)
-         || self::canManageCostCenters();
+      return self::isEnabledForCurrentEntity()
+         && (
+            Session::haveRight(self::RIGHT_COSTCENTERS, READ)
+            || self::canManageCostCenters()
+         );
    }
 
    public static function canManageConsumption(): bool
    {
-      return Session::haveRight(self::RIGHT_CONSUMPTION, UPDATE)
-         || self::canAdminConfig();
+      return self::isEnabledForCurrentEntity()
+         && (Session::haveRight(self::RIGHT_CONSUMPTION, UPDATE)
+         || self::canAdminConfig());
    }
 
    public static function canViewConsumption(): bool
    {
-      return Session::haveRight(self::RIGHT_CONSUMPTION, READ)
-         || self::canManageConsumption();
+      return self::isEnabledForCurrentEntity()
+         && (
+            Session::haveRight(self::RIGHT_CONSUMPTION, READ)
+            || self::canManageConsumption()
+         );
    }
 
    public static function canImport(): bool
    {
-      return Session::haveRight(self::RIGHT_IMPORT, UPDATE)
-         || self::canAdminConfig();
+      return self::isEnabledForCurrentEntity()
+         && (Session::haveRight(self::RIGHT_IMPORT, UPDATE)
+         || self::canAdminConfig());
    }
 
    public static function canViewReports(): bool
    {
-      return Session::haveRight(self::RIGHT_REPORTS, READ)
-         || self::canAdminConfig();
+      return self::isEnabledForCurrentEntity()
+         && (
+            Session::haveRight(self::RIGHT_REPORTS, READ)
+            || self::canAdminConfig()
+         );
    }
 
    public static function canAdminConfig(): bool
@@ -208,9 +451,23 @@ class Config extends CommonDBTM
          || Session::haveRight(\Config::$rightname, UPDATE);
    }
 
+   public static function clearMenuCache(): void
+   {
+      foreach (array_keys($_SESSION ?? []) as $key) {
+         if (strpos((string) $key, 'plugin_maintenancecosts_menu_cache_') === 0) {
+            unset($_SESSION[$key]);
+         }
+      }
+
+      unset($_SESSION['glpimenu']);
+   }
+
    public static function checkRight(string $right, int $level): void
    {
       Session::checkLoginUser();
+      if ($right !== self::RIGHT_CONFIG && !self::isEnabledForCurrentEntity()) {
+         Html::displayRightError(__('Plugin desabilitado para a entidade ativa.', 'maintenancecosts'));
+      }
       if (!Session::haveRight($right, $level) && !self::canAdminConfig()) {
          Html::displayRightError();
       }

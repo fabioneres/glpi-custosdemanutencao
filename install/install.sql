@@ -188,6 +188,22 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_maintenancecosts_configs` (
    PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
+CREATE TABLE IF NOT EXISTS `glpi_plugin_maintenancecosts_configentities` (
+   `id` int unsigned NOT NULL AUTO_INCREMENT,
+   `entities_id` int unsigned NOT NULL DEFAULT '0',
+   `is_recursive` tinyint NOT NULL DEFAULT '0',
+   `is_active` tinyint NOT NULL DEFAULT '1',
+   `users_id` int unsigned NOT NULL DEFAULT '0',
+   `date_creation` timestamp NULL DEFAULT NULL,
+   `date_mod` timestamp NULL DEFAULT NULL,
+   PRIMARY KEY (`id`),
+   UNIQUE KEY `unicity_entity_scope` (`entities_id`, `is_recursive`),
+   KEY `idx_entity` (`entities_id`),
+   KEY `idx_recursive` (`is_recursive`),
+   KEY `idx_active` (`is_active`),
+   KEY `idx_user` (`users_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
+
 CREATE TABLE IF NOT EXISTS `glpi_plugin_maintenancecosts_auditlogs` (
    `id` int unsigned NOT NULL AUTO_INCREMENT,
    `itemtype` varchar(100) NOT NULL DEFAULT '',

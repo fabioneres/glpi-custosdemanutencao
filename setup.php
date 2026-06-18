@@ -52,6 +52,7 @@ function plugin_init_maintenancecosts(): void {
    Plugin::registerClass(AuditLog::class);
    Plugin::registerClass(Exporter::class);
    Plugin::registerClass(Config::class);
+   Plugin::registerClass(\GlpiPlugin\Maintenancecosts\ConfigEntity::class, ['addtabon' => [\Entity::class]]);
    Plugin::registerClass(Menu::class);
    Plugin::registerClass(Report::class);
    Plugin::registerClass(TicketTab::class, ['addtabon' => [\Ticket::class]]);
@@ -61,8 +62,15 @@ function plugin_init_maintenancecosts(): void {
 
    if (Session::getLoginUserID()) {
       Profile::initProfile();
+      $is_recursive = (int) (($_SESSION['glpiactive_entity_recursive'] ?? false) ? 1 : 0);
 
-      $menu_cache_key = 'plugin_maintenancecosts_menu_cache_' . PLUGIN_MAINTENANCECOSTS_VERSION . '_plugins_v2';
+      $menu_cache_key = 'plugin_maintenancecosts_menu_cache_'
+         . PLUGIN_MAINTENANCECOSTS_VERSION
+         . '_'
+         . (int) Session::getActiveEntity()
+         . '_'
+         . $is_recursive
+         . '_plugins_v2';
       if (($_SESSION[$menu_cache_key] ?? 0) !== 1) {
          unset($_SESSION['glpimenu']);
          $_SESSION[$menu_cache_key] = 1;

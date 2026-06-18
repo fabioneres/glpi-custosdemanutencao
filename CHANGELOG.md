@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.5.10 - Disponibilidade por entidade
+
+- Move a habilitação do plugin por entidade para uma aba própria dentro de `Administração > Entidades`, evitando listas extensas na configuração global.
+- Permite definir disponibilidade por entidade com herança opcional para entidades filhas.
+- Mantém a configuração global do plugin focada apenas em parâmetros operacionais, sem misturar escopo organizacional.
+- Corrige a renderização dos controles da nova aba de entidade e o fluxo de salvamento correspondente.
+
 ## v0.5.9 - Preenchimento do valor unitario no chamado
 
 - Corrige o carregamento de dados do material no formulario de consumo usando fallback de AJAX quando `fetch` nao estiver disponivel.
