@@ -94,6 +94,10 @@ class TicketMaterial extends CommonDBTM
          return [];
       }
 
+      if (isset($input['costcenter_source'])) {
+         $input['costcenter_source'] = in_array($input['costcenter_source'], ['legacy', 'novo'], true) ? $input['costcenter_source'] : 'legacy';
+      }
+
       foreach (['tickets_id', 'items_id', 'plugin_maintenancecosts_materials_id', 'plugin_maintenancecosts_costcenters_id', 'plugin_maintenancecosts_materialorigins_id', 'contracts_id'] as $field) {
          if (isset($input[$field])) {
             $input[$field] = (int) $input[$field];
@@ -533,7 +537,8 @@ class TicketMaterial extends CommonDBTM
          $material_name = $material->getFromDB((int) $row['plugin_maintenancecosts_materials_id'])
             ? $material->getName()
             : '';
-         $costcenter = new CostCenter();
+         $ccSrc = (string) ($row['costcenter_source'] ?? 'novo');
+         $costcenter = $ccSrc === 'legacy' ? new CostCenterLegacy() : new CostCenter();
          $costcenter_name = $costcenter->getFromDB((int) $row['plugin_maintenancecosts_costcenters_id'])
             ? $costcenter->getName()
             : '';
@@ -627,8 +632,16 @@ class TicketMaterial extends CommonDBTM
          echo "</td></tr>";
       }
 
-      echo "<tr class='tab_bg_1'><td>" . CostCenter::getTypeName(1) . "</td><td>";
-      $this->showPluginDropdown('costcenter', 'plugin_maintenancecosts_costcenters_id', (int) ($this->fields['plugin_maintenancecosts_costcenters_id'] ?? 0));
+      $ccSource = (string) ($this->fields['costcenter_source'] ?? ($is_new ? 'legacy' : 'novo'));
+      echo "<tr class='tab_bg_1'><td>" . __('Centro de custo', 'maintenancecosts') . "</td><td>";
+      echo "<div class='d-flex gap-2 align-items-center flex-wrap'>";
+      echo "<select name='costcenter_source' class='form-select' style='max-width:160px' data-maintenancecosts-cc-source>";
+      echo "<option value='legacy'" . ($ccSource === 'legacy' ? ' selected' : '') . ">" . __('Antigo (Imóveis)', 'maintenancecosts') . "</option>";
+      echo "<option value='novo'" . ($ccSource === 'novo' ? ' selected' : '') . ">" . __('Novo', 'maintenancecosts') . "</option>";
+      echo "</select>";
+      $ccDropdownType = $ccSource === 'legacy' ? 'costcenter_legacy' : 'costcenter';
+      $this->showPluginDropdown($ccDropdownType, 'plugin_maintenancecosts_costcenters_id', (int) ($this->fields['plugin_maintenancecosts_costcenters_id'] ?? 0), $ccSource);
+      echo "</div>";
       echo "</td><td>" . __('Competência', 'maintenancecosts') . "</td>";
       echo "<td><input type='text' name='competence' placeholder='AAAA-MM' maxlength='7' value='" . self::escape($competenceValue) . "' class='form-control plugin-maintenancecosts-competence'></td></tr>";
 
@@ -663,12 +676,12 @@ class TicketMaterial extends CommonDBTM
       return true;
    }
 
-   private function showPluginDropdown(string $type, string $name, int $value): void
+   private function showPluginDropdown(string $type, string $name, int $value, string $ccSource = ''): void
    {
-      echo "<select name='" . Html::cleanInputText($name) . "' class='form-control plugin-maintenancecosts-dropdown' data-dropdown-type='" . Html::cleanInputText($type) . "'>";
+      echo "<select name='" . Html::cleanInputText($name) . "' class='form-control plugin-maintenancecosts-dropdown' data-dropdown-type='" . Html::cleanInputText($type) . "'" . ($ccSource !== '' ? " data-cc-source='" . self::escape($ccSource) . "'" : '') . ">";
       echo "<option value='0'>-----</option>";
       if ($value > 0) {
-         $label = self::getAsyncDropdownLabel($type, $value);
+         $label = self::getAsyncDropdownLabel($type, $value, $ccSource);
          if ($label !== '') {
             echo "<option value='" . (int) $value . "' selected>" . self::escape($label) . "</option>";
          }
@@ -712,7 +725,7 @@ class TicketMaterial extends CommonDBTM
       echo "</select>";
    }
 
-   private static function getAsyncDropdownLabel(string $type, int $id): string
+   private static function getAsyncDropdownLabel(string $type, int $id, string $ccSource = ''): string
    {
       $id = (int) $id;
       if ($id <= 0) {
@@ -732,12 +745,13 @@ class TicketMaterial extends CommonDBTM
          }
       }
 
-      if ($type === 'costcenter') {
-         $item = new CostCenter();
+      if ($type === 'costcenter' || $type === 'costcenter_legacy') {
+         $item = $type === 'costcenter_legacy' ? new CostCenterLegacy() : new CostCenter();
          if ($item->getFromDB($id)) {
-            return trim((string) ($item->fields['code'] ?? '')) !== ''
-               ? (string) $item->fields['code'] . ' - ' . $item->getName()
-               : $item->getName();
+            $code = trim((string) ($item->fields['code'] ?? ''));
+            $dept = trim((string) ($item->fields['department'] ?? ''));
+            $displayName = $dept !== '' ? $dept : $item->getName();
+            return $code !== '' ? $code . ' - ' . $displayName : $displayName;
          }
       }
 

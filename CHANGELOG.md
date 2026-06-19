@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.5.11 - Centro de custos Antigo (Imóveis)
+
+- Adiciona tabela separada de centro de custos para imóveis ("Antigo"), com colunas Código, Campus, Departamento/Disc./Setor, Endereço, Piso e Utilização.
+- Renomeia a aba de menu "Centros de custo" para "Centros de custo (Novo)" e adiciona "Centros de custo (Antigo)".
+- Importa planilha de imóveis (XLSX/CSV) fundindo automaticamente as colunas Tipo + Logradouro + Nº em uma única coluna Endereço.
+- No formulário de consumo do chamado, adiciona seletor de fonte do centro de custo (Antigo por padrão / Novo), que alterna o dropdown AJAX sem recarregar a página.
+- Adiciona coluna `costcenter_source` na tabela de materiais consumidos para registrar de qual cadastro o centro de custo foi selecionado.
+
 ## v0.5.10 - Disponibilidade por entidade
 
 - Move a habilitação do plugin por entidade para uma aba própria dentro de `Administração > Entidades`, evitando listas extensas na configuração global.

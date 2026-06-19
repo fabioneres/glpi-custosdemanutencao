@@ -12,6 +12,7 @@ use Glpi\Plugin\Hooks;
 use GlpiPlugin\Maintenancecosts\AuditLog;
 use GlpiPlugin\Maintenancecosts\Config;
 use GlpiPlugin\Maintenancecosts\CostCenter;
+use GlpiPlugin\Maintenancecosts\CostCenterLegacy;
 use GlpiPlugin\Maintenancecosts\Exporter;
 use GlpiPlugin\Maintenancecosts\ImportBatch;
 use GlpiPlugin\Maintenancecosts\Material;
@@ -52,6 +53,7 @@ function plugin_init_maintenancecosts(): void {
    Plugin::registerClass(AuditLog::class);
    Plugin::registerClass(Exporter::class);
    Plugin::registerClass(Config::class);
+   Plugin::registerClass(CostCenterLegacy::class);
    Plugin::registerClass(\GlpiPlugin\Maintenancecosts\ConfigEntity::class, ['addtabon' => [\Entity::class]]);
    Plugin::registerClass(Menu::class);
    Plugin::registerClass(Report::class);

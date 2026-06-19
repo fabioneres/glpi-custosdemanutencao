@@ -126,11 +126,13 @@ class Installer
          self::ensureField($migration, TicketMaterial::getTable(), 'contractcosts_id', 'int unsigned NOT NULL DEFAULT 0');
          self::ensureField($migration, TicketMaterial::getTable(), 'ticketcosts_id', 'int unsigned NOT NULL DEFAULT 0');
          self::ensureField($migration, TicketMaterial::getTable(), 'price_type', "varchar(32) NOT NULL DEFAULT 'sinapi'");
+         self::ensureField($migration, TicketMaterial::getTable(), 'costcenter_source', "varchar(10) NOT NULL DEFAULT 'novo'");
          self::ensureField($migration, TicketMaterial::getTable(), 'deleted_at', 'timestamp NULL DEFAULT NULL');
          self::ensureField($migration, TicketMaterial::getTable(), 'deleted_by', 'int unsigned NOT NULL DEFAULT 0');
          self::ensureField($migration, TicketMaterial::getTable(), 'delete_reason', 'text NULL');
       }
 
+         self::ensureCostCenterLegacyTable();
          self::ensureConfigTable();
          self::ensureConfigEntityTable();
          self::ensureAuditLogTable();
@@ -156,6 +158,36 @@ class Installer
       }
 
       $migration->executeMigration();
+   }
+
+   private static function ensureCostCenterLegacyTable(): void
+   {
+      global $DB;
+
+      if ($DB->tableExists(CostCenterLegacy::getTable())) {
+         return;
+      }
+
+      $DB->doQuery(
+         "CREATE TABLE IF NOT EXISTS `" . CostCenterLegacy::getTable() . "` (
+            `id` int unsigned NOT NULL AUTO_INCREMENT,
+            `entities_id` int unsigned NOT NULL DEFAULT '0',
+            `is_recursive` tinyint NOT NULL DEFAULT '1',
+            `code` varchar(64) NOT NULL DEFAULT '',
+            `name` varchar(255) NOT NULL DEFAULT '',
+            `campus` varchar(255) NOT NULL DEFAULT '',
+            `department` varchar(255) NOT NULL DEFAULT '',
+            `address` text NULL,
+            `floor` varchar(64) NOT NULL DEFAULT '',
+            `usage_type` varchar(255) NOT NULL DEFAULT '',
+            `date_creation` timestamp NULL DEFAULT NULL,
+            `date_mod` timestamp NULL DEFAULT NULL,
+            PRIMARY KEY (`id`),
+            KEY `idx_code` (`code`),
+            KEY `idx_campus` (`campus`),
+            KEY `idx_entity` (`entities_id`)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC"
+      );
    }
 
    private static function ensureConfigTable(): void

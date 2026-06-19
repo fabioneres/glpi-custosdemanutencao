@@ -617,6 +617,24 @@
       if (!form || !form.querySelector('[name="plugin_maintenancecosts_materials_id"]')) {
          return;
       }
+      if (event.target.name === 'costcenter_source') {
+         var newSource = event.target.value;
+         var newType = newSource === 'legacy' ? 'costcenter_legacy' : 'costcenter';
+         var ccSelect = form.querySelector('[data-cc-source]');
+         if (ccSelect) {
+            ccSelect.dataset.ccSource = newSource;
+            ccSelect.dataset.dropdownType = newType;
+            ccSelect.value = '0';
+            if (typeof jQuery !== 'undefined' && jQuery.fn.select2) {
+               try { jQuery(ccSelect).select2('destroy'); } catch (e) {}
+               jQuery(ccSelect).empty().append('<option value="0">-----</option>');
+               ccSelect.dataset.maintenancecostsReady = '';
+               delete ccSelect.dataset.maintenancecostsReady;
+               initPluginDropdowns(ccSelect.parentNode || form);
+            }
+         }
+         return;
+      }
       if (event.target.name === 'plugin_maintenancecosts_materials_id'
          || event.target.name === 'competence'
          || event.target.name === 'price_type') {
