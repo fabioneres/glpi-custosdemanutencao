@@ -588,9 +588,15 @@ class Config extends CommonDBTM
             'show'  => self::canAdminConfig(),
          ],
          'costcenters' => [
-            'label' => CostCenter::getTypeName(2),
+            'label' => __('Centros de custo (Novo)', 'maintenancecosts'),
             'url'   => self::pluginUrl('/front/costcenter.php'),
             'icon'  => 'ti ti-building-bank',
+            'show'  => self::canViewCostCenters(),
+         ],
+         'costcenterslegacy' => [
+            'label' => __('Centros de custo (Antigo)', 'maintenancecosts'),
+            'url'   => self::pluginUrl('/front/costcenterlegacy.php'),
+            'icon'  => 'ti ti-building-estate',
             'show'  => self::canViewCostCenters(),
          ],
          'prices' => [

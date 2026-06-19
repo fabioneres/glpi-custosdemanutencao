@@ -16,7 +16,7 @@
             placeholder: '-----',
             minimumResultsForSearch: 0
          };
-         var dropdownType = select.data('dropdown-type');
+         var dropdownType = select.attr('data-dropdown-type');
          if (dropdownType) {
             var rootDoc = getRootDoc();
             options.minimumInputLength = dropdownType === 'contract' ? 0 : 1;
@@ -25,8 +25,9 @@
                dataType: 'json',
                delay: 250,
                data: function(params) {
+                  var liveDropdownType = select.attr('data-dropdown-type') || dropdownType;
                   return {
-                     type: dropdownType,
+                     type: liveDropdownType,
                      q: params.term || '',
                      page: params.page || 1
                   };
@@ -38,6 +39,26 @@
             };
          }
          select.select2(options);
+      });
+
+      jQuery(root || document).find('select[name="plugin_maintenancecosts_materials_id"]').each(function() {
+         var materialSelect = jQuery(this);
+         if (materialSelect.data('maintenancecosts-autofill-ready')) {
+            return;
+         }
+         materialSelect.data('maintenancecosts-autofill-ready', 1);
+         materialSelect.on('select2:select', function() {
+            var form = materialSelect.closest('form')[0];
+            if (form) {
+               loadMaterialInfo(form);
+            }
+         });
+         materialSelect.on('select2:clear', function() {
+            var form = materialSelect.closest('form')[0];
+            if (form) {
+               loadMaterialInfo(form);
+            }
+         });
       });
    }
 
@@ -409,6 +430,45 @@
       });
    }
 
+   function initCostCenterSourceSwitch(root) {
+      (root || document).querySelectorAll('[data-maintenancecosts-costcenter-source]').forEach(function(select) {
+         if (select.dataset.maintenancecostsCostcenterSourceReady) {
+            return;
+         }
+         select.dataset.maintenancecostsCostcenterSourceReady = '1';
+
+         select.addEventListener('change', function() {
+            var form = select.closest('form');
+            if (!form) {
+               return;
+            }
+
+            var source = select.value === 'new' ? 'new' : 'legacy';
+            var hidden = form.querySelector('[data-maintenancecosts-costcenter-source-hidden]');
+            if (hidden) {
+               hidden.value = source;
+            }
+
+            var dropdown = form.querySelector('select[name="plugin_maintenancecosts_costcenters_id"]');
+            if (!dropdown) {
+               return;
+            }
+
+            if (typeof jQuery !== 'undefined' && jQuery.fn.select2) {
+               try {
+                  jQuery(dropdown).select2('destroy');
+               } catch (e) {}
+               jQuery(dropdown).removeData('maintenancecosts-ready');
+            }
+
+            dropdown.dataset.dropdownType = source === 'legacy' ? 'costcenter_legacy' : 'costcenter';
+            dropdown.innerHTML = '<option value="0">-----</option>';
+            dropdown.value = '0';
+            initPluginDropdowns(form);
+         });
+      });
+   }
+
    function toNumber(value) {
       value = String(value || '0').replace(/[^\d,.-]/g, '');
       if (value.indexOf(',') !== -1 && value.indexOf('.') !== -1) {
@@ -628,6 +688,12 @@
          }
          loadMaterialInfo(form);
       }
+      if (event.target.matches('[data-maintenancecosts-costcenter-source]')) {
+         var hidden = form.querySelector('[data-maintenancecosts-costcenter-source-hidden]');
+         if (hidden) {
+            hidden.value = event.target.value === 'new' ? 'new' : 'legacy';
+         }
+      }
       if (event.target.name === 'unit_price_applied') {
          event.target.value = formatDecimal(event.target.value);
          event.target.dataset.manualLocked = '1';
@@ -681,6 +747,7 @@
       container.style.display = isHidden ? 'block' : 'none';
       if (isHidden) {
          initPluginDropdowns(container);
+         initCostCenterSourceSwitch(container);
       }
    });
 
@@ -690,6 +757,7 @@
          initSortableTables(document);
          initColumnViews(document);
          initContractTicketDropdowns(document);
+         initCostCenterSourceSwitch(document);
          document.querySelectorAll('form').forEach(updateUnitPriceState);
          observeDynamicContent();
       });
@@ -698,6 +766,7 @@
       initSortableTables(document);
       initColumnViews(document);
       initContractTicketDropdowns(document);
+      initCostCenterSourceSwitch(document);
       document.querySelectorAll('form').forEach(updateUnitPriceState);
       observeDynamicContent();
    }
@@ -713,12 +782,13 @@
                if (!node || node.nodeType !== 1) {
                   return;
                }
-               initPluginDropdowns(node);
-               initSortableTables(node);
-               initColumnViews(node);
-               initContractTicketDropdowns(node);
-            });
-         });
+                initPluginDropdowns(node);
+                initSortableTables(node);
+                initColumnViews(node);
+                initContractTicketDropdowns(node);
+                initCostCenterSourceSwitch(node);
+             });
+          });
       }).observe(document.body, {childList: true, subtree: true});
    }
 })();

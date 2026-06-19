@@ -117,10 +117,36 @@ class Installer
          self::ensureField($migration, CostCenter::getTable(), 'date_mod', 'timestamp NULL DEFAULT NULL');
       }
 
+      self::ensureCostCenterLegacyTable();
+
+      if ($DB->tableExists(CostCenterLegacy::getTable())) {
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'entities_id', 'int unsigned NOT NULL DEFAULT 0');
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'is_recursive', 'tinyint NOT NULL DEFAULT 0');
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'address', 'text NULL');
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'floor', "varchar(64) NOT NULL DEFAULT ''");
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'campus', "varchar(255) NOT NULL DEFAULT ''");
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'academic_unit', "varchar(255) NOT NULL DEFAULT ''");
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'department', "varchar(255) NOT NULL DEFAULT ''");
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'division', "varchar(255) NOT NULL DEFAULT ''");
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'section', "varchar(255) NOT NULL DEFAULT ''");
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'siorg_code', "varchar(64) NOT NULL DEFAULT ''");
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'siorg_acronym', "varchar(64) NOT NULL DEFAULT ''");
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'responsible', "varchar(255) NOT NULL DEFAULT ''");
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'usage_type', "varchar(255) NOT NULL DEFAULT ''");
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'description', 'text NULL');
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'locations_id', 'int unsigned NOT NULL DEFAULT 0');
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'users_id', 'int unsigned NOT NULL DEFAULT 0');
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'is_active', 'tinyint NOT NULL DEFAULT 1');
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'comment', 'text NULL');
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'date_creation', 'timestamp NULL DEFAULT NULL');
+         self::ensureField($migration, CostCenterLegacy::getTable(), 'date_mod', 'timestamp NULL DEFAULT NULL');
+      }
+
       if ($DB->tableExists(TicketMaterial::getTable())) {
          self::ensureField($migration, TicketMaterial::getTable(), 'entities_id', 'int unsigned NOT NULL DEFAULT 0');
          self::ensureField($migration, TicketMaterial::getTable(), 'itemtype', "varchar(100) NOT NULL DEFAULT 'Ticket'");
          self::ensureField($migration, TicketMaterial::getTable(), 'items_id', 'int unsigned NOT NULL DEFAULT 0');
+         self::ensureField($migration, TicketMaterial::getTable(), 'costcenter_source', "varchar(16) NOT NULL DEFAULT 'new'");
          self::ensureField($migration, TicketMaterial::getTable(), 'plugin_maintenancecosts_materialorigins_id', 'int unsigned NOT NULL DEFAULT 0');
          self::ensureField($migration, TicketMaterial::getTable(), 'contracts_id', 'int unsigned NOT NULL DEFAULT 0');
          self::ensureField($migration, TicketMaterial::getTable(), 'contractcosts_id', 'int unsigned NOT NULL DEFAULT 0');
@@ -156,6 +182,51 @@ class Installer
       }
 
       $migration->executeMigration();
+   }
+
+   private static function ensureCostCenterLegacyTable(): void
+   {
+      global $DB;
+
+      if ($DB->tableExists(CostCenterLegacy::getTable())) {
+         return;
+      }
+
+      $DB->doQuery(
+         "CREATE TABLE IF NOT EXISTS `" . CostCenterLegacy::getTable() . "` (
+            `id` int unsigned NOT NULL AUTO_INCREMENT,
+            `entities_id` int unsigned NOT NULL DEFAULT '0',
+            `is_recursive` tinyint NOT NULL DEFAULT '0',
+            `code` varchar(64) NOT NULL DEFAULT '',
+            `name` varchar(255) NOT NULL DEFAULT '',
+            `address` text NULL,
+            `floor` varchar(64) NOT NULL DEFAULT '',
+            `campus` varchar(255) NOT NULL DEFAULT '',
+            `academic_unit` varchar(255) NOT NULL DEFAULT '',
+            `department` varchar(255) NOT NULL DEFAULT '',
+            `division` varchar(255) NOT NULL DEFAULT '',
+            `section` varchar(255) NOT NULL DEFAULT '',
+            `siorg_code` varchar(64) NOT NULL DEFAULT '',
+            `siorg_acronym` varchar(64) NOT NULL DEFAULT '',
+            `responsible` varchar(255) NOT NULL DEFAULT '',
+            `usage_type` varchar(255) NOT NULL DEFAULT '',
+            `description` text NULL,
+            `locations_id` int unsigned NOT NULL DEFAULT '0',
+            `users_id` int unsigned NOT NULL DEFAULT '0',
+            `is_active` tinyint NOT NULL DEFAULT '1',
+            `comment` text NULL,
+            `date_creation` timestamp NULL DEFAULT NULL,
+            `date_mod` timestamp NULL DEFAULT NULL,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `unicity_code` (`code`),
+            KEY `idx_entity` (`entities_id`),
+            KEY `idx_recursive` (`is_recursive`),
+            KEY `idx_location` (`locations_id`),
+            KEY `idx_user` (`users_id`),
+            KEY `idx_active` (`is_active`),
+            KEY `idx_name` (`name`)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC"
+      );
    }
 
    private static function ensureConfigTable(): void

@@ -112,6 +112,40 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_maintenancecosts_costcenters` (
    KEY `idx_name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
+CREATE TABLE IF NOT EXISTS `glpi_plugin_maintenancecosts_costcenters_legacy` (
+   `id` int unsigned NOT NULL AUTO_INCREMENT,
+   `entities_id` int unsigned NOT NULL DEFAULT '0',
+   `is_recursive` tinyint NOT NULL DEFAULT '0',
+   `code` varchar(64) NOT NULL DEFAULT '',
+   `name` varchar(255) NOT NULL DEFAULT '',
+   `address` text NULL,
+   `floor` varchar(64) NOT NULL DEFAULT '',
+   `campus` varchar(255) NOT NULL DEFAULT '',
+   `academic_unit` varchar(255) NOT NULL DEFAULT '',
+   `department` varchar(255) NOT NULL DEFAULT '',
+   `division` varchar(255) NOT NULL DEFAULT '',
+   `section` varchar(255) NOT NULL DEFAULT '',
+   `siorg_code` varchar(64) NOT NULL DEFAULT '',
+   `siorg_acronym` varchar(64) NOT NULL DEFAULT '',
+   `responsible` varchar(255) NOT NULL DEFAULT '',
+   `usage_type` varchar(255) NOT NULL DEFAULT '',
+   `description` text NULL,
+   `locations_id` int unsigned NOT NULL DEFAULT '0',
+   `users_id` int unsigned NOT NULL DEFAULT '0',
+   `is_active` tinyint NOT NULL DEFAULT '1',
+   `comment` text NULL,
+   `date_creation` timestamp NULL DEFAULT NULL,
+   `date_mod` timestamp NULL DEFAULT NULL,
+   PRIMARY KEY (`id`),
+   UNIQUE KEY `unicity_code` (`code`),
+   KEY `idx_entity` (`entities_id`),
+   KEY `idx_recursive` (`is_recursive`),
+   KEY `idx_location` (`locations_id`),
+   KEY `idx_user` (`users_id`),
+   KEY `idx_active` (`is_active`),
+   KEY `idx_name` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
+
 CREATE TABLE IF NOT EXISTS `glpi_plugin_maintenancecosts_ticketmaterials` (
    `id` int unsigned NOT NULL AUTO_INCREMENT,
    `entities_id` int unsigned NOT NULL DEFAULT '0',
@@ -120,6 +154,7 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_maintenancecosts_ticketmaterials` (
    `tickets_id` int unsigned NOT NULL DEFAULT '0',
    `plugin_maintenancecosts_materials_id` int unsigned NOT NULL DEFAULT '0',
    `plugin_maintenancecosts_costcenters_id` int unsigned NOT NULL DEFAULT '0',
+   `costcenter_source` varchar(16) NOT NULL DEFAULT 'new',
    `plugin_maintenancecosts_materialorigins_id` int unsigned NOT NULL DEFAULT '0',
    `contracts_id` int unsigned NOT NULL DEFAULT '0',
    `contractcosts_id` int unsigned NOT NULL DEFAULT '0',
@@ -145,6 +180,7 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_maintenancecosts_ticketmaterials` (
    KEY `idx_ticket` (`tickets_id`),
    KEY `idx_material` (`plugin_maintenancecosts_materials_id`),
    KEY `idx_costcenter` (`plugin_maintenancecosts_costcenters_id`),
+   KEY `idx_costcenter_source` (`costcenter_source`),
    KEY `idx_materialorigin` (`plugin_maintenancecosts_materialorigins_id`),
    KEY `idx_contract` (`contracts_id`),
    KEY `idx_contractcost` (`contractcosts_id`),

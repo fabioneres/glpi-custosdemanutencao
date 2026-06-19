@@ -90,6 +90,92 @@ class Importer
       return $summary;
    }
 
+   public static function importCostCentersLegacyFile(string $path, string $filename, bool $dryRun = true, string $delimiter = 'auto'): array
+   {
+      $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+      if ($extension === 'xlsx') {
+         $csv = self::xlsxToTemporaryCsv($path);
+         if ($csv === null) {
+            return self::emptyCostCenterSummary($filename, $dryRun, [__('Não foi possível ler o arquivo XLSX.', 'maintenancecosts')]);
+         }
+
+         $summary = self::importCostCentersLegacyCsv($csv, $filename, $dryRun, ';');
+         @unlink($csv);
+         return $summary;
+      }
+
+      return self::importCostCentersLegacyCsv($path, $filename, $dryRun, $delimiter);
+   }
+
+   public static function importCostCentersLegacyCsv(string $path, string $filename, bool $dryRun = true, string $delimiter = 'auto'): array
+   {
+      if ($delimiter === 'auto') {
+         $delimiter = self::detectDelimiter($path);
+      }
+
+      $summary = self::emptyCostCenterSummary($filename, $dryRun);
+      if (!is_readable($path)) {
+         $summary['errors'][] = __('Arquivo indisponível para leitura.', 'maintenancecosts');
+         return $summary;
+      }
+
+      $handle = fopen($path, 'rb');
+      if (!$handle) {
+         $summary['errors'][] = __('Falha ao abrir arquivo.', 'maintenancecosts');
+         return $summary;
+      }
+
+      $header = fgetcsv($handle, 0, $delimiter);
+      if (!$header) {
+         fclose($handle);
+         $summary['errors'][] = __('Arquivo vazio.', 'maintenancecosts');
+         return $summary;
+      }
+
+      $map = self::buildCostCenterLegacyHeaderMap($header);
+      foreach (['code'] as $required) {
+         if (!isset($map[$required])) {
+            fclose($handle);
+            $summary['errors'][] = sprintf(__('Coluna obrigatória ausente: %s', 'maintenancecosts'), $required);
+            return $summary;
+         }
+      }
+
+      while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+         $summary['total_rows']++;
+         $data = self::costCenterLegacyRowToData($row, $map);
+         if (self::isEmptyCostCenterRow($data)) {
+            $summary['total_rows']--;
+            continue;
+         }
+         if (trim((string) ($data['code'] ?? '')) === '') {
+            $summary['total_rows']--;
+            continue;
+         }
+         $error = self::validateCostCenterRow($data);
+         if ($error !== '') {
+            $summary['invalid_rows']++;
+            $summary['errors'][] = sprintf('Linha %d: %s', $summary['total_rows'] + 1, $error);
+            continue;
+         }
+
+         $summary['valid_rows']++;
+         $existing = self::findCostCenterLegacyByCode($data['code']);
+         $summary[$existing ? 'updated_costcenters' : 'new_costcenters']++;
+
+         if (!$dryRun) {
+            self::saveCostCenterLegacyRow($data, $existing);
+         }
+      }
+      fclose($handle);
+
+      if (!$dryRun) {
+         AuditLog::record(CostCenterLegacy::class, 0, 'costcenter_legacy_import', [], $summary);
+      }
+
+      return $summary;
+   }
+
    public static function importFile(string $path, string $filename, string $competence, bool $dryRun = true, string $delimiter = 'auto', string $priceType = 'sinapi'): array
    {
       $priceType = Config::normalizePriceType($priceType);
@@ -266,6 +352,33 @@ class Importer
       return $map;
    }
 
+   private static function buildCostCenterLegacyHeaderMap(array $header): array
+   {
+      $aliases = [
+         'code'           => ['centro de custo', 'codigo', 'cÃ³digo', 'code'],
+         'campus'         => ['campus'],
+         'department'     => ['departamento /disc./setor', 'departamento/disc./setor', 'departamento / disc. / setor', 'departamento'],
+         'address_type'   => ['tipo'],
+         'address_street' => ['logradouro'],
+         'address_number' => ['nº', 'n°', 'nÂº', 'nÃºmero', 'numero', 'nÂ°', 'no'],
+         'floor'          => ['piso', 'andar', 'floor'],
+         'usage_type'     => ['utilizacao', 'utilizaÃ§Ã£o', 'uso', 'usage', 'utilization'],
+      ];
+
+      $map = [];
+      foreach ($header as $index => $column) {
+         $normalized = self::normalizeHeader((string) $column);
+         foreach ($aliases as $field => $names) {
+            if (in_array($normalized, array_map([self::class, 'normalizeHeader'], $names), true)) {
+               $map[$field] = $index;
+               break;
+            }
+         }
+      }
+
+      return $map;
+   }
+
    private static function costCenterRowToData(array $row, array $map): array
    {
       $get = static function(string $field) use ($row, $map): string {
@@ -284,6 +397,43 @@ class Importer
          'siorg_acronym' => self::cleanImportedText($get('siorg_acronym'), 64),
          'address'       => self::cleanImportedText($get('address')),
          'responsible'   => self::cleanImportedText($get('responsible'), 255),
+         'floor'         => self::cleanImportedText($get('floor'), 64),
+         'usage_type'    => self::cleanImportedText($get('usage_type'), 255),
+      ];
+      $data['locations_id'] = $data['campus'] !== '' ? CostCenter::getRootLocationIdByLabel($data['campus']) : 0;
+
+      return $data;
+   }
+
+   private static function costCenterLegacyRowToData(array $row, array $map): array
+   {
+      $get = static function(string $field) use ($row, $map): string {
+         return isset($map[$field], $row[$map[$field]]) ? trim((string) $row[$map[$field]]) : '';
+      };
+
+      $type = self::cleanImportedText($get('address_type'), 64);
+      $street = self::cleanImportedText($get('address_street'), 255);
+      $number = self::cleanImportedText($get('address_number'), 64);
+
+      $address = trim(implode(' ', array_filter([$type, $street], static function($value) {
+         return trim((string) $value) !== '';
+      })));
+      if ($number !== '') {
+         $address .= ($address !== '' ? ', ' : '') . $number;
+      }
+
+      $data = [
+         'code'          => self::cleanImportedText($get('code'), 64),
+         'name'          => '',
+         'campus'        => self::cleanImportedText($get('campus'), 255),
+         'academic_unit' => '',
+         'department'    => self::cleanImportedText($get('department'), 255),
+         'division'      => '',
+         'section'       => '',
+         'siorg_code'    => '',
+         'siorg_acronym' => '',
+         'address'       => self::cleanImportedText($address),
+         'responsible'   => '',
          'floor'         => self::cleanImportedText($get('floor'), 64),
          'usage_type'    => self::cleanImportedText($get('usage_type'), 255),
       ];
@@ -315,6 +465,23 @@ class Importer
    private static function saveCostCenterRow(array $data, ?array $existing): void
    {
       $costCenter = new CostCenter();
+      $input = $data + [
+         'entities_id'  => (int) ($_SESSION['glpiactive_entity'] ?? 0),
+         'is_recursive' => 1,
+         'is_active'    => 1,
+      ];
+
+      if ($existing) {
+         $costCenter->update(['id' => (int) $existing['id']] + $input);
+         return;
+      }
+
+      $costCenter->add($input);
+   }
+
+   private static function saveCostCenterLegacyRow(array $data, ?array $existing): void
+   {
+      $costCenter = new CostCenterLegacy();
       $input = $data + [
          'entities_id'  => (int) ($_SESSION['glpiactive_entity'] ?? 0),
          'is_recursive' => 1,
@@ -578,6 +745,19 @@ class Importer
 
       $row = $DB->request([
          'FROM'  => CostCenter::getTable(),
+         'WHERE' => ['code' => $code],
+         'LIMIT' => 1,
+      ])->current();
+
+      return $row ?: null;
+   }
+
+   private static function findCostCenterLegacyByCode(string $code): ?array
+   {
+      global $DB;
+
+      $row = $DB->request([
+         'FROM'  => CostCenterLegacy::getTable(),
          'WHERE' => ['code' => $code],
          'LIMIT' => 1,
       ])->current();

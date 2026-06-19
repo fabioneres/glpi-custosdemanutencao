@@ -395,8 +395,6 @@ class Report extends CommonDBTM
             'glpi_tickets.itilcategories_id',
             Material::getTable() . '.name AS material_name',
             Material::getTable() . '.code AS material_code',
-            CostCenter::getTable() . '.code AS costcenter_code',
-            CostCenter::getTable() . '.name AS costcenter_name',
             MaterialOrigin::getTable() . '.name AS materialorigin_name',
             'glpi_locations.completename AS location_name',
             'glpi_itilcategories.completename AS itilcategory_name',
@@ -408,9 +406,6 @@ class Report extends CommonDBTM
             ],
             Material::getTable() => [
                'FKEY' => [TicketMaterial::getTable() => 'plugin_maintenancecosts_materials_id', Material::getTable() => 'id'],
-            ],
-            CostCenter::getTable() => [
-               'FKEY' => [TicketMaterial::getTable() => 'plugin_maintenancecosts_costcenters_id', CostCenter::getTable() => 'id'],
             ],
             MaterialOrigin::getTable() => [
                'FKEY' => [TicketMaterial::getTable() => 'plugin_maintenancecosts_materialorigins_id', MaterialOrigin::getTable() => 'id'],
@@ -435,9 +430,15 @@ class Report extends CommonDBTM
          if (!empty($filters['itilcategories_id']) && (int) ($row['itilcategories_id'] ?? 0) !== (int) $filters['itilcategories_id']) {
             continue;
          }
-         $row['costcenter_label'] = self::labelWithCode($row['costcenter_code'] ?? '', $row['costcenter_name'] ?? '');
+         $row['costcenter_label'] = TicketMaterial::getCostCenterDisplayName(
+            (int) ($row['plugin_maintenancecosts_costcenters_id'] ?? 0),
+            (string) ($row['costcenter_source'] ?? 'new')
+         );
          $row['price_type_label'] = Config::getPriceTypeLabel((string) ($row['price_type'] ?? 'sinapi'));
          $row['contract_label'] = self::getContractLabel((int) ($row['contracts_id'] ?? 0), (int) $row['tickets_id']);
+         if (!empty($filters['costcenters_id']) && (int) ($row['plugin_maintenancecosts_costcenters_id'] ?? 0) !== (int) $filters['costcenters_id']) {
+            continue;
+         }
          $rows[] = $row;
       }
 

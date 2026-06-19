@@ -2,6 +2,7 @@
 
 use GlpiPlugin\Maintenancecosts\Config;
 use GlpiPlugin\Maintenancecosts\CostCenter;
+use GlpiPlugin\Maintenancecosts\CostCenterLegacy;
 use GlpiPlugin\Maintenancecosts\Material;
 
 ob_start();
@@ -27,7 +28,7 @@ if ($type === 'material'
    echo json_encode(['results' => []]);
    exit;
 }
-if ($type === 'costcenter'
+if (($type === 'costcenter' || $type === 'costcenter_legacy')
    && !Config::canViewConsumption()
    && !Config::canViewReports()
    && !Config::canViewCostCenters()
@@ -53,6 +54,10 @@ if ($type === 'material') {
 
 if ($type === 'costcenter') {
    show_costcenters($search, $limit, $offset);
+}
+
+if ($type === 'costcenter_legacy') {
+   show_costcenters_legacy($search, $limit, $offset);
 }
 
 if ($type === 'contract') {
@@ -114,7 +119,10 @@ function show_costcenters(string $search, int $limit, int $offset): void
 {
    global $DB;
 
-   $where = ['is_active' => 1];
+   $where = [];
+   if ($DB->fieldExists(CostCenter::getTable(), 'is_active')) {
+      $where['is_active'] = 1;
+   }
    if ($search !== '') {
       $like = '%' . $search . '%';
       $where[] = [
@@ -144,6 +152,63 @@ function show_costcenters(string $search, int $limit, int $offset): void
       $label = trim((string) $row['code']) !== ''
          ? sprintf('%s - %s', $row['code'], $row['name'])
          : (string) $row['name'];
+      $results[] = ['id' => (int) $row['id'], 'text' => $label];
+   }
+
+   echo json_encode([
+      'results'    => $results,
+      'pagination' => ['more' => $fetched > $limit],
+   ]);
+   exit;
+}
+
+function show_costcenters_legacy(string $search, int $limit, int $offset): void
+{
+   global $DB;
+
+   $where = [];
+   if ($DB->fieldExists(CostCenterLegacy::getTable(), 'is_active')) {
+      $where['is_active'] = 1;
+   }
+   if ($search !== '') {
+      $like = '%' . $search . '%';
+      $where[] = [
+         'OR' => [
+            'code'       => ['LIKE', $like],
+            'campus'     => ['LIKE', $like],
+            'department' => ['LIKE', $like],
+            'address'    => ['LIKE', $like],
+            'usage_type' => ['LIKE', $like],
+         ],
+      ];
+   }
+
+   $rows = $DB->request([
+      'SELECT' => ['id', 'code', 'campus', 'department'],
+      'FROM'   => CostCenterLegacy::getTable(),
+      'WHERE'  => $where,
+      'ORDER'  => ['code ASC', 'department ASC'],
+      'START'  => $offset,
+      'LIMIT'  => $limit + 1,
+   ]);
+
+   $results = [];
+   $fetched = 0;
+   foreach ($rows as $row) {
+      $fetched++;
+      if (count($results) >= $limit) {
+         break;
+      }
+      $parts = [];
+      if (trim((string) ($row['code'] ?? '')) !== '') {
+         $parts[] = (string) $row['code'];
+      }
+      if (trim((string) ($row['department'] ?? '')) !== '') {
+         $parts[] = (string) $row['department'];
+      } elseif (trim((string) ($row['campus'] ?? '')) !== '') {
+         $parts[] = (string) $row['campus'];
+      }
+      $label = count($parts) ? implode(' - ', $parts) : (string) $row['id'];
       $results[] = ['id' => (int) $row['id'], 'text' => $label];
    }
 

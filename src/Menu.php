@@ -77,9 +77,14 @@ class Menu extends CommonDBTM
 
       if (Config::canViewCostCenters()) {
          $menu['options']['costcenters'] = [
-            'title' => CostCenter::getTypeName(2),
+            'title' => __('Centros de custo (Novo)', 'maintenancecosts'),
             'page'  => Config::pluginUrl('/front/costcenter.php', false),
             'icon'  => CostCenter::getIcon(),
+         ];
+         $menu['options']['costcenterslegacy'] = [
+            'title' => __('Centros de custo (Antigo)', 'maintenancecosts'),
+            'page'  => Config::pluginUrl('/front/costcenterlegacy.php', false),
+            'icon'  => CostCenterLegacy::getIcon(),
          ];
       }
 

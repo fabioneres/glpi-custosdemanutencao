@@ -1,11 +1,31 @@
 # Changelog
 
+## v0.9.0 - Centro de custo antigo, selecao no chamado e correcoes finais
+
+- Duplica a area de centros de custo e separa os cadastros em `Centros de custo (Novo)` e `Centros de custo (Antigo)`.
+- Adiciona a nova tabela legada de centros de custo com cadastro, listagem e importacao dedicados.
+- Implementa o mapeamento de importacao do centro de custo antigo a partir da planilha institucional:
+  - `CENTRO DE CUSTO` -> `Codigo`
+  - `CAMPUS` -> `Campus`
+  - `DEPARTAMENTO /DISC./SETOR` -> `Departamento/Disc./Setor`
+  - `Tipo + Logradouro + no` -> `Endereco`
+  - `Piso` -> `Piso`
+  - `UTILIZACAO` -> `Utilizacao`
+- Torna a importacao legada tolerante a linhas sem codigo, ignorando registros vazios em vez de abortar o lote inteiro.
+- Permite escolher, na aba `Materiais consumidos` do chamado, se a pesquisa de centro de custo sera feita na base `Antigo` ou `Novo`, com padrao em `Antigo`.
+- Remove o atalho de cadastro manual de material da tela de consumo no chamado.
+- Persiste a origem do centro de custo consumido em `costcenter_source`, com compatibilidade para valores antigos como `novo` e `new`.
+- Corrige a busca de `Materiais consumidos` para localizar tambem por nome/codigo de centro de custo.
+- Corrige os relatorios para respeitarem a base de centro de custo usada no lancamento, evitando associacoes incorretas entre centro antigo e centro novo.
+- Corrige o autofill do material no formulario de consumo para disparar corretamente ao selecionar itens via Select2.
+- Corrige rotulos com encoding quebrado no cadastro de centros de custo antigos.
+
 ## v0.5.10 - Disponibilidade por entidade
 
-- Move a habilitação do plugin por entidade para uma aba própria dentro de `Administração > Entidades`, evitando listas extensas na configuração global.
-- Permite definir disponibilidade por entidade com herança opcional para entidades filhas.
-- Mantém a configuração global do plugin focada apenas em parâmetros operacionais, sem misturar escopo organizacional.
-- Corrige a renderização dos controles da nova aba de entidade e o fluxo de salvamento correspondente.
+- Move a habilitacao do plugin por entidade para uma aba propria dentro de `Administracao > Entidades`, evitando listas extensas na configuracao global.
+- Permite definir disponibilidade por entidade com heranca opcional para entidades filhas.
+- Mantem a configuracao global do plugin focada apenas em parametros operacionais, sem misturar escopo organizacional.
+- Corrige a renderizacao dos controles da nova aba de entidade e o fluxo de salvamento correspondente.
 
 ## v0.5.9 - Preenchimento do valor unitario no chamado
 
@@ -17,12 +37,12 @@
 
 - Corrige a montagem das URLs AJAX dos dropdowns em ambientes onde o GLPI roda na raiz do dominio, sem o prefixo `/glpi`.
 - Mantem compatibilidade com instalacoes em subdiretorio, como `/glpi`, calculando o caminho base a partir do script carregado quando `CFG_GLPI.root_doc` nao estiver disponivel.
-- Evita falha "Os resultados nao puderam ser carregados" nos dropdowns de material, centro de custo e contratos na aba Materiais Consumidos.
+- Evita falha `Os resultados nao puderam ser carregados` nos dropdowns de material, centro de custo e contratos na aba Materiais Consumidos.
 
 ## v0.5.7 - Dropdowns no consumo do chamado
 
 - Ajusta permissoes do endpoint AJAX de dropdowns para permitir selecao de materiais e centros de custo nos fluxos autorizados de consumo, relatorios e cadastros.
-- Evita a mensagem "Os resultados nao puderam ser carregados" quando o usuario possui permissao para lancar consumo no chamado, mas nao administra diretamente o cadastro auxiliar.
+- Evita a mensagem `Os resultados nao puderam ser carregados` quando o usuario possui permissao para lancar consumo no chamado, mas nao administra diretamente o cadastro auxiliar.
 
 ## v0.5.6 - Paginacao das tabelas grandes
 
@@ -37,7 +57,7 @@
 - Adiciona importacao XLSX/CSV de centros de custo com reconhecimento de cabecalhos acentuados em maiusculas.
 - Remove a criacao automatica de origens do material; origens passam a ser somente cadastros manuais.
 - Remove origens padrao legadas sem uso durante upgrade idempotente.
-- Mantem a coluna Acoes sempre visivel, nao ocultavel e nao ordenavel nas tabelas customizaveis do plugin.
+- Mantem a coluna `Acoes` sempre visivel, nao ocultavel e nao ordenavel nas tabelas customizaveis do plugin.
 - Atualiza exportacao CSV/PDF de centros de custo para seguir a nova estrutura.
 
 ## v0.5.4 - Compatibilidade de instalacao no GLPI 10.0.24
@@ -50,9 +70,9 @@
 - Separa Cotacao/Mercado em tab propria, com acoes de adicionar preco, importar e consultar historico no mesmo contexto.
 - Adequa Cotacao/Mercado ao layout da planilha de cotacoes com quantidade, valor aplicado e tres cotacoes comparativas.
 - Adiciona a tab Materiais Cotacao abaixo de Materiais SINAPI, listando materiais com precos de cotacao/mercado.
-- Ajusta os fluxos Adicionar preco cotacao e Importar Cotacao para exibirem labels, campos e orientacoes proprias de cotacao.
+- Ajusta os fluxos `Adicionar preco cotacao` e `Importar Cotacao` para exibirem labels, campos e orientacoes proprias de cotacao.
 - Preenche a competencia do lancamento de material com a ultima competencia cadastrada, mantendo edicao manual.
-- Sincroniza materiais consumidos com a aba nativa Chamado > Custos por meio de TicketCost idempotente.
+- Sincroniza materiais consumidos com a aba nativa `Chamado > Custos` por meio de `TicketCost` idempotente.
 
 ## v0.5.2 - Icone, campus e correcoes visuais
 
@@ -64,43 +84,17 @@
 ## v0.5.1 - Performance, importacoes e relatorios
 
 - Otimiza dropdowns grandes de materiais, centros de custo e contratos com carregamento remoto paginado.
-- Move o historico de importacoes para a tela de Importar SINAPI e adiciona Importar Cotacao.
+- Move o historico de importacoes para a tela de Importar SINAPI e adiciona `Importar Cotacao`.
 - Permite ordenar colunas nas visoes pessoal/global das tabelas do plugin por arrastar e soltar.
 - Cria o vinculo chamado-contrato ao selecionar contrato no lancamento de material.
 - Melhora exportacao PDF de relatorios com resumo, grafico e tabela em layout visual.
 
-## v0.5.0 - Evolução de centros, preços e relatórios
+## v0.5.0 - Evolucao de centros, precos e relatorios
 
-- Reorganiza centros de custo com código, nome, endereço, piso, campus, departamento/disciplina/setor e utilização.
-- Adiciona importação CSV/XLSX de centros de custo com pré-validação.
-- Move importações SINAPI para a área de Preços SINAPI.
-- Adiciona fluxo de preços por cotação/mercado e filtro por tipo de preço.
-- Adiciona unidade e histórico por item em Preços SINAPI.
-- Reestrutura relatórios para exibir uma visão por vez, com gráficos configuráveis.
-- Adiciona relatórios por origem do material, tipo de preço e contrato.
-- Adiciona vínculo explícito de material consumido com contrato e sincronização do custo do contrato.
-- Adiciona exportação PDF simples para tabelas e relatórios.
-- Mantém navegação por tabs laterais em todas as telas principais do plugin.
-
-## v0.4.1 - Consolidada
-
-- Consolida a entrega aplicada na VM após validação visual e técnica.
-- Mantém o menu em Plug-ins, telas revisadas, relatórios pesquisáveis/ordenáveis e correções de dropdowns.
-- Confirma congelamento de valores em chamados, histórico de preços e suporte a SINAPI/Cotação.
-
-## v0.4.0 - Base da evolução
-
-- Adiciona histórico formal de alterações de preços, com material, competência, tipo de preço, valor anterior, valor novo, usuário, origem, lote de importação e justificativa.
-- Prepara a importação SINAPI para atualizar preço existente por material, competência e tipo de preço, evitando duplicidade de preços da mesma competência.
-- Move o menu principal do plugin para a secao Plug-ins do GLPI.
-- Amplia o cadastro de centros de custo com campo de endereco e listagem propria com pesquisa.
-
-## v0.3.19 - Release base
-
-- Estabiliza cadastro de materiais SINAPI, centros de custo, origens de material, preços, importações, consumo em chamados, relatórios e página Sobre.
-- Corrige dropdowns de material e centro de custo no lancamento de materiais consumidos em chamados.
-- Adiciona origem do material e tipo de preco no lancamento de consumo.
-- Mantém o valor unitário aplicado no consumo gravado em `unit_price_applied`, preservando os custos já lançados.
-- Melhora exibicao de valores em reais e quantidades inteiras nas telas operacionais e relatorios.
-- Corrige listagens de materiais, preços e importações para evitar linhas em branco.
-
+- Reorganiza centros de custo com codigo, nome, endereco, piso, campus, departamento/disciplina/setor e utilizacao.
+- Adiciona importacao CSV/XLSX de centros de custo com pre-validacao.
+- Move importacoes SINAPI para a area de Precos SINAPI.
+- Adiciona fluxo de precos por cotacao/mercado e filtro por tipo de preco.
+- Adiciona unidade e historico por item em Precos SINAPI.
+- Reestrutura relatorios para exibir uma visao por vez, com graficos configuraveis.
+- Adiciona relatorios por origem do material, tipo de preco e contrato.

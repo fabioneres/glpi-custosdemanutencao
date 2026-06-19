@@ -196,6 +196,36 @@ class Exporter
       );
    }
 
+   public static function exportCostCentersLegacy(string $format = 'csv'): void
+   {
+      global $DB;
+      Config::checkRight(Config::RIGHT_COSTCENTERS, READ);
+
+      $rows = [];
+      $iterator = $DB->request(['FROM' => CostCenterLegacy::getTable(), 'ORDER' => 'code ASC']);
+      foreach ($iterator as $row) {
+         $rows[] = [
+            $row['code'],
+            $row['campus'] ?? '',
+            $row['academic_unit'] ?? '',
+            $row['department'] ?? '',
+            $row['division'] ?? '',
+            $row['section'] ?? '',
+            $row['siorg_code'] ?? '',
+            $row['siorg_acronym'] ?? '',
+            $row['address'] ?? '',
+            $row['responsible'] ?? '',
+            (int) ($row['is_active'] ?? 0),
+         ];
+      }
+      self::sendTable(
+         'maintenancecosts-centros-custo-antigo',
+         ['codigo', 'unidade_gestora', 'unidade_academica', 'departamento', 'divisao', 'secao', 'codigo_siorg', 'sigla_siorg', 'endereco', 'responsavel', 'ativo'],
+         $rows,
+         $format
+      );
+   }
+
    public static function exportReport(array $filters, string $format = 'csv'): void
    {
       Config::checkRight(Config::RIGHT_REPORTS, READ);

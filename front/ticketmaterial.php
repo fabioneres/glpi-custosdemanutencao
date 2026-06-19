@@ -1,7 +1,6 @@
 <?php
 
 use GlpiPlugin\Maintenancecosts\Config;
-use GlpiPlugin\Maintenancecosts\CostCenter;
 use GlpiPlugin\Maintenancecosts\Material;
 use GlpiPlugin\Maintenancecosts\MaterialOrigin;
 use GlpiPlugin\Maintenancecosts\Menu;
@@ -21,18 +20,6 @@ $search = trim((string) ($_GET['q'] ?? ''));
 $page = Pager::page();
 $perPage = Pager::perPage();
 $where = [TicketMaterial::getTable() . '.is_deleted' => 0];
-if ($search !== '') {
-   $where[] = [
-      'OR' => [
-         [Material::getTable() . '.name' => ['LIKE', '%' . $search . '%']],
-         [Material::getTable() . '.code' => ['LIKE', '%' . $search . '%']],
-         [CostCenter::getTable() . '.name' => ['LIKE', '%' . $search . '%']],
-         [CostCenter::getTable() . '.code' => ['LIKE', '%' . $search . '%']],
-         ['glpi_tickets.name' => ['LIKE', '%' . $search . '%']],
-         ['glpi_contracts.name' => ['LIKE', '%' . $search . '%']],
-      ],
-   ];
-}
 
 $joins = [
    'glpi_tickets' => [
@@ -40,9 +27,6 @@ $joins = [
    ],
    Material::getTable() => [
       'FKEY' => [TicketMaterial::getTable() => 'plugin_maintenancecosts_materials_id', Material::getTable() => 'id'],
-   ],
-   CostCenter::getTable() => [
-      'FKEY' => [TicketMaterial::getTable() => 'plugin_maintenancecosts_costcenters_id', CostCenter::getTable() => 'id'],
    ],
    MaterialOrigin::getTable() => [
       'FKEY' => [TicketMaterial::getTable() => 'plugin_maintenancecosts_materialorigins_id', MaterialOrigin::getTable() => 'id'],
@@ -52,23 +36,12 @@ $joins = [
    ],
 ];
 
-$countRow = $DB->request([
-   'COUNT' => 'cpt',
-   'FROM' => TicketMaterial::getTable(),
-   'LEFT JOIN' => $joins,
-   'WHERE' => $where,
-])->current();
-$totalRows = (int) ($countRow['cpt'] ?? 0);
-$start = Pager::start($page, $perPage, $totalRows);
-
 $iterator = $DB->request([
    'SELECT' => [
       TicketMaterial::getTable() . '.*',
       'glpi_tickets.name AS ticket_name',
       Material::getTable() . '.code AS material_code',
       Material::getTable() . '.name AS material_name',
-      CostCenter::getTable() . '.code AS costcenter_code',
-      CostCenter::getTable() . '.name AS costcenter_name',
       MaterialOrigin::getTable() . '.name AS origin_name',
       'glpi_contracts.name AS contract_name',
    ],
@@ -76,9 +49,43 @@ $iterator = $DB->request([
    'LEFT JOIN' => $joins,
    'WHERE' => $where,
    'ORDER' => [TicketMaterial::getTable() . '.consumption_date DESC', TicketMaterial::getTable() . '.id DESC'],
-   'START' => $start,
-   'LIMIT' => $perPage,
+   'LIMIT' => 5000,
 ]);
+
+$rows = [];
+foreach ($iterator as $row) {
+   $costcenter = TicketMaterial::getCostCenterDisplayName(
+      (int) ($row['plugin_maintenancecosts_costcenters_id'] ?? 0),
+      (string) ($row['costcenter_source'] ?? 'new')
+   );
+
+   if ($search !== '') {
+      $haystacks = [
+         (string) ($row['ticket_name'] ?? ''),
+         (string) ($row['material_code'] ?? ''),
+         (string) ($row['material_name'] ?? ''),
+         (string) ($row['contract_name'] ?? ''),
+         (string) $costcenter,
+      ];
+      $matched = false;
+      foreach ($haystacks as $haystack) {
+         if ($haystack !== '' && mb_stripos($haystack, $search, 0, 'UTF-8') !== false) {
+            $matched = true;
+            break;
+         }
+      }
+      if (!$matched) {
+         continue;
+      }
+   }
+
+   $row['_costcenter_label'] = $costcenter;
+   $rows[] = $row;
+}
+
+$totalRows = count($rows);
+$start = Pager::start($page, $perPage, $totalRows);
+$rows = array_slice($rows, $start, $perPage);
 
 Html::header(TicketMaterial::getTypeName(Session::getPluralNumber()), $_SERVER['PHP_SELF'], 'plugins', Menu::class);
 Config::renderPluginLayoutStart('consumption');
@@ -102,7 +109,7 @@ foreach ([
    ['text', __('Unidade', 'maintenancecosts')],
    ['currency', __('Valor unitário', 'maintenancecosts')],
    ['currency', __('Total', 'maintenancecosts')],
-   ['text', CostCenter::getTypeName(1)],
+   ['text', __('Centro de custo', 'maintenancecosts')],
    ['text', MaterialOrigin::getTypeName(1)],
    ['text', __('Tipo de preço', 'maintenancecosts')],
    ['text', \Contract::getTypeName(1)],
@@ -113,10 +120,8 @@ foreach ([
 }
 echo "</tr></thead><tbody>";
 
-foreach ($iterator as $row) {
-   $costcenter = trim((string) ($row['costcenter_code'] ?? '')) !== ''
-      ? $row['costcenter_code'] . ' - ' . $row['costcenter_name']
-      : (string) ($row['costcenter_name'] ?? '');
+foreach ($rows as $row) {
+   $costcenter = (string) ($row['_costcenter_label'] ?? '');
    $code = (string) ($row['material_code'] ?? '');
    $sortCode = preg_match('/^\d+$/', $code) ? str_pad($code, 8, '0', STR_PAD_LEFT) : $code;
 
@@ -138,7 +143,7 @@ foreach ($iterator as $row) {
    echo "</tr>";
 }
 
-if ($iterator->count() === 0) {
+if (count($rows) === 0) {
    echo "<tr class='tab_bg_1' data-no-sort='1'><td colspan='14' class='center'>" . __('Nenhum material consumido encontrado.', 'maintenancecosts') . "</td></tr>";
 }
 

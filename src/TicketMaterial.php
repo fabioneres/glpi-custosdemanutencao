@@ -100,6 +100,14 @@ class TicketMaterial extends CommonDBTM
          }
       }
 
+      if (isset($input['costcenter_source'])) {
+         $input['costcenter_source'] = self::normalizeCostCenterSource((string) $input['costcenter_source']);
+      } elseif (!empty($this->fields['id'])) {
+         $input['costcenter_source'] = self::normalizeCostCenterSource((string) ($this->fields['costcenter_source'] ?? 'new'));
+      } else {
+         $input['costcenter_source'] = 'legacy';
+      }
+
       if (isset($input['price_type'])) {
          $input['price_type'] = Config::normalizePriceType((string) $input['price_type']);
       } else {
@@ -533,10 +541,10 @@ class TicketMaterial extends CommonDBTM
          $material_name = $material->getFromDB((int) $row['plugin_maintenancecosts_materials_id'])
             ? $material->getName()
             : '';
-         $costcenter = new CostCenter();
-         $costcenter_name = $costcenter->getFromDB((int) $row['plugin_maintenancecosts_costcenters_id'])
-            ? $costcenter->getName()
-            : '';
+         $costcenter_name = self::getCostCenterDisplayName(
+            (int) $row['plugin_maintenancecosts_costcenters_id'],
+            (string) ($row['costcenter_source'] ?? 'new')
+         );
          $origin = new MaterialOrigin();
          $origin_name = $origin->getFromDB((int) ($row['plugin_maintenancecosts_materialorigins_id'] ?? 0))
             ? $origin->getName()
@@ -577,6 +585,9 @@ class TicketMaterial extends CommonDBTM
       $is_new = (int) $ID <= 0;
       $embedded = !empty($options['embedded']);
       $priceType = Config::normalizePriceType((string) ($this->fields['price_type'] ?? 'sinapi'));
+      $costcenterSource = $is_new
+         ? 'legacy'
+         : self::normalizeCostCenterSource((string) ($this->fields['costcenter_source'] ?? 'new'));
       $competenceValue = Config::normalizeCompetence((string) ($this->fields['competence'] ?? ''));
       if ($is_new && $competenceValue === '') {
          $competenceValue = Price::getLatestCompetence($priceType);
@@ -592,6 +603,7 @@ class TicketMaterial extends CommonDBTM
       if (!$is_new) {
          echo "<input type='hidden' name='id' value='" . (int) $ID . "'>";
       }
+      echo "<input type='hidden' name='costcenter_source' value='" . self::escape($costcenterSource) . "' data-maintenancecosts-costcenter-source-hidden>";
 
       echo "<div class='card'>";
       if (!$embedded) {
@@ -608,7 +620,6 @@ class TicketMaterial extends CommonDBTM
          echo "<tr class='tab_bg_1'><td style='width:160px'>" . Material::getTypeName(1) . "</td><td colspan='3'>";
       }
       $this->showPluginDropdown('material', 'plugin_maintenancecosts_materials_id', (int) ($this->fields['plugin_maintenancecosts_materials_id'] ?? 0));
-      echo " <a class='btn btn-sm btn-secondary ms-2' href='" . self::escape(Material::getFormURL() . '?_in_modal=0') . "' target='_blank'>" . self::escape(__('Cadastrar material manual', 'maintenancecosts')) . "</a>";
       echo "</td></tr>";
 
       echo "<tr class='tab_bg_1'><td>" . MaterialOrigin::getTypeName(1) . "</td><td>";
@@ -627,10 +638,23 @@ class TicketMaterial extends CommonDBTM
          echo "</td></tr>";
       }
 
-      echo "<tr class='tab_bg_1'><td>" . CostCenter::getTypeName(1) . "</td><td>";
-      $this->showPluginDropdown('costcenter', 'plugin_maintenancecosts_costcenters_id', (int) ($this->fields['plugin_maintenancecosts_costcenters_id'] ?? 0));
+      echo "<tr class='tab_bg_1'><td>" . __('Tabela de centro de custo', 'maintenancecosts') . "</td><td>";
+      echo "<select class='form-select' data-maintenancecosts-costcenter-source style='width:120px; max-width:120px;'>";
+      foreach (self::getCostCenterSourceOptions() as $value => $label) {
+         $selected = $costcenterSource === $value ? ' selected' : '';
+         echo "<option value='" . self::escape($value) . "'$selected>" . self::escape($label) . "</option>";
+      }
+      echo "</select>";
       echo "</td><td>" . __('Competência', 'maintenancecosts') . "</td>";
       echo "<td><input type='text' name='competence' placeholder='AAAA-MM' maxlength='7' value='" . self::escape($competenceValue) . "' class='form-control plugin-maintenancecosts-competence'></td></tr>";
+
+      echo "<tr class='tab_bg_1'><td>" . CostCenter::getTypeName(1) . "</td><td colspan='3'>";
+      $this->showPluginDropdown(
+         $costcenterSource === 'legacy' ? 'costcenter_legacy' : 'costcenter',
+         'plugin_maintenancecosts_costcenters_id',
+         (int) ($this->fields['plugin_maintenancecosts_costcenters_id'] ?? 0)
+      );
+      echo "</td></tr>";
 
       echo "<tr class='tab_bg_1'><td>" . __('Quantidade', 'maintenancecosts') . "</td>";
       echo "<td><input type='number' step='1' min='0' name='quantity' value='" . self::escape(self::formatQuantity((float) ($this->fields['quantity'] ?? 0))) . "' class='form-control'></td>";
@@ -741,6 +765,18 @@ class TicketMaterial extends CommonDBTM
          }
       }
 
+      if ($type === 'costcenter_legacy') {
+         $item = new CostCenterLegacy();
+         if ($item->getFromDB($id)) {
+            $label = trim((string) ($item->fields['code'] ?? ''));
+            $secondary = trim((string) ($item->fields['department'] ?? ''));
+            if ($secondary === '') {
+               $secondary = trim((string) ($item->fields['campus'] ?? ''));
+            }
+            return $secondary !== '' ? $label . ' - ' . $secondary : $label;
+         }
+      }
+
       if ($type === 'contract') {
          $item = new \Contract();
          if ($item->getFromDB($id)) {
@@ -761,5 +797,52 @@ class TicketMaterial extends CommonDBTM
    public static function formatQuantity(float $value): string
    {
       return (string) (int) round($value);
+   }
+
+   public static function normalizeCostCenterSource(string $value): string
+   {
+      $value = strtolower(trim($value));
+      if ($value === 'new' || $value === 'novo') {
+         return 'new';
+      }
+      return 'legacy';
+   }
+
+   public static function getCostCenterSourceOptions(): array
+   {
+      return [
+         'legacy' => __('Antigo', 'maintenancecosts'),
+         'new'    => __('Novo', 'maintenancecosts'),
+      ];
+   }
+
+   public static function getCostCenterDisplayName(int $id, string $source): string
+   {
+      $id = (int) $id;
+      if ($id <= 0) {
+         return '';
+      }
+
+      $source = self::normalizeCostCenterSource($source);
+      if ($source === 'legacy') {
+         $item = new CostCenterLegacy();
+         if ($item->getFromDB($id)) {
+            $label = trim((string) ($item->fields['code'] ?? ''));
+            $secondary = trim((string) ($item->fields['department'] ?? ''));
+            if ($secondary === '') {
+               $secondary = trim((string) ($item->fields['campus'] ?? ''));
+            }
+            return $secondary !== '' ? $label . ' - ' . $secondary : $label;
+         }
+      }
+
+      $item = new CostCenter();
+      if ($item->getFromDB($id)) {
+         return trim((string) ($item->fields['code'] ?? '')) !== ''
+            ? (string) $item->fields['code'] . ' - ' . $item->getName()
+            : $item->getName();
+      }
+
+      return '';
    }
 }

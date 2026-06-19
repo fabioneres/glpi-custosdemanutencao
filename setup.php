@@ -12,6 +12,7 @@ use Glpi\Plugin\Hooks;
 use GlpiPlugin\Maintenancecosts\AuditLog;
 use GlpiPlugin\Maintenancecosts\Config;
 use GlpiPlugin\Maintenancecosts\CostCenter;
+use GlpiPlugin\Maintenancecosts\CostCenterLegacy;
 use GlpiPlugin\Maintenancecosts\Exporter;
 use GlpiPlugin\Maintenancecosts\ImportBatch;
 use GlpiPlugin\Maintenancecosts\Material;
@@ -47,6 +48,7 @@ function plugin_init_maintenancecosts(): void {
    Plugin::registerClass(Price::class);
    Plugin::registerClass(PriceHistory::class);
    Plugin::registerClass(CostCenter::class);
+   Plugin::registerClass(CostCenterLegacy::class);
    Plugin::registerClass(TicketMaterial::class);
    Plugin::registerClass(ImportBatch::class);
    Plugin::registerClass(AuditLog::class);

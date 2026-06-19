@@ -19,6 +19,9 @@ switch ($type) {
    case 'costcenters':
       Exporter::exportCostCenters($format);
       break;
+   case 'costcenters_legacy':
+      Exporter::exportCostCentersLegacy($format);
+      break;
    case 'report':
       Exporter::exportReport($_GET, $format);
       break;
