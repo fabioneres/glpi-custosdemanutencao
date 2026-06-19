@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.9.1 - Correcao do pacote para Linux
+
+- Regenera o pacote de distribuicao com estrutura de caminhos compativel com servidores Linux.
+- Mantem a pasta `maintenancecosts/` como raiz do artefato, pronta para extracao direta em `plugins/`.
+- Preserva integralmente as funcionalidades da `v0.9.0`, sem mudancas funcionais adicionais no plugin.
+
 ## v0.9.0 - Centro de custo antigo, selecao no chamado e correcoes finais
 
 - Duplica a area de centros de custo e separa os cadastros em `Centros de custo (Novo)` e `Centros de custo (Antigo)`.
