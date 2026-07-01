@@ -15,6 +15,10 @@ Registrar materiais consumidos em atendimentos de manutencao no GLPI, preservand
 
 A rotina de instalacao tambem executa reparos idempotentes de schema e direitos. Em atualizacoes futuras, validar backup do banco antes de ativar nova versao.
 
+## Documentacao de uso
+
+- [Manual de uso do plugin](C:\Projetos\glpi\plugins\meusplugins\maintenancecosts\docs\manual-de-uso.md)
+
 ## Estrutura do Banco
 
 - `glpi_plugin_maintenancecosts_materials`

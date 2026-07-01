@@ -20,7 +20,7 @@ class CostCenter extends CommonDBTM
 
    public static function getTypeName($nb = 0)
    {
-      return _n('Centro de custo', 'Centros de custo', $nb, 'maintenancecosts');
+      return _n('Centro de Custos Novo', 'Centro de Custos Novo', $nb, 'maintenancecosts');
    }
 
    public static function getIcon()

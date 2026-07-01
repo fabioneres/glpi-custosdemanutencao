@@ -715,8 +715,8 @@ class Importer
          'plugin_maintenancecosts_importbatches_id' => $importBatchId,
          'users_id'                                 => (int) ($_SESSION['glpiID'] ?? 0),
          'comment'                                  => $priceType === 'sinapi'
-            ? __('AtualizaÃ§Ã£o por importaÃ§Ã£o SINAPI.', 'maintenancecosts')
-            : __('AtualizaÃ§Ã£o por importaÃ§Ã£o de cotaÃ§Ã£o/mercado.', 'maintenancecosts'),
+            ? __('Atualização por importação SINAPI.', 'maintenancecosts')
+            : __('Atualização por importação de cotação/mercado.', 'maintenancecosts'),
       ];
 
       if ($price) {

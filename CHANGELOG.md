@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.0.0 - Consolidacao funcional para uso operacional
+
+- Consolida o fluxo operacional do plugin para uso em producao, com foco em materiais consumidos, centros de custo, contratos e relatorios.
+- Mantem o valor unitario congelado no momento do lancamento do material no chamado, mesmo com novas importacoes de preco.
+- Separa claramente materiais e precos das tabelas SINAPI e Cotacao / Mercado.
+- Expande a integracao com contratos, incluindo vinculo de custos a partir do chamado e remocao do vinculo quando necessario.
+- Disponibiliza centros de custo Novo e Antigo com importacoes dedicadas, uso no chamado e suporte a filtros nativos do GLPI.
+- Adiciona vinculacao direta de centro de custo ao chamado, impedindo divergencia entre o centro do chamado e o centro dos materiais consumidos.
+- Exponibiliza `Centro de Custos Novo` e `Centro de Custos Antigo` para uso no FormCreator como objetos GLPI.
+- Mantem paginacao e carregamento remoto nas tabelas grandes para preservar desempenho.
+- Consolida a base local preparada para homologacao final via navegador antes da publicacao externa.
+
 ## v0.9.1 - Correcao do pacote para Linux
 
 - Regenera o pacote de distribuicao com estrutura de caminhos compativel com servidores Linux.

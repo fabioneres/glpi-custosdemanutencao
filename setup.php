@@ -22,6 +22,7 @@ use GlpiPlugin\Maintenancecosts\Price;
 use GlpiPlugin\Maintenancecosts\PriceHistory;
 use GlpiPlugin\Maintenancecosts\Profile;
 use GlpiPlugin\Maintenancecosts\Report;
+use GlpiPlugin\Maintenancecosts\TicketCostCenter;
 use GlpiPlugin\Maintenancecosts\TicketMaterial;
 use GlpiPlugin\Maintenancecosts\TicketTab;
 
@@ -49,6 +50,7 @@ function plugin_init_maintenancecosts(): void {
    Plugin::registerClass(PriceHistory::class);
    Plugin::registerClass(CostCenter::class);
    Plugin::registerClass(CostCenterLegacy::class);
+   Plugin::registerClass(TicketCostCenter::class);
    Plugin::registerClass(TicketMaterial::class);
    Plugin::registerClass(ImportBatch::class);
    Plugin::registerClass(AuditLog::class);
@@ -59,8 +61,9 @@ function plugin_init_maintenancecosts(): void {
    Plugin::registerClass(Report::class);
    Plugin::registerClass(TicketTab::class, ['addtabon' => [\Ticket::class]]);
 
-   $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['maintenancecosts'][] = 'js/ticketmaterial.js';
+   $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['maintenancecosts'][] = 'js/ticketmaterial-v2.js';
    $PLUGIN_HOOKS[Hooks::ADD_CSS]['maintenancecosts'][] = 'css/maintenancecosts.css';
+   $PLUGIN_HOOKS['formcreator_get_glpi_object_types']['maintenancecosts'] = 'plugin_maintenancecosts_formcreator_get_glpi_object_types';
 
    if (Session::getLoginUserID()) {
       Profile::initProfile();

@@ -36,6 +36,7 @@ class Installer
          Config::ensureDefaultConfig();
          self::ensureDefaultCostCenter();
          TicketMaterial::syncAllTicketCosts();
+         TicketCostCenter::syncFromTicketMaterials();
       } catch (Throwable $e) {
          Toolbox::logInFile(
             'plugin_maintenancecosts',
@@ -157,6 +158,17 @@ class Installer
          self::ensureField($migration, TicketMaterial::getTable(), 'delete_reason', 'text NULL');
       }
 
+      self::ensureTicketCostCenterTable();
+      if ($DB->tableExists(TicketCostCenter::getTable())) {
+         self::ensureField($migration, TicketCostCenter::getTable(), 'tickets_id', 'int unsigned NOT NULL DEFAULT 0');
+         self::ensureField($migration, TicketCostCenter::getTable(), 'entities_id', 'int unsigned NOT NULL DEFAULT 0');
+         self::ensureField($migration, TicketCostCenter::getTable(), 'plugin_maintenancecosts_costcenters_id', 'int unsigned NOT NULL DEFAULT 0');
+         self::ensureField($migration, TicketCostCenter::getTable(), 'costcenter_source', "varchar(16) NOT NULL DEFAULT 'legacy'");
+         self::ensureField($migration, TicketCostCenter::getTable(), 'users_id', 'int unsigned NOT NULL DEFAULT 0');
+         self::ensureField($migration, TicketCostCenter::getTable(), 'date_creation', 'timestamp NULL DEFAULT NULL');
+         self::ensureField($migration, TicketCostCenter::getTable(), 'date_mod', 'timestamp NULL DEFAULT NULL');
+      }
+
          self::ensureConfigTable();
          self::ensureConfigEntityTable();
          self::ensureAuditLogTable();
@@ -248,6 +260,33 @@ class Installer
             `date_creation` timestamp NULL DEFAULT NULL,
             `date_mod` timestamp NULL DEFAULT NULL,
             PRIMARY KEY (`id`)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC"
+      );
+   }
+
+   private static function ensureTicketCostCenterTable(): void
+   {
+      global $DB;
+
+      if ($DB->tableExists(TicketCostCenter::getTable())) {
+         return;
+      }
+
+      $DB->doQuery(
+         "CREATE TABLE IF NOT EXISTS `" . TicketCostCenter::getTable() . "` (
+            `id` int unsigned NOT NULL AUTO_INCREMENT,
+            `tickets_id` int unsigned NOT NULL DEFAULT '0',
+            `entities_id` int unsigned NOT NULL DEFAULT '0',
+            `plugin_maintenancecosts_costcenters_id` int unsigned NOT NULL DEFAULT '0',
+            `costcenter_source` varchar(16) NOT NULL DEFAULT 'legacy',
+            `users_id` int unsigned NOT NULL DEFAULT '0',
+            `date_creation` timestamp NULL DEFAULT NULL,
+            `date_mod` timestamp NULL DEFAULT NULL,
+            PRIMARY KEY (`id`),
+            UNIQUE KEY `uniq_ticket` (`tickets_id`),
+            KEY `idx_entity` (`entities_id`),
+            KEY `idx_costcenter` (`plugin_maintenancecosts_costcenters_id`),
+            KEY `idx_source` (`costcenter_source`)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC"
       );
    }

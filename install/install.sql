@@ -192,6 +192,22 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_maintenancecosts_ticketmaterials` (
    KEY `idx_deleted` (`is_deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
 
+CREATE TABLE IF NOT EXISTS `glpi_plugin_maintenancecosts_ticketcostcenters` (
+   `id` int unsigned NOT NULL AUTO_INCREMENT,
+   `tickets_id` int unsigned NOT NULL DEFAULT '0',
+   `entities_id` int unsigned NOT NULL DEFAULT '0',
+   `plugin_maintenancecosts_costcenters_id` int unsigned NOT NULL DEFAULT '0',
+   `costcenter_source` varchar(16) NOT NULL DEFAULT 'legacy',
+   `users_id` int unsigned NOT NULL DEFAULT '0',
+   `date_creation` timestamp NULL DEFAULT NULL,
+   `date_mod` timestamp NULL DEFAULT NULL,
+   PRIMARY KEY (`id`),
+   UNIQUE KEY `uniq_ticket` (`tickets_id`),
+   KEY `idx_entity` (`entities_id`),
+   KEY `idx_costcenter` (`plugin_maintenancecosts_costcenters_id`),
+   KEY `idx_source` (`costcenter_source`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;
+
 CREATE TABLE IF NOT EXISTS `glpi_plugin_maintenancecosts_importbatches` (
    `id` int unsigned NOT NULL AUTO_INCREMENT,
    `filename` varchar(255) NOT NULL DEFAULT '',

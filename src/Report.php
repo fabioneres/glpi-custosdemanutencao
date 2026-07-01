@@ -37,7 +37,9 @@ class Report extends CommonDBTM
       self::showSummaryCards($rows);
 
       $field = self::chartField($reportType);
-      if ($field !== '') {
+      if ($reportType === 'materials') {
+         self::showDashboardChart(self::reportTypes()[$reportType], self::materialChartRows($rows), $limit, $chartType);
+      } elseif ($field !== '') {
          self::showDashboardChart(self::reportTypes()[$reportType], self::groupRows($rows, $field), $limit, $chartType);
       }
 
@@ -129,7 +131,7 @@ class Report extends CommonDBTM
          'origin'     => __('Gastos por origem do material', 'maintenancecosts'),
          'price_type' => __('Gastos por tipo de preço', 'maintenancecosts'),
          'contract'   => __('Gastos por contrato', 'maintenancecosts'),
-         'materials'  => __('Materiais mais utilizados', 'maintenancecosts'),
+         'materials'  => __('Custos por material', 'maintenancecosts'),
          'tickets'    => __('Custo por chamado', 'maintenancecosts'),
          'monthly'    => __('Evolução mensal de custos', 'maintenancecosts'),
       ];
@@ -203,6 +205,7 @@ class Report extends CommonDBTM
          'origin'     => 'materialorigin_name',
          'price_type' => 'price_type_label',
          'contract'   => 'contract_label',
+         'materials'  => 'material_label',
       ][$reportType] ?? '';
    }
 
@@ -434,6 +437,10 @@ class Report extends CommonDBTM
             (int) ($row['plugin_maintenancecosts_costcenters_id'] ?? 0),
             (string) ($row['costcenter_source'] ?? 'new')
          );
+         $row['material_label'] = self::labelWithCode(
+            (string) ($row['material_code'] ?? ''),
+            (string) ($row['material_name'] ?? '')
+         );
          $row['price_type_label'] = Config::getPriceTypeLabel((string) ($row['price_type'] ?? 'sinapi'));
          $row['contract_label'] = self::getContractLabel((int) ($row['contracts_id'] ?? 0), (int) $row['tickets_id']);
          if (!empty($filters['costcenters_id']) && (int) ($row['plugin_maintenancecosts_costcenters_id'] ?? 0) !== (int) $filters['costcenters_id']) {
@@ -481,18 +488,6 @@ class Report extends CommonDBTM
 
    private static function getContractLabel(int $contracts_id, int $tickets_id): string
    {
-      global $DB;
-      if ($contracts_id <= 0 && $tickets_id > 0 && class_exists('Ticket_Contract') && $DB->tableExists(\Ticket_Contract::getTable())) {
-         $link = $DB->request([
-            'SELECT' => ['contracts_id'],
-            'FROM'   => \Ticket_Contract::getTable(),
-            'WHERE'  => ['tickets_id' => $tickets_id],
-            'ORDER'  => 'id ASC',
-            'LIMIT'  => 1,
-         ])->current();
-         $contracts_id = (int) ($link['contracts_id'] ?? 0);
-      }
-
       $contract = new \Contract();
       if ($contracts_id <= 0 || !$contract->getFromDB($contracts_id)) {
          return '';
@@ -562,26 +557,43 @@ class Report extends CommonDBTM
 
    private static function showTopMaterials(array $rows, int $limit = 10): void
    {
+      $grouped = self::limitRows(self::groupMaterialRows($rows), $limit);
+      echo "<div class='spaced'><table class='tab_cadre_fixe plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
+      echo "<thead><tr class='tab_bg_2'><th colspan='5'>" . __('Custos por material', 'maintenancecosts') . "</th></tr>";
+      echo "<tr><th data-sort='text'>" . __('Código', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Material', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Quantidade', 'maintenancecosts') . "</th><th data-sort='number'>" . \Ticket::getTypeName(2) . "</th><th data-sort='currency'>" . __('Total') . "</th></tr></thead><tbody>";
+      foreach ($grouped as $row) {
+         $sortCode = preg_match('/^\d+$/', (string) $row['code']) ? str_pad((string) $row['code'], 8, '0', STR_PAD_LEFT) : (string) $row['code'];
+         echo "<tr class='tab_bg_1'><td data-value='" . Html::clean($sortCode) . "'>" . Html::clean($row['code']) . "</td><td class='text-start'>" . Html::clean($row['name']) . "</td><td data-value='" . Html::clean((string) (float) $row['quantity']) . "'>" . TicketMaterial::formatQuantity((float) $row['quantity']) . "</td><td data-value='" . count($row['tickets']) . "'>" . count($row['tickets']) . "</td><td data-value='" . Html::clean((string) (float) $row['total']) . "'>" . Config::formatCurrency((float) $row['total']) . "</td></tr>";
+      }
+      echo "</tbody></table></div>";
+   }
+
+   private static function groupMaterialRows(array $rows): array
+   {
       $grouped = [];
       foreach ($rows as $row) {
          $key = (string) ($row['material_code'] ?? '') . '|' . (string) ($row['material_name'] ?? '');
          if (!isset($grouped[$key])) {
             $grouped[$key] = ['code' => $row['material_code'] ?? '', 'name' => $row['material_name'] ?? '', 'quantity' => 0.0, 'total' => 0.0, 'tickets' => []];
          }
-         $grouped[$key]['quantity'] += (float) $row['quantity'];
-         $grouped[$key]['total'] += (float) $row['total_price'];
-         $grouped[$key]['tickets'][(int) $row['tickets_id']] = true;
+         $grouped[$key]['quantity'] += (float) ($row['quantity'] ?? 0);
+         $grouped[$key]['total'] += (float) ($row['total_price'] ?? 0);
+         $grouped[$key]['tickets'][(int) ($row['tickets_id'] ?? 0)] = true;
       }
       usort($grouped, static function($a, $b) { return $b['total'] <=> $a['total']; });
-      $grouped = self::limitRows($grouped, $limit);
-      echo "<div class='spaced'><table class='tab_cadre_fixe plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
-      echo "<thead><tr class='tab_bg_2'><th colspan='5'>" . __('Materiais mais utilizados', 'maintenancecosts') . "</th></tr>";
-      echo "<tr><th data-sort='text'>" . __('Código SINAPI', 'maintenancecosts') . "</th><th data-sort='text'>" . Material::getTypeName(1) . "</th><th data-sort='number'>" . __('Quantidade', 'maintenancecosts') . "</th><th data-sort='number'>" . \Ticket::getTypeName(2) . "</th><th data-sort='currency'>" . __('Total') . "</th></tr></thead><tbody>";
-      foreach ($grouped as $row) {
-         $sortCode = preg_match('/^\d+$/', (string) $row['code']) ? str_pad((string) $row['code'], 8, '0', STR_PAD_LEFT) : (string) $row['code'];
-         echo "<tr class='tab_bg_1'><td data-value='" . Html::clean($sortCode) . "'>" . Html::clean($row['code']) . "</td><td class='text-start'>" . Html::clean($row['name']) . "</td><td data-value='" . Html::clean((string) (float) $row['quantity']) . "'>" . TicketMaterial::formatQuantity((float) $row['quantity']) . "</td><td data-value='" . count($row['tickets']) . "'>" . count($row['tickets']) . "</td><td data-value='" . Html::clean((string) (float) $row['total']) . "'>" . Config::formatCurrency((float) $row['total']) . "</td></tr>";
+      return $grouped;
+   }
+
+   private static function materialChartRows(array $rows): array
+   {
+      $chartRows = [];
+      foreach (self::groupMaterialRows($rows) as $row) {
+         $chartRows[] = [
+            'name'  => self::labelWithCode((string) $row['code'], (string) $row['name']),
+            'total' => (float) $row['total'],
+         ];
       }
-      echo "</tbody></table></div>";
+      return $chartRows;
    }
 
    private static function showMonthlyEvolution(array $rows, int $limit = 10): void

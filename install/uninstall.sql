@@ -1,4 +1,5 @@
 DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_ticketmaterials`;
+DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_ticketcostcenters`;
 DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_prices`;
 DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_pricehistories`;
 DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_costcenters`;

@@ -283,7 +283,7 @@ class Exporter
          'origin'     => 'Gastos por origem do material',
          'price_type' => 'Gastos por tipo de preco',
          'contract'   => 'Gastos por contrato',
-         'materials'  => 'Materiais mais utilizados',
+         'materials'  => 'Custos por material',
          'tickets'    => 'Custo por chamado',
          'monthly'    => 'Evolucao mensal de custos',
       ][$reportType] ?? 'Relatorio de custos';
@@ -332,15 +332,16 @@ class Exporter
          $y -= 18;
       }
 
+      $countLabel = $reportType === 'materials' ? 'Quantidade' : 'Itens';
       self::pdfText($content, 28, 290, $title, 10, true);
       self::pdfText($content, 28, 270, 'Nome', 8, true);
-      self::pdfText($content, 555, 270, 'Itens', 8, true);
+      self::pdfText($content, 555, 270, $countLabel, 8, true);
       self::pdfText($content, 635, 270, 'Chamados', 8, true);
       self::pdfText($content, 735, 270, 'Total', 8, true);
       $y = 252;
       foreach (array_slice($limitedGroups, 0, 14) as $group) {
          self::pdfText($content, 28, $y, self::shortText((string) $group['name'], 84), 7);
-         self::pdfText($content, 565, $y, (string) (int) $group['items'], 7);
+         self::pdfText($content, 565, $y, (string) ($reportType === 'materials' ? ($group['quantity_display'] ?? 0) : (int) $group['items']), 7);
          self::pdfText($content, 655, $y, (string) (int) $group['tickets_count'], 7);
          self::pdfText($content, 730, $y, Config::formatCurrency((float) $group['total']), 7);
          $y -= 14;
@@ -387,15 +388,19 @@ class Exporter
             $name = 'Not defined';
          }
          if (!isset($groups[$name])) {
-            $groups[$name] = ['name' => $name, 'items' => 0, 'tickets' => [], 'total' => 0.0];
+            $groups[$name] = ['name' => $name, 'items' => 0, 'tickets' => [], 'total' => 0.0, 'quantity' => 0.0];
          }
          $groups[$name]['items']++;
+         $groups[$name]['quantity'] += (float) ($row['quantity'] ?? 0);
          $groups[$name]['tickets'][(int) ($row['tickets_id'] ?? 0)] = true;
          $groups[$name]['total'] += (float) ($row['total_price'] ?? 0);
       }
       foreach ($groups as &$group) {
          unset($group['tickets'][0]);
          $group['tickets_count'] = count($group['tickets']);
+         $group['quantity_display'] = abs(((float) $group['quantity']) - round((float) $group['quantity'])) < 0.000001
+            ? (string) (int) round((float) $group['quantity'])
+            : rtrim(rtrim(number_format((float) $group['quantity'], 2, ',', '.'), '0'), ',');
       }
       unset($group);
       usort($groups, static function($a, $b) { return $b['total'] <=> $a['total']; });

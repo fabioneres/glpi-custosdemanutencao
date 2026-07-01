@@ -43,7 +43,7 @@ echo "<table class='tab_cadre_fixe plugin-maintenancecosts-table'>";
 echo "<tr><th>#</th><th>" . __('Etapa', 'maintenancecosts') . "</th><th>" . __('O que acontece', 'maintenancecosts') . "</th></tr>";
 foreach ([
    [1, __('Configuração', 'maintenancecosts'), __('Habilite o plugin, defina se centro de custo é obrigatório e revise permissões por perfil.', 'maintenancecosts')],
-   [2, __('Centros de custo', 'maintenancecosts'), __('Cadastre ou importe centros de custo com código, nome, endereço, entidade e status ativo.', 'maintenancecosts')],
+   [2, __('Centros de custo', 'maintenancecosts'), __('Cadastre ou importe os cadastros de Centro de Custos Novo e Centro de Custos Antigo conforme a necessidade operacional.', 'maintenancecosts')],
    [3, __('Materiais e preços', 'maintenancecosts'), __('Importe SINAPI ou cadastre manualmente materiais e preços de cotação/mercado.', 'maintenancecosts')],
    [4, __('Lançamento no chamado', 'maintenancecosts'), __('Na aba Materiais Consumidos, selecione material, origem, tipo de preço, centro de custo e quantidade.', 'maintenancecosts')],
    [5, __('Auditoria', 'maintenancecosts'), __('O preço aplicado, competência, usuário e total ficam gravados no item consumido.', 'maintenancecosts')],
