@@ -50,7 +50,7 @@ if (isset($_POST['save_ticket_costcenter'])) {
    Session::addMessageAfterRedirect(
       $ok
          ? __('Centro de custo do chamado salvo com sucesso.', 'maintenancecosts')
-         : __('Nao foi possivel salvar o centro de custo do chamado.', 'maintenancecosts'),
+         : __('Não foi possível salvar o centro de custo do chamado.', 'maintenancecosts'),
       !$ok,
       $ok ? INFO : ERROR
    );
@@ -66,7 +66,7 @@ if (isset($_POST['clear_ticket_costcenter'])) {
    Session::addMessageAfterRedirect(
       $ok
          ? __('Centro de custo do chamado removido com sucesso.', 'maintenancecosts')
-         : __('Nao foi possivel remover o centro de custo do chamado.', 'maintenancecosts'),
+         : __('Não foi possível remover o centro de custo do chamado.', 'maintenancecosts'),
       !$ok,
       $ok ? INFO : ERROR
    );

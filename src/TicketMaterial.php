@@ -139,7 +139,7 @@ class TicketMaterial extends CommonDBTM
       }
 
       if (!empty($input['tickets_id']) && !$this->ticketCategoryAllowed((int) $input['tickets_id'], (string) ($settings['allowed_itilcategories'] ?? ''))) {
-         Session::addMessageAfterRedirect(__('Categoria do chamado nao permitida para lancamento de materiais.', 'maintenancecosts'), false, ERROR);
+         Session::addMessageAfterRedirect(__('Categoria do chamado não permitida para lançamento de materiais.', 'maintenancecosts'), false, ERROR);
          return [];
       }
 
@@ -160,7 +160,7 @@ class TicketMaterial extends CommonDBTM
       }
 
       if ((int) $settings['costcenter_required'] && empty($input['plugin_maintenancecosts_costcenters_id'])) {
-         Session::addMessageAfterRedirect(__('Centro de custo e obrigatorio.', 'maintenancecosts'), false, ERROR);
+         Session::addMessageAfterRedirect(__('Centro de custo é obrigatório.', 'maintenancecosts'), false, ERROR);
          return [];
       }
 
@@ -987,7 +987,7 @@ class TicketMaterial extends CommonDBTM
       if (!Config::canManageConsumption()) {
          $label = $costcenterId > 0
             ? self::getCostCenterDisplayName($costcenterId, $source)
-            : __('Nao definido', 'maintenancecosts');
+            : __('Não definido', 'maintenancecosts');
          echo "<div>" . self::escape($label) . "</div>";
          echo "</div>";
          return;

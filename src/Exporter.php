@@ -302,7 +302,7 @@ class Exporter
       }
 
       $content = [];
-      self::pdfText($content, 28, 565, 'Custos de Manutencao - ' . $title, 14, true);
+      self::pdfText($content, 28, 565, 'Custos de Manutenção - ' . $title, 14, true);
       $cards = [
          ['Custo total', Config::formatCurrency($total)],
          ['Lancamentos', (string) count($rows)],

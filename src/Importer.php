@@ -183,7 +183,7 @@ class Importer
       if ($extension === 'xlsx') {
          $csv = self::xlsxToTemporaryCsv($path);
          if ($csv === null) {
-            return self::emptySummary($filename, $competence, $dryRun, [__('Nao foi possivel ler o arquivo XLSX.', 'maintenancecosts')], $priceType);
+            return self::emptySummary($filename, $competence, $dryRun, [__('Não foi possível ler o arquivo XLSX.', 'maintenancecosts')], $priceType);
          }
 
          $summary = self::importCsv($csv, $filename, $competence, $dryRun, ';', $priceType);
@@ -711,7 +711,7 @@ class Importer
          'quote_price_2'                            => $data['quote_price_2'] ?? 0,
          'quote_price_3'                            => $data['quote_price_3'] ?? 0,
          'price_type'                               => $priceType,
-         'source'                                   => $priceType === 'sinapi' ? 'CSV/XLSX SINAPI' : 'CSV/XLSX Cotacao/Mercado',
+         'source'                                   => $priceType === 'sinapi' ? 'CSV/XLSX SINAPI' : 'CSV/XLSX Cotação/Mercado',
          'plugin_maintenancecosts_importbatches_id' => $importBatchId,
          'users_id'                                 => (int) ($_SESSION['glpiID'] ?? 0),
          'comment'                                  => $priceType === 'sinapi'
