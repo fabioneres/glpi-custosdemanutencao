@@ -4,6 +4,7 @@ use GlpiPlugin\Maintenancecosts\Config;
 use GlpiPlugin\Maintenancecosts\CostCenter;
 use GlpiPlugin\Maintenancecosts\CostCenterLegacy;
 use GlpiPlugin\Maintenancecosts\Material;
+use GlpiPlugin\Maintenancecosts\Price;
 
 ob_start();
 if (!defined('GLPI_ROOT')) {
@@ -47,9 +48,10 @@ $search = trim((string) ($_GET['q'] ?? $_POST['q'] ?? $_GET['term'] ?? $_POST['t
 $page = max(1, (int) ($_GET['page'] ?? $_POST['page'] ?? 1));
 $limit = 20;
 $offset = ($page - 1) * $limit;
+$priceType = Config::normalizePriceType((string) ($_GET['price_type'] ?? $_POST['price_type'] ?? 'sinapi'));
 
 if ($type === 'material') {
-   show_materials($search, $limit, $offset);
+   show_materials($search, $limit, $offset, $priceType);
 }
 
 if ($type === 'costcenter') {
@@ -67,27 +69,50 @@ if ($type === 'contract') {
 http_response_code(400);
 echo json_encode(['results' => []]);
 
-function show_materials(string $search, int $limit, int $offset): void
+function show_materials(string $search, int $limit, int $offset, string $priceType): void
 {
    global $DB;
 
-   $where = ['is_active' => 1];
+   $materialTable = Material::getTable();
+   $priceTable = Price::getTable();
+   $where = [
+      $materialTable . '.is_active' => 1,
+      $priceTable . '.price_type'   => Config::normalizePriceType($priceType),
+   ];
    if ($search !== '') {
       $like = '%' . $search . '%';
       $where[] = [
          'OR' => [
-            'code' => ['LIKE', $like],
-            'name' => ['LIKE', $like],
-            'description' => ['LIKE', $like],
+            [$materialTable . '.code' => ['LIKE', $like]],
+            [$materialTable . '.name' => ['LIKE', $like]],
+            [$materialTable . '.description' => ['LIKE', $like]],
+            [$priceTable . '.competence' => ['LIKE', $like]],
+            [$priceTable . '.source' => ['LIKE', $like]],
          ],
       ];
    }
 
    $rows = $DB->request([
-      'SELECT' => ['id', 'code', 'name', 'unit'],
-      'FROM'   => Material::getTable(),
+      'SELECT' => [
+         $materialTable . '.id AS id',
+         $materialTable . '.code AS code',
+         $materialTable . '.name AS name',
+         $materialTable . '.unit AS unit',
+      ],
+      'FROM'   => $priceTable,
+      'LEFT JOIN' => [
+         $materialTable => [
+            'FKEY' => [$priceTable => 'plugin_maintenancecosts_materials_id', $materialTable => 'id'],
+         ],
+      ],
       'WHERE'  => $where,
-      'ORDER'  => ['code ASC', 'name ASC'],
+      'GROUPBY' => [
+         $materialTable . '.id',
+         $materialTable . '.code',
+         $materialTable . '.name',
+         $materialTable . '.unit',
+      ],
+      'ORDER'  => [$materialTable . '.code ASC', $materialTable . '.name ASC'],
       'START'  => $offset,
       'LIMIT'  => $limit + 1,
    ]);

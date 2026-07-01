@@ -17,7 +17,7 @@ class CostCenterLegacy extends CostCenter
 
    public static function getTypeName($nb = 0)
    {
-      return _n('Centro de custo (Antigo)', 'Centros de custo (Antigo)', $nb, 'maintenancecosts');
+      return _n('Centro de Custos Antigo', 'Centro de Custos Antigo', $nb, 'maintenancecosts');
    }
 
    public static function getIcon()
