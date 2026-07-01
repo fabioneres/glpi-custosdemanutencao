@@ -591,9 +591,6 @@ class TicketMaterial extends CommonDBTM
       echo "<colgroup><col style='width:28%'><col style='width:6%'><col style='width:5%'><col style='width:8%'><col style='width:8%'><col style='width:13%'><col style='width:10%'><col style='width:9%'><col style='width:6%'><col style='width:5%'><col style='width:8%'></colgroup>";
       echo "<tr class='tab_bg_2'><th colspan='11'>" . self::getTypeName(2) . "</th></tr>";
       echo "<tr class='tab_bg_1'><td colspan='11'><strong>" . __('Total') . ":</strong> " . Config::formatCurrency(self::getTicketTotal($tickets_id)) . "</td></tr>";
-      echo "<tr class='tab_bg_1'><td colspan='11'>";
-      self::showTicketCostCenterForm($ticket);
-      echo "</td></tr>";
       if (Config::canManageConsumption()) {
          echo "<tr class='tab_bg_1'><td colspan='11'>";
          echo "<button type='button' class='btn btn-primary' data-maintenancecosts-toggle-add>" . __('Adicionar material', 'maintenancecosts') . "</button>";
@@ -974,7 +971,7 @@ class TicketMaterial extends CommonDBTM
       return $normalized === 'contrato';
    }
 
-   private static function showTicketCostCenterForm(Ticket $ticket): void
+   public static function showTicketCostCenterForm(Ticket $ticket): void
    {
       $tickets_id = (int) $ticket->getID();
       $selection = TicketCostCenter::getSelection($tickets_id);

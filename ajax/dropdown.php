@@ -150,12 +150,19 @@ function show_costcenters(string $search, int $limit, int $offset): void
    }
    if ($search !== '') {
       $like = '%' . $search . '%';
-      $where[] = [
-         'OR' => [
-            'code' => ['LIKE', $like],
-            'name' => ['LIKE', $like],
-         ],
+      // Normaliza o termo removendo pontos e hifens para busca tolerante
+      // Ex: "001005000" encontra "001.005.000" armazenado no banco
+      $searchNorm = preg_replace('/[.\-\/]/', '', $search);
+      $orConditions = [
+         'name' => ['LIKE', $like],
+         'code' => ['LIKE', $like],
       ];
+      if ($searchNorm !== '') {
+         $orConditions[] = new \QueryExpression(
+            "REPLACE(REPLACE(`code`, '.', ''), '-', '') LIKE " . $DB->quote('%' . $searchNorm . '%')
+         );
+      }
+      $where[] = ['OR' => $orConditions];
    }
 
    $rows = $DB->request([
@@ -197,15 +204,22 @@ function show_costcenters_legacy(string $search, int $limit, int $offset): void
    }
    if ($search !== '') {
       $like = '%' . $search . '%';
-      $where[] = [
-         'OR' => [
-            'code'       => ['LIKE', $like],
-            'campus'     => ['LIKE', $like],
-            'department' => ['LIKE', $like],
-            'address'    => ['LIKE', $like],
-            'usage_type' => ['LIKE', $like],
-         ],
+      // Normaliza o termo removendo pontos e hifens para busca tolerante
+      // Ex: "001005000" encontra "001.005.000" armazenado no banco
+      $searchNorm = preg_replace('/[.\-\/]/', '', $search);
+      $orConditions = [
+         'code'       => ['LIKE', $like],
+         'campus'     => ['LIKE', $like],
+         'department' => ['LIKE', $like],
+         'address'    => ['LIKE', $like],
+         'usage_type' => ['LIKE', $like],
       ];
+      if ($searchNorm !== '') {
+         $orConditions[] = new \QueryExpression(
+            "REPLACE(REPLACE(`code`, '.', ''), '-', '') LIKE " . $DB->quote('%' . $searchNorm . '%')
+         );
+      }
+      $where[] = ['OR' => $orConditions];
    }
 
    $rows = $DB->request([

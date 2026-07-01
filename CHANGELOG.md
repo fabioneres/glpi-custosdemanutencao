@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.1 - Ajustes pos-consolidacao da 1.0.0
+
+- Adiciona busca tolerante a pontuacao no dropdown de centro de custos, permitindo localizar codigos sem digitar separadores.
+- Move o vinculo de centro de custo do chamado para uma aba propria `Centro de Custos`, separada da aba `Materiais Consumidos`.
+- Remove o formulario de centro de custo da aba de materiais consumidos para evitar duplicidade de manutencao no chamado.
+- Mantem o deploy homologado na VM com validacao funcional posterior via navegador.
+
 ## v1.0.0 - Consolidacao funcional para uso operacional
 
 - Consolida o fluxo operacional do plugin para uso em producao, com foco em materiais consumidos, centros de custo, contratos e relatorios.

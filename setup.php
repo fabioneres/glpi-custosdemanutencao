@@ -50,7 +50,7 @@ function plugin_init_maintenancecosts(): void {
    Plugin::registerClass(PriceHistory::class);
    Plugin::registerClass(CostCenter::class);
    Plugin::registerClass(CostCenterLegacy::class);
-   Plugin::registerClass(TicketCostCenter::class);
+   Plugin::registerClass(TicketCostCenter::class, ['addtabon' => [\Ticket::class]]);
    Plugin::registerClass(TicketMaterial::class);
    Plugin::registerClass(ImportBatch::class);
    Plugin::registerClass(AuditLog::class);
