@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.2 - Ajuste de exibicao e busca dos centros de custo no FormCreator
+
+- Ajusta o nome amigavel dos objetos `Centro de Custos Antigo` e `Centro de Custos Novo` para exibir `codigo - nome` nas listas suspensas do FormCreator.
+- Permite pesquisar centros de custo pelo nome, pelo codigo com pontuacao e pelo codigo sem pontuacao nas listas suspensas baseadas em objetos GLPI.
+- Mantem a alteracao concentrada na classe base de centros de custo para preservar compatibilidade entre o cadastro novo e o legado.
+
 ## v1.0.1 - Ajustes pos-consolidacao da 1.0.0
 
 - Adiciona busca tolerante a pontuacao no dropdown de centro de custos, permitindo localizar codigos sem digitar separadores.
