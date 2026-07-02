@@ -7,7 +7,9 @@ if (!defined('GLPI_ROOT')) {
 }
 
 use CommonDBTM;
+use DBmysql;
 use Html;
+use QueryExpression;
 
 class CostCenter extends CommonDBTM
 {
@@ -41,6 +43,55 @@ class CostCenter extends CommonDBTM
    public static function getNameField()
    {
       return 'name';
+   }
+
+   protected function computeFriendlyName()
+   {
+      return self::buildFriendlyLabel(
+         (string) ($this->fields['code'] ?? ''),
+         (string) ($this->fields[static::getNameField()] ?? '')
+      );
+   }
+
+   public static function getFriendlyNameSearchCriteria(string $filter): array
+   {
+      $table = static::getTable();
+      $name = DBmysql::quoteName($table . '.' . static::getNameField());
+      $code = DBmysql::quoteName($table . '.code');
+      $filter = mb_strtolower(trim($filter));
+      $normalized = self::normalizeFriendlyCode($filter);
+
+      $criteria = [
+         'OR' => [
+            ['RAW' => ["LOWER($name)" => ['LIKE', "%$filter%"]]],
+            ['RAW' => ["LOWER($code)" => ['LIKE', "%$filter%"]]],
+         ],
+      ];
+
+      if ($normalized !== '') {
+         $criteria['OR'][] = [
+            'RAW' => [
+               "LOWER(REPLACE(REPLACE(REPLACE(REPLACE($code, '.', ''), '-', ''), '/', ''), ' ', ''))"
+                  => ['LIKE', "%$normalized%"],
+            ],
+         ];
+      }
+
+      return $criteria;
+   }
+
+   public static function getFriendlyNameFields(string $alias = 'name')
+   {
+      $table = static::getTable();
+      $code = DBmysql::quoteName($table . '.code');
+      $name = DBmysql::quoteName($table . '.' . static::getNameField());
+      $alias = DBmysql::quoteName($alias);
+
+      return new QueryExpression("CASE
+         WHEN $code <> '' AND $name <> '' THEN CONCAT($code, ' - ', $name)
+         WHEN $code <> '' THEN $code
+         ELSE $name
+      END AS $alias");
    }
 
    public function prepareInputForAdd($input)
@@ -224,6 +275,27 @@ class CostCenter extends CommonDBTM
          }
       }
       return '';
+   }
+
+   protected static function buildFriendlyLabel(string $code, string $name): string
+   {
+      $code = trim($code);
+      $name = trim($name);
+
+      if ($code !== '' && $name !== '') {
+         return sprintf('%s - %s', $code, $name);
+      }
+
+      if ($code !== '') {
+         return $code;
+      }
+
+      return $name;
+   }
+
+   protected static function normalizeFriendlyCode(string $value): string
+   {
+      return preg_replace('/[.\-\/\s]+/', '', $value) ?? '';
    }
 
    private static function showRootLocationDropdown(string $name, int $value): void
