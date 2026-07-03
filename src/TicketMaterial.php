@@ -138,6 +138,10 @@ class TicketMaterial extends CommonDBTM
          $input['competence'] = Config::normalizeCompetence((string) $input['competence']);
       }
 
+      if (empty($input['consumption_date'])) {
+         $input['consumption_date'] = date('Y-m-d');
+      }
+
       if (!empty($input['tickets_id']) && !$this->ticketCategoryAllowed((int) $input['tickets_id'], (string) ($settings['allowed_itilcategories'] ?? ''))) {
          Session::addMessageAfterRedirect(__('Categoria do chamado não permitida para lançamento de materiais.', 'maintenancecosts'), false, ERROR);
          return [];
@@ -767,10 +771,15 @@ class TicketMaterial extends CommonDBTM
       $readonly = (int) $settings['allow_manual_unit_price'] ? '' : ' readonly';
       echo "<td><input type='text' inputmode='decimal' name='unit_price_applied' value='" . self::escape(Config::formatDecimalInput((float) ($this->fields['unit_price_applied'] ?? 0))) . "' class='form-control plugin-maintenancecosts-money'" . $readonly . " data-readonly-for-sinapi='" . ((int) $settings['allow_manual_unit_price'] ? '0' : '1') . "'></td></tr>";
 
+      $consumptionDateValue = (string) ($this->fields['consumption_date'] ?? '');
+      if ($consumptionDateValue === '') {
+         $consumptionDateValue = date('Y-m-d');
+      }
+
       echo "<tr class='tab_bg_1'><td>" . __('Unidade', 'maintenancecosts') . "</td>";
       echo "<td><input type='text' name='unit' value='" . self::escape((string) ($this->fields['unit'] ?? '')) . "' class='form-control'></td>";
       echo "<td>" . __('Data', 'maintenancecosts') . "</td>";
-      echo "<td><input type='date' name='consumption_date' value='" . self::escape((string) ($this->fields['consumption_date'] ?? date('Y-m-d'))) . "' class='form-control'></td></tr>";
+      echo "<td><input type='date' name='consumption_date' value='" . self::escape($consumptionDateValue) . "' class='form-control'></td></tr>";
 
       echo "<tr class='tab_bg_1'><td>" . __('Comments') . "</td>";
       echo "<td colspan='3'><textarea name='comment' class='form-control' rows='3'>" . self::escape((string) ($this->fields['comment'] ?? '')) . "</textarea></td></tr>";

@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.4 - Preenchimento automatico da data no lancamento
+
+- Preenche automaticamente a data do consumo com a data vigente ao abrir o formulario de lancamento em `Materiais consumidos`.
+- Mantem a data editavel no formulario para permitir ajustes manuais antes de salvar.
+- Garante fallback no backend para gravar a data atual quando o campo vier vazio.
+
 ## v1.0.3 - Correcao da integracao de centros de custo no FormCreator
 
 - Faz os campos `Centro de Custos Antigo` e `Centro de Custos Novo` do FormCreator usarem o endpoint AJAX do proprio plugin.
