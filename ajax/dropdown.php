@@ -48,18 +48,19 @@ $search = trim((string) ($_GET['q'] ?? $_POST['q'] ?? $_GET['term'] ?? $_POST['t
 $page = max(1, (int) ($_GET['page'] ?? $_POST['page'] ?? 1));
 $limit = 20;
 $offset = ($page - 1) * $limit;
+$oneId = max(0, (int) ($_GET['_one_id'] ?? $_POST['_one_id'] ?? $_GET['one_id'] ?? $_POST['one_id'] ?? 0));
 $priceType = Config::normalizePriceType((string) ($_GET['price_type'] ?? $_POST['price_type'] ?? 'sinapi'));
 
 if ($type === 'material') {
-   show_materials($search, $limit, $offset, $priceType);
+   show_materials($search, $limit, $offset, $priceType, $oneId);
 }
 
 if ($type === 'costcenter') {
-   show_costcenters($search, $limit, $offset);
+   show_costcenters($search, $limit, $offset, $oneId);
 }
 
 if ($type === 'costcenter_legacy') {
-   show_costcenters_legacy($search, $limit, $offset);
+   show_costcenters_legacy($search, $limit, $offset, $oneId);
 }
 
 if ($type === 'contract') {
@@ -69,7 +70,7 @@ if ($type === 'contract') {
 http_response_code(400);
 echo json_encode(['results' => []]);
 
-function show_materials(string $search, int $limit, int $offset, string $priceType): void
+function show_materials(string $search, int $limit, int $offset, string $priceType, int $oneId = 0): void
 {
    global $DB;
 
@@ -79,6 +80,9 @@ function show_materials(string $search, int $limit, int $offset, string $priceTy
       $materialTable . '.is_active' => 1,
       $priceTable . '.price_type'   => Config::normalizePriceType($priceType),
    ];
+   if ($oneId > 0) {
+      $where[$materialTable . '.id'] = $oneId;
+   }
    if ($search !== '') {
       $like = '%' . $search . '%';
       $where[] = [
@@ -140,13 +144,16 @@ function show_materials(string $search, int $limit, int $offset, string $priceTy
    exit;
 }
 
-function show_costcenters(string $search, int $limit, int $offset): void
+function show_costcenters(string $search, int $limit, int $offset, int $oneId = 0): void
 {
    global $DB;
 
    $where = [];
    if ($DB->fieldExists(CostCenter::getTable(), 'is_active')) {
       $where['is_active'] = 1;
+   }
+   if ($oneId > 0) {
+      $where['id'] = $oneId;
    }
    if ($search !== '') {
       $like = '%' . $search . '%';
@@ -194,13 +201,16 @@ function show_costcenters(string $search, int $limit, int $offset): void
    exit;
 }
 
-function show_costcenters_legacy(string $search, int $limit, int $offset): void
+function show_costcenters_legacy(string $search, int $limit, int $offset, int $oneId = 0): void
 {
    global $DB;
 
    $where = [];
    if ($DB->fieldExists(CostCenterLegacy::getTable(), 'is_active')) {
       $where['is_active'] = 1;
+   }
+   if ($oneId > 0) {
+      $where['id'] = $oneId;
    }
    if ($search !== '') {
       $like = '%' . $search . '%';

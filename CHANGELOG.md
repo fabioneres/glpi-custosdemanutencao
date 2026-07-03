@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.3 - Correcao da integracao de centros de custo no FormCreator
+
+- Faz os campos `Centro de Custos Antigo` e `Centro de Custos Novo` do FormCreator usarem o endpoint AJAX do proprio plugin.
+- Exibe os itens no formato `codigo - nome` nas listas suspensas dos dois tipos de centro de custo.
+- Permite buscar centros de custo por nome, por codigo formatado e por codigo sem pontuacao.
+- Mantem compatibilidade com valores previamente selecionados no FormCreator, inclusive no carregamento de opcoes por ID.
+
 ## v1.0.2 - Ajuste de exibicao e busca dos centros de custo no FormCreator
 
 - Ajusta o nome amigavel dos objetos `Centro de Custos Antigo` e `Centro de Custos Novo` para exibir `codigo - nome` nas listas suspensas do FormCreator.

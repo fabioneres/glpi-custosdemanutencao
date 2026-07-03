@@ -1,4 +1,192 @@
 (function() {
+   function initFormcreatorCostCenterDropdowns(root) {
+      if (typeof jQuery === 'undefined' || !jQuery.fn.select2) {
+         return;
+      }
+
+      jQuery(root || document).find('select').each(function() {
+         var select = this;
+         var params = getFormcreatorDropdownParams(select);
+         var dropdownType = getFormcreatorCostCenterDropdownType(params);
+         if (!dropdownType) {
+            return;
+         }
+
+         if (select.dataset.maintenancecostsFormcreatorScheduleReady === '1'
+            && select.dataset.maintenancecostsFormcreatorType === dropdownType) {
+            return;
+         }
+
+         select.dataset.maintenancecostsFormcreatorScheduleReady = '1';
+         select.dataset.maintenancecostsFormcreatorType = dropdownType;
+
+         [0, 150, 500].forEach(function(delay) {
+            window.setTimeout(function() {
+               applyFormcreatorCostCenterDropdown(select, params, dropdownType);
+            }, delay);
+         });
+      });
+   }
+
+   function applyFormcreatorCostCenterDropdown(select, params, dropdownType) {
+      if (!select || !select.isConnected || typeof jQuery === 'undefined' || !jQuery.fn.select2) {
+         return;
+      }
+
+      var pluginUrl = getRootDoc() + '/plugins/maintenancecosts/ajax/dropdown.php';
+      if (select.dataset.maintenancecostsFormcreatorReady === '1'
+         && select.dataset.maintenancecostsFormcreatorType === dropdownType
+         && getSelect2AjaxUrl(select) === pluginUrl) {
+         return;
+      }
+
+      select.dataset.maintenancecostsFormcreatorReady = '1';
+      select.dataset.maintenancecostsFormcreatorType = dropdownType;
+
+      jQuery(select).off('setValue.maintenancecosts');
+      try {
+         jQuery(select).select2('destroy');
+      } catch (e) {}
+
+      var selectedValue = select.value || '';
+      var selectedText = '';
+      if (select.selectedIndex >= 0 && select.options[select.selectedIndex]) {
+         selectedText = select.options[select.selectedIndex].text || '';
+      }
+      if (selectedValue !== '' && selectedValue !== '0' && selectedText !== '') {
+         select.innerHTML = '';
+         var option = document.createElement('option');
+         option.value = selectedValue;
+         option.text = selectedText;
+         option.selected = true;
+         select.appendChild(option);
+      }
+
+      jQuery(select).select2({
+         width: params && params.width ? params.width : '100%',
+         allowClear: false,
+         placeholder: params && params.placeholder_text ? params.placeholder_text : '-----',
+         minimumInputLength: 0,
+         minimumResultsForSearch: 10,
+         dropdownAutoWidth: true,
+         dropdownParent: jQuery(select).closest('div.modal, div.dropdown-menu, body'),
+         ajax: {
+            url: pluginUrl,
+            dataType: 'json',
+            delay: 250,
+            data: function(requestParams) {
+               return {
+                  type: dropdownType,
+                  q: requestParams.term || '',
+                  page: requestParams.page || 1
+               };
+            },
+            processResults: function(data) {
+               return data || {results: []};
+            },
+            cache: true
+         }
+      });
+
+      jQuery(select).on('setValue.maintenancecosts', function(event, value) {
+         if (!value) {
+            return;
+         }
+
+         jQuery.ajax({
+            url: pluginUrl,
+            dataType: 'json',
+            type: 'GET',
+            data: {
+               type: dropdownType,
+               _one_id: value
+            }
+         }).done(function(data) {
+            if (!data || !data.results || !data.results.length) {
+               return;
+            }
+
+            var optionData = data.results[0];
+            var option = new Option(optionData.text, optionData.id, true, true);
+            select.innerHTML = '';
+            select.appendChild(option);
+            jQuery(select).trigger('change');
+         });
+      });
+   }
+
+   function getFormcreatorDropdownParams(select) {
+      if (!select || !select.id) {
+         return null;
+      }
+
+      var key = 'params_dropdown_' + select.id;
+      if (window[key] && typeof window[key] === 'object') {
+         return window[key];
+      }
+
+      var itemtype = findFormcreatorItemtype(select.id);
+      if (!itemtype) {
+         return null;
+      }
+
+      return {
+         itemtype: itemtype,
+         width: '100%',
+         placeholder_text: '-----'
+      };
+    }
+
+   function getFormcreatorCostCenterDropdownType(params) {
+      if (!params || typeof params.itemtype !== 'string') {
+         return '';
+      }
+
+      if (params.itemtype === 'GlpiPlugin\\Maintenancecosts\\CostCenter') {
+         return 'costcenter';
+      }
+
+      if (params.itemtype === 'GlpiPlugin\\Maintenancecosts\\CostCenterLegacy') {
+         return 'costcenter_legacy';
+      }
+
+      return '';
+   }
+
+   function findFormcreatorItemtype(selectId) {
+      if (!selectId) {
+         return '';
+      }
+
+      if (!window.maintenancecostsFormcreatorItemtypes) {
+         window.maintenancecostsFormcreatorItemtypes = {};
+         Array.prototype.slice.call(document.scripts || []).forEach(function(script) {
+            var content = script && script.textContent ? script.textContent : '';
+            if (content.indexOf('params_dropdown_formcreator_field_') === -1) {
+               return;
+            }
+
+            var regex = /var\s+params_(dropdown_formcreator_field_\d+)\s*=\s*\{[\s\S]*?itemtype:\s*"([^"]+)"/g;
+            var match;
+            while ((match = regex.exec(content)) !== null) {
+               window.maintenancecostsFormcreatorItemtypes[match[1]] = String(match[2] || '').replace(/\\\\/g, '\\');
+            }
+         });
+      }
+
+      return window.maintenancecostsFormcreatorItemtypes[selectId] || '';
+   }
+
+   function getSelect2AjaxUrl(select) {
+      if (!select || typeof jQuery === 'undefined') {
+         return '';
+      }
+
+      var instance = jQuery(select).data('select2');
+      var options = instance && instance.options ? instance.options.options : null;
+      return options && options.ajax && options.ajax.url ? String(options.ajax.url) : '';
+   }
+
    function initPluginDropdowns(root) {
       if (typeof jQuery === 'undefined' || !jQuery.fn.select2) {
          return;
@@ -904,6 +1092,7 @@
    if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function() {
          initPluginDropdowns(document);
+         initFormcreatorCostCenterDropdowns(document);
          initSortableTables(document);
          initColumnViews(document);
          initContractTicketDropdowns(document);
@@ -918,6 +1107,7 @@
       });
    } else {
       initPluginDropdowns(document);
+      initFormcreatorCostCenterDropdowns(document);
       initSortableTables(document);
       initColumnViews(document);
       initContractTicketDropdowns(document);
@@ -943,6 +1133,7 @@
                   return;
                }
                 initPluginDropdowns(node);
+                initFormcreatorCostCenterDropdowns(node);
                 initSortableTables(node);
                 initColumnViews(node);
                 initContractTicketDropdowns(node);
