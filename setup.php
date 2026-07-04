@@ -116,4 +116,42 @@ function plugin_version_maintenancecosts(): array {
       'license'      => 'GPLv3+',
       'homepage'     => '',
       'icon'         => 'pics/icon.png',
-    
+      'picture'      => 'pics/logo.png',
+      'requirements' => [
+         'glpi' => [
+            'min' => PLUGIN_MAINTENANCECOSTS_MIN_GLPI_VERSION,
+            'max' => PLUGIN_MAINTENANCECOSTS_MAX_GLPI_VERSION,
+         ],
+      ],
+   ];
+}
+
+function plugin_maintenancecosts_check_prerequisites(): bool {
+   if (version_compare(GLPI_VERSION, PLUGIN_MAINTENANCECOSTS_MIN_GLPI_VERSION, 'lt')) {
+      if (method_exists(Plugin::class, 'messageIncompatible')) {
+         Plugin::messageIncompatible(
+            'core',
+            PLUGIN_MAINTENANCECOSTS_MIN_GLPI_VERSION,
+            PLUGIN_MAINTENANCECOSTS_MAX_GLPI_VERSION
+         );
+      }
+      return false;
+   }
+
+   if (version_compare(GLPI_VERSION, PLUGIN_MAINTENANCECOSTS_MAX_GLPI_VERSION, 'gt')) {
+      if (method_exists(Plugin::class, 'messageIncompatible')) {
+         Plugin::messageIncompatible(
+            'core',
+            PLUGIN_MAINTENANCECOSTS_MIN_GLPI_VERSION,
+            PLUGIN_MAINTENANCECOSTS_MAX_GLPI_VERSION
+         );
+      }
+      return false;
+   }
+
+   return true;
+}
+
+function plugin_maintenancecosts_check_config(): bool {
+   return true;
+}
