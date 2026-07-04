@@ -14,6 +14,7 @@ use GlpiPlugin\Maintenancecosts\Config;
 use GlpiPlugin\Maintenancecosts\CostCenter;
 use GlpiPlugin\Maintenancecosts\CostCenterLegacy;
 use GlpiPlugin\Maintenancecosts\Exporter;
+use GlpiPlugin\Maintenancecosts\FormcreatorCostCenterSync;
 use GlpiPlugin\Maintenancecosts\ImportBatch;
 use GlpiPlugin\Maintenancecosts\Material;
 use GlpiPlugin\Maintenancecosts\MaterialOrigin;
@@ -33,6 +34,7 @@ if (!defined('GLPI_ROOT')) {
 require_once __DIR__ . '/bootstrap.php';
 
 function plugin_init_maintenancecosts(): void {
+   global $CFG_GLPI;
    global $PLUGIN_HOOKS;
 
    $PLUGIN_HOOKS[Hooks::CSRF_COMPLIANT]['maintenancecosts'] = true;
@@ -50,6 +52,7 @@ function plugin_init_maintenancecosts(): void {
    Plugin::registerClass(PriceHistory::class);
    Plugin::registerClass(CostCenter::class);
    Plugin::registerClass(CostCenterLegacy::class);
+   Plugin::registerClass(FormcreatorCostCenterSync::class);
    Plugin::registerClass(TicketCostCenter::class, ['addtabon' => [\Ticket::class]]);
    Plugin::registerClass(TicketMaterial::class);
    Plugin::registerClass(ImportBatch::class);
@@ -61,9 +64,21 @@ function plugin_init_maintenancecosts(): void {
    Plugin::registerClass(Report::class);
    Plugin::registerClass(TicketTab::class, ['addtabon' => [\Ticket::class]]);
 
+   // O itemtype legado tem nome irregular para as heuristicas do GLPI
+   // (CostCenterLegacy -> costcenterlegacies). Registramos o mapeamento
+   // explicito para garantir dropdowns, Search e integrações como FormCreator.
+   $CFG_GLPI['glpitablesitemtype'][CostCenterLegacy::class] = CostCenterLegacy::getTable();
+   $CFG_GLPI['glpiitemtypetables'][CostCenterLegacy::getTable()] = CostCenterLegacy::class;
+
    $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['maintenancecosts'][] = 'js/ticketmaterial-v2.js';
+   $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT_ANONYMOUS_PAGE]['maintenancecosts'][] = 'js/ticketmaterial-v2.js';
    $PLUGIN_HOOKS[Hooks::ADD_CSS]['maintenancecosts'][] = 'css/maintenancecosts.css';
+   $PLUGIN_HOOKS[Hooks::ADD_CSS_ANONYMOUS_PAGE]['maintenancecosts'][] = 'css/maintenancecosts.css';
    $PLUGIN_HOOKS['formcreator_get_glpi_object_types']['maintenancecosts'] = 'plugin_maintenancecosts_formcreator_get_glpi_object_types';
+   $PLUGIN_HOOKS['item_add']['maintenancecosts']['Item_Ticket'] = [
+      FormcreatorCostCenterSync::class,
+      'itemAdded',
+   ];
 
    if (Session::getLoginUserID()) {
       Profile::initProfile();
@@ -101,42 +116,4 @@ function plugin_version_maintenancecosts(): array {
       'license'      => 'GPLv3+',
       'homepage'     => '',
       'icon'         => 'pics/icon.png',
-      'picture'      => 'pics/logo.png',
-      'requirements' => [
-         'glpi' => [
-            'min' => PLUGIN_MAINTENANCECOSTS_MIN_GLPI_VERSION,
-            'max' => PLUGIN_MAINTENANCECOSTS_MAX_GLPI_VERSION,
-         ],
-      ],
-   ];
-}
-
-function plugin_maintenancecosts_check_prerequisites(): bool {
-   if (version_compare(GLPI_VERSION, PLUGIN_MAINTENANCECOSTS_MIN_GLPI_VERSION, 'lt')) {
-      if (method_exists(Plugin::class, 'messageIncompatible')) {
-         Plugin::messageIncompatible(
-            'core',
-            PLUGIN_MAINTENANCECOSTS_MIN_GLPI_VERSION,
-            PLUGIN_MAINTENANCECOSTS_MAX_GLPI_VERSION
-         );
-      }
-      return false;
-   }
-
-   if (version_compare(GLPI_VERSION, PLUGIN_MAINTENANCECOSTS_MAX_GLPI_VERSION, 'gt')) {
-      if (method_exists(Plugin::class, 'messageIncompatible')) {
-         Plugin::messageIncompatible(
-            'core',
-            PLUGIN_MAINTENANCECOSTS_MIN_GLPI_VERSION,
-            PLUGIN_MAINTENANCECOSTS_MAX_GLPI_VERSION
-         );
-      }
-      return false;
-   }
-
-   return true;
-}
-
-function plugin_maintenancecosts_check_config(): bool {
-   return true;
-}
+    

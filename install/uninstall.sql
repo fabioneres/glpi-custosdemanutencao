@@ -8,5 +8,4 @@ DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_materialorigins`;
 DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_materials`;
 DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_importbatches`;
 DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_auditlogs`;
-DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_configentities`;
-DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_configs`;
+DROP TABLE IF EXISTS `glpi_plugin_maintenancecos

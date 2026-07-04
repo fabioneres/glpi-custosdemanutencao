@@ -144,10 +144,4 @@ foreach ($rows as $row) {
 }
 
 if (count($rows) === 0) {
-   echo "<tr class='tab_bg_1' data-no-sort='1'><td colspan='14' class='center'>" . __('Nenhum material consumido encontrado.', 'maintenancecosts') . "</td></tr>";
-}
-
-echo "</tbody></table>";
-Pager::render($totalRows, $page, $perPage, ['q' => $search]);
-Config::renderPluginLayoutEnd();
-Html::footer();
+   echo "<tr class='tab_bg_1' data-no-sort='1'><td colspan='14' class='center'>" . __('Nenhum material consumido encontrado.', 'maintenancecosts') . "</td><

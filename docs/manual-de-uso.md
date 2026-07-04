@@ -829,39 +829,4 @@ Isso depende da configuracao da entidade e das permissoes do perfil.
 
 ### Para o administrador
 
-- plugin instalado e ativo;
-- perfis configurados;
-- entidades habilitadas;
-- bases importadas;
-- centros de custo revisados.
-
-### Para o tecnico
-
-- chamado correto;
-- material correto;
-- base de centro de custo correta;
-- centro de custo correto;
-- quantidade correta;
-- competencia correta;
-- contrato correto, quando aplicavel.
-
-### Para o gestor
-
-- relatorios filtrados por periodo;
-- exportacao arquivada;
-- principais centros de custo acompanhados;
-- contratos com maior gasto monitorados.
-
----
-
-## 23. Limites desta versao
-
-Este manual descreve o comportamento funcional consolidado do plugin na fase operacional atual.
-
-Dependendo da release aplicada no ambiente, alguns detalhes visuais ou nomes de botoes podem variar levemente, mas o fluxo principal permanece:
-
-- cadastrar/importar;
-- lancar no chamado;
-- rastrear;
-- relatar.
-
+- plugin 

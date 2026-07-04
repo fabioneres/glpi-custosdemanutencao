@@ -329,10 +329,4 @@ A versao `1.0.0` so deve ser consolidada quando:
 - a integracao com FormCreator estiver validada no navegador;
 - nao houver erros indevidos de permissao;
 - nao houver erros visiveis de encoding ou acentuacao;
-- nao houver travamentos graves nas telas de relatorio e lancamento no chamado.
-
-## Arquivo de apoio para resultado da homologacao
-
-Se quiser registrar o retorno da execucao deste checklist, usar ou atualizar:
-
-- [maintenancecosts-1.0.0-validacao-resultado.md](C:\Projetos\glpi\plugins\meusplugins\maintenancecosts\docs\session\maintenancecosts-1.0.0-validacao-resultado.md)
+- nao houver travamentos graves nas telas de

@@ -26,5 +26,4 @@ switch ($type) {
       Exporter::exportReport($_GET, $format);
       break;
    default:
-      Html::displayErrorAndDie(__('Exportação inválida.', 'maintenancecosts'));
-}
+      Html::displayErrorAndDie(__('Exportação inválida

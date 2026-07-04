@@ -953,14 +953,4 @@
                    updateMaterialSource(node, false);
                    updateContractRow(node);
                 } else if (node.querySelectorAll) {
-                   node.querySelectorAll('form').forEach(function(form) {
-                      updateUnitPriceState(form);
-                      updateMaterialSource(form, false);
-                      updateContractRow(form);
-                   });
-                }
-             });
-          });
-      }).observe(document.body, {childList: true, subtree: true});
-   }
-})();
+                   node.querySelectorAll('form').forEach(function(fo

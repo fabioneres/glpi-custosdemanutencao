@@ -98,6 +98,4 @@ class CostCenterLegacy extends CostCenter
 
    public function post_updateItem($history = true)
    {
-      AuditLog::record(self::class, (int) $this->getID(), 'costcenter_legacy_update', [], $this->fields, '', (int) ($this->fields['entities_id'] ?? 0));
-   }
-}
+      AuditLog::record(self::class, (int) $this->getID(), 'cost

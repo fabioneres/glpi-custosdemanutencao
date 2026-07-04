@@ -188,9 +188,7 @@ function show_costcenters(string $search, int $limit, int $offset, int $oneId = 
       if (count($results) >= $limit) {
          break;
       }
-      $label = trim((string) $row['code']) !== ''
-         ? sprintf('%s - %s', $row['code'], $row['name'])
-         : (string) $row['name'];
+      $label = CostCenter::composeFriendlyLabel((string) ($row['code'] ?? ''), (string) ($row['name'] ?? ''));
       $results[] = ['id' => (int) $row['id'], 'text' => $label];
    }
 
@@ -265,54 +263,4 @@ function show_costcenters_legacy(string $search, int $limit, int $offset, int $o
       'results'    => $results,
       'pagination' => ['more' => $fetched > $limit],
    ]);
-   exit;
-}
-
-function show_contracts(string $search, int $limit, int $offset): void
-{
-   global $DB;
-
-   if (!$DB->tableExists('glpi_contracts')) {
-      echo json_encode(['results' => [], 'pagination' => ['more' => false]]);
-      exit;
-   }
-
-   $where = ['is_deleted' => 0];
-   if ($search !== '') {
-      $like = '%' . $search . '%';
-      $where[] = [
-         'OR' => [
-            'name' => ['LIKE', $like],
-            'num'  => ['LIKE', $like],
-         ],
-      ];
-   }
-
-   $rows = $DB->request([
-      'SELECT' => ['id', 'name', 'num'],
-      'FROM'   => 'glpi_contracts',
-      'WHERE'  => $where,
-      'ORDER'  => ['name ASC'],
-      'START'  => $offset,
-      'LIMIT'  => $limit + 1,
-   ]);
-
-   $results = [];
-   $fetched = 0;
-   foreach ($rows as $row) {
-      $fetched++;
-      if (count($results) >= $limit) {
-         break;
-      }
-      $label = trim((string) ($row['num'] ?? '')) !== ''
-         ? sprintf('%s - %s', $row['num'], $row['name'])
-         : sprintf('%d - %s', (int) $row['id'], $row['name']);
-      $results[] = ['id' => (int) $row['id'], 'text' => $label];
-   }
-
-   echo json_encode([
-      'results'    => $results,
-      'pagination' => ['more' => $fetched > $limit],
-   ]);
-   exit;
-}
+   exit;

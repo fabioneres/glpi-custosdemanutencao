@@ -295,11 +295,9 @@ class TicketCostCenter extends CommonDBTM
                'beforejoin' => [
                   'table'      => self::getTable(),
                   'joinparams' => [
-                     'jointype' => 'child',
+                     'jointype'  => 'child',
+                     'condition' => ['NEWTABLE.costcenter_source' => 'legacy'],
                   ],
-               ],
-               'condition'  => [
-                  'NEWTABLE.costcenter_source' => 'legacy',
                ],
             ],
          ],
@@ -317,11 +315,9 @@ class TicketCostCenter extends CommonDBTM
                'beforejoin' => [
                   'table'      => self::getTable(),
                   'joinparams' => [
-                     'jointype' => 'child',
+                     'jointype'  => 'child',
+                     'condition' => ['NEWTABLE.costcenter_source' => 'new'],
                   ],
-               ],
-               'condition'  => [
-                  'NEWTABLE.costcenter_source' => 'new',
                ],
             ],
          ],
@@ -402,49 +398,4 @@ class TicketCostCenter extends CommonDBTM
    private static function getEmptySelection(int $tickets_id): array
    {
       return [
-         'id'                                      => 0,
-         'tickets_id'                              => $tickets_id,
-         'entities_id'                             => 0,
-         'plugin_maintenancecosts_costcenters_id' => 0,
-         'costcenter_source'                       => 'legacy',
-         'users_id'                                => 0,
-      ];
-   }
-
-   public static function getIcon(): string
-   {
-      return 'ti ti-building-bank';
-   }
-
-   public function getTabNameForItem(\CommonGLPI $item, $withtemplate = 0): string
-   {
-      if (!$item instanceof Ticket || $withtemplate) {
-         return '';
-      }
-
-      if (!Config::canViewConsumption()) {
-         return '';
-      }
-
-      if (!Config::isEnabledForEntity((int) $item->getEntityID())) {
-         return '';
-      }
-
-      $count = 0;
-      if (!empty($_SESSION['glpishow_count_on_tabs'])) {
-         $selection = self::getSelection((int) $item->getID());
-         $count = (int) ($selection['plugin_maintenancecosts_costcenters_id'] ?? 0) > 0 ? 1 : 0;
-      }
-
-      return self::createTabEntry(__('Centro de Custos', 'maintenancecosts'), $count, $item::getType(), self::getIcon());
-   }
-
-   public static function displayTabContentForItem(\CommonGLPI $item, $tabnum = 1, $withtemplate = 0): bool
-   {
-      if ($item instanceof Ticket && Config::isEnabledForEntity((int) $item->getEntityID())) {
-         TicketMaterial::showTicketCostCenterForm($item);
-      }
-
-      return true;
-   }
-}
+         'id'                                      

@@ -635,20 +635,4 @@ class Config extends CommonDBTM
    public static function renderPluginLayoutStart(string $active): void
    {
       echo "<div class='plugin-maintenancecosts-page'>";
-      echo "<div class='plugin-maintenancecosts-shell'>";
-      echo "<nav class='plugin-maintenancecosts-side-tabs'>";
-      foreach (self::getPluginTabs() as $key => $tab) {
-         if (empty($tab['show'])) {
-            continue;
-         }
-         $class = $key === $active ? " class='active'" : '';
-         echo "<a{$class} href='" . Html::clean((string) $tab['url']) . "'><i class='" . Html::clean((string) $tab['icon']) . "'></i> " . Html::clean((string) $tab['label']) . "</a>";
-      }
-      echo "</nav><main class='plugin-maintenancecosts-main'>";
-   }
-
-   public static function renderPluginLayoutEnd(): void
-   {
-      echo "</main></div></div>";
-   }
-}
+      echo "<div class='plugin-mainte
