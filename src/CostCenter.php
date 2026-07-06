@@ -310,4 +310,122 @@ class CostCenter extends CommonDBTM
       $code = trim($code);
       $name = trim($name);
 
-      if ($code !== '' && $name !== ''
+      if ($code !== '' && $name !== '' && stripos($name, $code . ' - ') === 0) {
+         return $name;
+      }
+
+      if ($code !== '' && $name !== '') {
+         return sprintf('%s - %s', $code, $name);
+      }
+
+      if ($code !== '') {
+         return $code;
+      }
+
+      return $name;
+   }
+
+   protected static function normalizeFriendlyCode(string $value): string
+   {
+      return preg_replace('/[.\-\/\s]+/', '', $value) ?? '';
+   }
+
+   private static function showRootLocationDropdown(string $name, int $value): void
+   {
+      echo "<select name='" . Html::cleanInputText($name) . "' class='form-select plugin-maintenancecosts-dropdown'>";
+      echo "<option value='0'>-----</option>";
+      foreach (self::rootLocationOptions($value) as $id => $label) {
+         echo "<option value='" . (int) $id . "' " . ((int) $id === $value ? 'selected' : '') . ">" . Html::clean($label) . "</option>";
+      }
+      echo "</select>";
+   }
+
+   private static function rootLocationOptions(int $includeId = 0): array
+   {
+      global $DB;
+      if (!$DB->tableExists('glpi_locations')) {
+         return [];
+      }
+
+      $options = [];
+      foreach ($DB->request([
+         'SELECT' => ['id', 'name', 'completename'],
+         'FROM'   => 'glpi_locations',
+         'WHERE'  => ['locations_id' => 0],
+         'ORDER'  => 'name ASC',
+      ]) as $row) {
+         $label = self::locationLabelFromRow($row);
+         if ($label !== '') {
+            $options[(int) $row['id']] = $label;
+         }
+      }
+
+      if ($includeId > 0 && !isset($options[$includeId])) {
+         $label = self::getLocationLabel($includeId);
+         if ($label !== '') {
+            $options[$includeId] = $label;
+            asort($options, SORT_NATURAL | SORT_FLAG_CASE);
+         }
+      }
+
+      return $options;
+   }
+
+   private static function getRootLocationId(int $locationsId): int
+   {
+      global $DB;
+      if ($locationsId <= 0 || !$DB->tableExists('glpi_locations')) {
+         return 0;
+      }
+
+      $current = $locationsId;
+      $guard = 0;
+      while ($current > 0 && $guard < 50) {
+         $row = $DB->request([
+            'SELECT' => ['id', 'locations_id'],
+            'FROM'   => 'glpi_locations',
+            'WHERE'  => ['id' => $current],
+            'LIMIT'  => 1,
+         ])->current();
+         if (!is_array($row)) {
+            return 0;
+         }
+
+         $parent = (int) ($row['locations_id'] ?? 0);
+         if ($parent <= 0) {
+            return (int) $row['id'];
+         }
+
+         $current = $parent;
+         $guard++;
+      }
+
+      return 0;
+   }
+
+   private static function getLocationLabel(int $locationsId): string
+   {
+      global $DB;
+      if ($locationsId <= 0 || !$DB->tableExists('glpi_locations')) {
+         return '';
+      }
+
+      $row = $DB->request([
+         'SELECT' => ['name', 'completename'],
+         'FROM'   => 'glpi_locations',
+         'WHERE'  => ['id' => $locationsId],
+         'LIMIT'  => 1,
+      ])->current();
+
+      return is_array($row) ? self::locationLabelFromRow($row) : '';
+   }
+
+   private static function locationLabelFromRow(array $row): string
+   {
+      $label = trim((string) ($row['name'] ?? ''));
+      if ($label === '') {
+         $label = trim((string) ($row['completename'] ?? ''));
+      }
+      return $label;
+   }
+}

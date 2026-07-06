@@ -993,4 +993,195 @@
             reject(new Error('Request failed'));
          };
          request.send();
-    
+      });
+   }
+
+   function normalizeFormFields(form) {
+      var competence = form.querySelector('[name="competence"]');
+      if (competence) {
+         competence.value = normalizeCompetence(competence.value);
+      }
+
+      var quantity = form.querySelector('[name="quantity"]');
+      if (quantity) {
+         quantity.value = String(Math.max(0, Math.round(toNumber(quantity.value))));
+      }
+
+      ['unit_price_applied', 'unit_price'].forEach(function(name) {
+         var input = form.querySelector('[name="' + name + '"]');
+         if (input && input.value !== '') {
+            input.value = formatDecimal(input.value);
+         }
+      });
+   }
+
+   function updateUnitPriceState(form) {
+      var priceType = form.querySelector('[name="price_type"]');
+      var unitPrice = form.querySelector('[name="unit_price_applied"]');
+      if (!priceType || !unitPrice) {
+         return;
+      }
+
+      if (priceType.value === 'cotacao_mercado') {
+         unitPrice.readOnly = false;
+      } else if (unitPrice.dataset.readonlyForSinapi === '1') {
+         unitPrice.readOnly = true;
+         unitPrice.dataset.manualLocked = '';
+      }
+   }
+
+   document.addEventListener('change', function(event) {
+      var form = event.target.closest('form');
+      if (!form || !form.querySelector('[name="plugin_maintenancecosts_materials_id"]')) {
+         return;
+      }
+      if (event.target.name === 'plugin_maintenancecosts_materials_id'
+         || event.target.name === 'competence'
+         || event.target.name === 'price_type') {
+         if (event.target.name === 'competence') {
+            event.target.value = normalizeCompetence(event.target.value);
+         }
+         if (event.target.name === 'price_type') {
+            updateUnitPriceState(form);
+            updateMaterialSource(form, true);
+         }
+         loadMaterialInfo(form);
+      }
+      if (event.target.name === 'plugin_maintenancecosts_materialorigins_id') {
+         updateContractRow(form);
+      }
+      if (event.target.matches('[data-maintenancecosts-costcenter-source]')) {
+         var hidden = form.querySelector('[data-maintenancecosts-costcenter-source-hidden]');
+         if (hidden) {
+            hidden.value = event.target.value === 'new' ? 'new' : 'legacy';
+         }
+      }
+      if (event.target.name === 'unit_price_applied') {
+         event.target.value = formatDecimal(event.target.value);
+         event.target.dataset.manualLocked = '1';
+      }
+      if (event.target.name === 'unit_price') {
+         event.target.value = formatDecimal(event.target.value);
+      }
+      if (event.target.name === 'quantity') {
+         event.target.value = String(Math.max(0, Math.round(toNumber(event.target.value))));
+      }
+      if (event.target.name === 'quantity' || event.target.name === 'unit_price_applied') {
+         updateTotal(form);
+      }
+   });
+
+   document.addEventListener('input', function(event) {
+      var form = event.target.closest('form');
+      if (form && form.querySelector('[name="plugin_maintenancecosts_materials_id"]') && (event.target.name === 'quantity' || event.target.name === 'unit_price_applied')) {
+         updateTotal(form);
+      }
+   });
+
+   document.addEventListener('blur', function(event) {
+      if (event.target.name === 'competence') {
+         event.target.value = normalizeCompetence(event.target.value);
+      }
+      if (event.target.name === 'quantity') {
+         event.target.value = String(Math.max(0, Math.round(toNumber(event.target.value))));
+      }
+      if (event.target.name === 'unit_price_applied' || event.target.name === 'unit_price') {
+         event.target.value = formatDecimal(event.target.value);
+      }
+   }, true);
+
+   document.addEventListener('submit', function(event) {
+      normalizeFormFields(event.target);
+   });
+
+   document.addEventListener('click', function(event) {
+      var button = event.target.closest('[data-maintenancecosts-toggle-add]');
+      if (!button) {
+         return;
+      }
+
+      var container = button.parentNode.querySelector('[data-maintenancecosts-add-form]');
+      if (!container) {
+         return;
+      }
+
+      var isHidden = container.style.display === 'none' || container.style.display === '';
+      container.style.display = isHidden ? 'block' : 'none';
+      if (isHidden) {
+         initPluginDropdowns(container);
+         initCostCenterSourceSwitch(container);
+         initOriginContractToggle(container);
+         container.querySelectorAll('form').forEach(function(form) {
+            updateUnitPriceState(form);
+            updateMaterialSource(form, false);
+            updateContractRow(form);
+         });
+      }
+   });
+
+   if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+         initPluginDropdowns(document);
+         initFormcreatorCostCenterDropdowns(document);
+         initSortableTables(document);
+         initColumnViews(document);
+         initContractTicketDropdowns(document);
+         initCostCenterSourceSwitch(document);
+         initOriginContractToggle(document);
+         document.querySelectorAll('form').forEach(function(form) {
+            updateUnitPriceState(form);
+            updateMaterialSource(form, false);
+            updateContractRow(form);
+         });
+         observeDynamicContent();
+      });
+   } else {
+      initPluginDropdowns(document);
+      initFormcreatorCostCenterDropdowns(document);
+      initSortableTables(document);
+      initColumnViews(document);
+      initContractTicketDropdowns(document);
+      initCostCenterSourceSwitch(document);
+      initOriginContractToggle(document);
+      document.querySelectorAll('form').forEach(function(form) {
+         updateUnitPriceState(form);
+         updateMaterialSource(form, false);
+         updateContractRow(form);
+      });
+      observeDynamicContent();
+   }
+
+   function observeDynamicContent() {
+      if (window.maintenanceCostsObserverReady || !window.MutationObserver || !document.body) {
+         return;
+      }
+      window.maintenanceCostsObserverReady = true;
+      new MutationObserver(function(mutations) {
+         mutations.forEach(function(mutation) {
+            mutation.addedNodes.forEach(function(node) {
+               if (!node || node.nodeType !== 1) {
+                  return;
+               }
+                initPluginDropdowns(node);
+                initFormcreatorCostCenterDropdowns(node);
+                initSortableTables(node);
+                initColumnViews(node);
+                initContractTicketDropdowns(node);
+                initCostCenterSourceSwitch(node);
+                initOriginContractToggle(node);
+                if (node.matches && node.matches('form')) {
+                   updateUnitPriceState(node);
+                   updateMaterialSource(node, false);
+                   updateContractRow(node);
+                } else if (node.querySelectorAll) {
+                   node.querySelectorAll('form').forEach(function(form) {
+                      updateUnitPriceState(form);
+                      updateMaterialSource(form, false);
+                      updateContractRow(form);
+                   });
+                }
+             });
+          });
+      }).observe(document.body, {childList: true, subtree: true});
+   }
+})();

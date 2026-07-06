@@ -50,4 +50,5 @@ Esta primeira entrega operacional nao implementa dashboards graficos, aprovacao 
 
 - Servicos reutilizaveis para Dashboard Plus e ferramentas externas.
 - Validacao futura para GLPI 11.
-- Melhorias de usabilidade no mo
+- Melhorias de usabilidade no modal de lancamento.
+- Exportacao PDF dos relatorios.

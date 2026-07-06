@@ -88,4 +88,9 @@ echo "<tr><th>" . __('Nome', 'maintenancecosts') . "</th><td>" . Html::clean(Con
 echo "<tr><th>" . __('Versão', 'maintenancecosts') . "</th><td>" . Html::clean(PLUGIN_MAINTENANCECOSTS_VERSION) . "</td></tr>";
 echo "<tr><th>" . __('Autor', 'maintenancecosts') . "</th><td>Fabio Neres</td></tr>";
 echo "<tr><th>" . __('Escopo', 'maintenancecosts') . "</th><td>" . __('Custos de materiais em chamados de manutenção no GLPI.', 'maintenancecosts') . "</td></tr>";
-echo "<tr><th>" . __('Fora do escopo atual', 'maintenancecosts') . "</th><td>" . __('Estoque, compras, nota fiscal, empenho, aprovação de consumo e integrações financeiras.', 'maint
+echo "<tr><th>" . __('Fora do escopo atual', 'maintenancecosts') . "</th><td>" . __('Estoque, compras, nota fiscal, empenho, aprovação de consumo e integrações financeiras.', 'maintenancecosts') . "</td></tr>";
+echo "</table>";
+echo "</div></div>";
+
+Config::renderPluginLayoutEnd();
+Html::footer();

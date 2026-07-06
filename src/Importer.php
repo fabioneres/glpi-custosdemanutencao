@@ -875,4 +875,10 @@ class Importer
    private static function columnIndexFromReference(string $reference): int
    {
       $letters = preg_replace('/[^A-Z]/', '', strtoupper($reference));
- 
+      $index = 0;
+      for ($i = 0; $i < strlen($letters); $i++) {
+         $index = ($index * 26) + (ord($letters[$i]) - 64);
+      }
+      return max(0, $index - 1);
+   }
+}

@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.7 - Hotfix de empacotamento e publicacao segura
+
+- Regenera a release a partir da arvore local funcional validada em homologacao, evitando arquivos truncados no pacote publicado.
+- Corrige a publicacao de `setup.php`, `hook.php`, telas `front/` e classes `src/` que causavam tela branca ou falha de instalacao em ambiente Linux.
+- Mantem os ajustes mais recentes de FormCreator, dropdowns de centros de custo e filtros/pesquisa nativa do plugin.
+- Gera um novo pacote ZIP de instalacao pronto para atualizacao segura em producao.
+
 ## v1.0.4 - Preenchimento automatico da data no lancamento
 
 - Preenche automaticamente a data do consumo com a data vigente ao abrir o formulario de lancamento em `Materiais consumidos`.
@@ -98,4 +105,47 @@
 
 - Adequa centros de custo ao layout da planilha institucional, com codigo, unidade gestora, unidade academica, departamento, divisao, secao, codigo SIORG, sigla SIORG, endereco e responsavel.
 - Vincula Unidade gestora a localizacao GLPI de nivel 1 quando houver correspondencia de nome.
-- Adiciona importacao XLSX/CS
+- Adiciona importacao XLSX/CSV de centros de custo com reconhecimento de cabecalhos acentuados em maiusculas.
+- Remove a criacao automatica de origens do material; origens passam a ser somente cadastros manuais.
+- Remove origens padrao legadas sem uso durante upgrade idempotente.
+- Mantem a coluna `Acoes` sempre visivel, nao ocultavel e nao ordenavel nas tabelas customizaveis do plugin.
+- Atualiza exportacao CSV/PDF de centros de custo para seguir a nova estrutura.
+
+## v0.5.4 - Compatibilidade de instalacao no GLPI 10.0.24
+
+- Corrige a instalacao/habilitacao pela interface em ambientes GLPI 10.0.24, usando a classe global `\QueryExpression` em vez do namespace `Glpi\DBAL\QueryExpression`.
+- Mantem a logica de direitos de perfil inalterada; a mudanca e restrita a compatibilidade da API DBAL do GLPI 10.0.x.
+
+## v0.5.3 - Cotacao Mercado e custos do chamado
+
+- Separa Cotacao/Mercado em tab propria, com acoes de adicionar preco, importar e consultar historico no mesmo contexto.
+- Adequa Cotacao/Mercado ao layout da planilha de cotacoes com quantidade, valor aplicado e tres cotacoes comparativas.
+- Adiciona a tab Materiais Cotacao abaixo de Materiais SINAPI, listando materiais com precos de cotacao/mercado.
+- Ajusta os fluxos `Adicionar preco cotacao` e `Importar Cotacao` para exibirem labels, campos e orientacoes proprias de cotacao.
+- Preenche a competencia do lancamento de material com a ultima competencia cadastrada, mantendo edicao manual.
+- Sincroniza materiais consumidos com a aba nativa `Chamado > Custos` por meio de `TicketCost` idempotente.
+
+## v0.5.2 - Icone, campus e correcoes visuais
+
+- Ajusta o cadastro de centros de custo para usar Campus como localizacao GLPI de nivel 1.
+- Corrige nomes e acentuacao visivel nas telas de centro de custo e configuracao.
+- Adiciona metadados e arquivos de icone/logotipo do plugin para empacotamento.
+- Exibe o icone do plugin no card de Plug-ins instalados do GLPI quando o plugin foi instalado localmente.
+
+## v0.5.1 - Performance, importacoes e relatorios
+
+- Otimiza dropdowns grandes de materiais, centros de custo e contratos com carregamento remoto paginado.
+- Move o historico de importacoes para a tela de Importar SINAPI e adiciona `Importar Cotacao`.
+- Permite ordenar colunas nas visoes pessoal/global das tabelas do plugin por arrastar e soltar.
+- Cria o vinculo chamado-contrato ao selecionar contrato no lancamento de material.
+- Melhora exportacao PDF de relatorios com resumo, grafico e tabela em layout visual.
+
+## v0.5.0 - Evolucao de centros, precos e relatorios
+
+- Reorganiza centros de custo com codigo, nome, endereco, piso, campus, departamento/disciplina/setor e utilizacao.
+- Adiciona importacao CSV/XLSX de centros de custo com pre-validacao.
+- Move importacoes SINAPI para a area de Precos SINAPI.
+- Adiciona fluxo de precos por cotacao/mercado e filtro por tipo de preco.
+- Adiciona unidade e historico por item em Precos SINAPI.
+- Reestrutura relatorios para exibir uma visao por vez, com graficos configuraveis.
+- Adiciona relatorios por origem do material, tipo de preco e contrato.

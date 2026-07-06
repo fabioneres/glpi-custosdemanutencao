@@ -414,4 +414,93 @@ class Installer
             `id` int unsigned NOT NULL AUTO_INCREMENT,
             `plugin_maintenancecosts_materials_id` int unsigned NOT NULL DEFAULT '0',
             `plugin_maintenancecosts_prices_id` int unsigned NOT NULL DEFAULT '0',
-            `plugin_maint
+            `plugin_maintenancecosts_importbatches_id` int unsigned NOT NULL DEFAULT '0',
+            `competence` varchar(7) NOT NULL DEFAULT '',
+            `price_type` varchar(32) NOT NULL DEFAULT 'sinapi',
+            `old_unit_price` decimal(20,6) NOT NULL DEFAULT '0.000000',
+            `new_unit_price` decimal(20,6) NOT NULL DEFAULT '0.000000',
+            `source` varchar(255) NOT NULL DEFAULT '',
+            `users_id` int unsigned NOT NULL DEFAULT '0',
+            `justification` text NULL,
+            `date_creation` timestamp NULL DEFAULT NULL,
+            PRIMARY KEY (`id`),
+            KEY `idx_material` (`plugin_maintenancecosts_materials_id`),
+            KEY `idx_price` (`plugin_maintenancecosts_prices_id`),
+            KEY `idx_importbatch` (`plugin_maintenancecosts_importbatches_id`),
+            KEY `idx_competence` (`competence`),
+            KEY `idx_price_type` (`price_type`),
+            KEY `idx_user` (`users_id`),
+            KEY `idx_date_creation` (`date_creation`)
+         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC"
+      );
+   }
+
+   private static function ensureDefaultCostCenter(): void
+   {
+      global $DB;
+
+      if (!$DB->tableExists(CostCenter::getTable())) {
+         return;
+      }
+
+      $existing = $DB->request([
+         'FROM'  => CostCenter::getTable(),
+         'WHERE' => ['code' => 'GERAL'],
+         'LIMIT' => 1,
+      ])->current();
+
+      if ($existing) {
+         if (!(int) ($existing['is_active'] ?? 0)) {
+            $DB->update(CostCenter::getTable(), ['is_active' => 1], ['id' => (int) $existing['id']]);
+         }
+         return;
+      }
+
+      $DB->insert(CostCenter::getTable(), [
+         'entities_id'   => 0,
+         'is_recursive'  => 1,
+         'code'          => 'GERAL',
+         'name'          => 'Centro de custo geral',
+         'address'       => '',
+         'description'   => 'Centro de custo padrão criado automaticamente pelo plugin.',
+         'locations_id'  => 0,
+         'users_id'      => 0,
+         'is_active'     => 1,
+         'comment'       => '',
+         'date_creation' => date('Y-m-d H:i:s'),
+         'date_mod'      => date('Y-m-d H:i:s'),
+      ]);
+   }
+
+   private static function ensureField(\Migration $migration, string $table, string $field, string $definition): void
+   {
+      /** @var DBmysql $DB */
+      global $DB;
+
+      if (!$DB->fieldExists($table, $field)) {
+         $migration->addField($table, $field, $definition);
+      }
+   }
+
+   public static function uninstall(): bool
+   {
+      /** @var DBmysql $DB */
+      global $DB;
+
+      try {
+         $sqlfile = PLUGIN_MAINTENANCECOSTS_DIR . '/install/uninstall.sql';
+         if (file_exists($sqlfile)) {
+            $DB->runFile($sqlfile);
+         }
+      } catch (Throwable $e) {
+         Toolbox::logInFile(
+            'plugin_maintenancecosts',
+            'Uninstall failed: ' . $e->getMessage() . PHP_EOL
+         );
+         return false;
+      }
+
+      \Config::deleteConfigurationValues('plugin:maintenancecosts', ['dbversion']);
+      return true;
+   }
+}

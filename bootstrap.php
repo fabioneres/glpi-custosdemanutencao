@@ -13,7 +13,7 @@ if (!defined('GLPI_ROOT')) {
 }
 
 if (!defined('PLUGIN_MAINTENANCECOSTS_VERSION')) {
-   define('PLUGIN_MAINTENANCECOSTS_VERSION', '1.0.5');
+   define('PLUGIN_MAINTENANCECOSTS_VERSION', '1.0.7');
 }
 
 if (!defined('PLUGIN_MAINTENANCECOSTS_SCHEMA_VERSION')) {
@@ -46,4 +46,5 @@ if (!defined('PLUGIN_MAINTENANCECOSTS_AUTOLOADER')) {
       if (file_exists($file)) {
          require_once $file;
       }
-   }
+   });
+}

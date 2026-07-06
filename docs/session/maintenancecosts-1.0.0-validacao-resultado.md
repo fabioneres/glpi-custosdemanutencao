@@ -97,4 +97,7 @@ echo "<div class='text-muted small' style='margin-top:8px; width:100%;'>"
 
 ## Pendências para consolidação final
 
-1. **[DEPLOY]** Enviar `src/TicketM
+1. **[DEPLOY]** Enviar `src/TicketMaterial.php` para a VM (fix CSS `width:100%`)
+2. **[OPCIONAL]** Verificar histórico de preços com registros novos após fix do encoding
+3. Commit e tag `v1.0.0`
+4. Publicação externa

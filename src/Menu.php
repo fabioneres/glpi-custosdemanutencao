@@ -115,4 +115,5 @@ class Menu extends CommonDBTM
       }
 
       return $menu;
- 
+   }
+}

@@ -156,4 +156,10 @@ foreach ($iterator as $row) {
 }
 
 if ($iterator->count() === 0) {
-   echo "<tr class='tab_bg_1'><td colspan='8' class='center'>" . __('Nenhum centro de custo encontrado.', 'maintenancecosts
+   echo "<tr class='tab_bg_1'><td colspan='8' class='center'>" . __('Nenhum centro de custo encontrado.', 'maintenancecosts') . "</td></tr>";
+}
+
+echo "</tbody></table>";
+Pager::render($totalRows, $page, $perPage, ['q' => $search]);
+Config::renderPluginLayoutEnd();
+Html::footer();

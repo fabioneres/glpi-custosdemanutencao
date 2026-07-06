@@ -178,4 +178,34 @@ class FormcreatorCostCenterSync
 
       foreach ($patterns as [$from, $to]) {
          if ($from !== '' && mb_strpos($updated, $from) !== false) {
-            $updated = preg_replace('/' . preg_quote($from, '/') . '/u', $to, $updated, 
+            $updated = preg_replace('/' . preg_quote($from, '/') . '/u', $to, $updated, 1) ?? $updated;
+            break;
+         }
+      }
+
+      if ($updated === $content && mb_strpos($updated, $friendlyLabel) === false) {
+         // O GLPI pode persistir HTML literal, entidades nomeadas (&lt;)
+         // ou entidades numericas (&#60;). Mantemos o mesmo formato para
+         // evitar lixo visual na descricao do ticket.
+         if (mb_strpos($updated, '&#60;') !== false) {
+            $lineBreak = '&#60;br&#62;&#60;br&#62;';
+         } elseif (mb_strpos($updated, '&lt;') !== false) {
+            $lineBreak = '&lt;br&gt;&lt;br&gt;';
+         } elseif (mb_strpos($updated, '<') !== false) {
+            $lineBreak = '<br><br>';
+         } else {
+            $lineBreak = "\n\n";
+         }
+         $updated = rtrim($updated) . $lineBreak . $questionName . ': ' . $friendlyLabel;
+      }
+
+      if ($updated === $content) {
+         return;
+      }
+
+      $ticket->update([
+         'id'      => $ticketId,
+         'content' => $updated,
+      ]);
+   }
+}

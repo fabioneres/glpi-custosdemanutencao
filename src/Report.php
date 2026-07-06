@@ -706,4 +706,15 @@ class Report extends CommonDBTM
 
       echo "<div class='plugin-maintenancecosts-pie-wrap'><div class='plugin-maintenancecosts-pie' style='background:conic-gradient(" . Html::clean(implode(', ', $segments)) . ");'></div><div>";
       foreach (array_values($rows) as $index => $row) {
-         $color = $colors[$index % c
+         $color = $colors[$index % count($colors)];
+         $share = $total > 0 ? ((float) $row['total'] / $total) * 100 : 0;
+         echo "<div class='plugin-maintenancecosts-pie-item'><span style='background:" . Html::clean($color) . "'></span><div>" . Html::clean($row['name']) . "</div><strong>" . Config::formatCurrency((float) $row['total']) . "</strong><em>" . Html::formatNumber($share, true, 1) . "%</em></div>";
+      }
+      echo "</div></div>";
+   }
+
+   private static function labelWithCode($code, $name): string
+   {
+      return CostCenter::composeFriendlyLabel((string) $code, (string) $name);
+   }
+}

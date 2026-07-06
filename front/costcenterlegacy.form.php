@@ -32,4 +32,5 @@ if (isset($_POST['delete']) || isset($_POST['purge'])) {
 Config::checkRight(Config::RIGHT_COSTCENTERS, READ);
 
 Html::header(CostCenterLegacy::getTypeName(1), $_SERVER['PHP_SELF'], 'plugins', Menu::class);
-$item->display(['id' => (int) ($_G
+$item->display(['id' => (int) ($_GET['id'] ?? 0)]);
+Html::footer();
