@@ -10,6 +10,7 @@ use CommonDBTM;
 use DBmysql;
 use Html;
 use QueryExpression;
+use Session;
 
 class CostCenter extends CommonDBTM
 {
@@ -239,8 +240,37 @@ class CostCenter extends CommonDBTM
       echo "<tr class='tab_bg_1'><td>" . __('Comments') . "</td>";
       echo "<td colspan='3'><textarea name='comment' class='form-control' rows='3'>" . Html::cleanInputText($this->fields['comment'] ?? '') . "</textarea></td></tr>";
 
-      $this->showFormButtons($options);
+      $this->renderSubmitRow();
       return true;
+   }
+
+   protected function renderSubmitRow(): void
+   {
+      $itemId = (int) ($this->fields['id'] ?? 0);
+      $isNew = $itemId <= 0;
+      $requiredRight = $isNew ? CREATE : UPDATE;
+
+      echo "<tr class='tab_bg_2'>";
+      echo "<td class='center' colspan='4'>";
+
+      if (Session::haveRight(static::$rightname, $requiredRight)) {
+         if (!$isNew) {
+            echo Html::hidden('id', ['value' => $itemId]);
+         }
+
+         echo Html::submit(
+            _sx('button', $isNew ? 'Add' : 'Save'),
+            [
+               'name'  => $isNew ? 'add' : 'update',
+               'class' => 'btn btn-primary',
+            ]
+         );
+      }
+
+      echo "</td>";
+      echo "</tr>";
+
+      Html::closeForm();
    }
 
    public static function getRootLocationIdByLabel(string $label): int

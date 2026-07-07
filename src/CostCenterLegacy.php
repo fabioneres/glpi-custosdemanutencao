@@ -87,7 +87,7 @@ class CostCenterLegacy extends CostCenter
       echo "<tr class='tab_bg_1'><td>" . __('Comments') . "</td>";
       echo "<td colspan='3'><textarea name='comment' class='form-control' rows='3'>" . Html::cleanInputText($this->fields['comment'] ?? '') . "</textarea></td></tr>";
 
-      $this->showFormButtons($options);
+      $this->renderSubmitRow();
       return true;
    }
 

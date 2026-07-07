@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.0.8 - Hotfix do botao Salvar em centros de custo
+
+- Restaura a acao de `Salvar` na edicao dos registros de `Centro de Custos Novo` e `Centro de Custos Antigo`.
+- Mantem o botao `Adicionar` no cadastro de novos centros de custo.
+- Evita dependencia do rodape automatico do GLPI nesses dois formularios, garantindo consistencia no modo de edicao.
+
 ## v1.0.7 - Hotfix de empacotamento e publicacao segura
 
 - Regenera a release a partir da arvore local funcional validada em homologacao, evitando arquivos truncados no pacote publicado.
