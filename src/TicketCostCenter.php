@@ -26,31 +26,66 @@ class TicketCostCenter extends CommonDBTM
 
    public static function getSelection(int $tickets_id): array
    {
+      return self::getPreferredSelection($tickets_id);
+   }
+
+   public static function getMaterialSelection(int $tickets_id): array
+   {
+      return self::getPreferredSelection($tickets_id);
+   }
+
+   private static function getPreferredSelection(int $tickets_id): array
+   {
+      $selections = self::getSelections($tickets_id);
+      if ((int) ($selections['legacy']['plugin_maintenancecosts_costcenters_id'] ?? 0) > 0) {
+         return $selections['legacy'];
+      }
+
+      if ((int) ($selections['new']['plugin_maintenancecosts_costcenters_id'] ?? 0) > 0) {
+         return $selections['new'];
+      }
+
+      return self::getEmptySelection($tickets_id, 'legacy');
+   }
+
+   public static function getSelections(int $tickets_id): array
+   {
       global $DB;
 
-      $selection = self::getEmptySelection($tickets_id);
+      $selections = [
+         'legacy' => self::getEmptySelection($tickets_id, 'legacy'),
+         'new'    => self::getEmptySelection($tickets_id, 'new'),
+      ];
+
       if ($tickets_id <= 0 || !$DB->tableExists(self::getTable())) {
-         return $selection;
+         return $selections;
       }
 
-      $row = $DB->request([
+      $iterator = $DB->request([
          'FROM'  => self::getTable(),
          'WHERE' => ['tickets_id' => $tickets_id],
-         'LIMIT' => 1,
-      ])->current();
+      ]);
 
-      if (!is_array($row)) {
-         return $selection;
+      foreach ($iterator as $row) {
+         $source = TicketMaterial::normalizeCostCenterSource((string) ($row['costcenter_source'] ?? 'legacy'));
+         $selection = array_merge(self::getEmptySelection($tickets_id, $source), $row);
+         $selection['id'] = (int) ($selection['id'] ?? 0);
+         $selection['tickets_id'] = (int) ($selection['tickets_id'] ?? 0);
+         $selection['entities_id'] = (int) ($selection['entities_id'] ?? 0);
+         $selection['plugin_maintenancecosts_costcenters_id'] = (int) ($selection['plugin_maintenancecosts_costcenters_id'] ?? 0);
+         $selection['costcenter_source'] = $source;
+         $selection['users_id'] = (int) ($selection['users_id'] ?? 0);
+         $selections[$source] = $selection;
       }
 
-      $selection = array_merge($selection, $row);
-      $selection['id'] = (int) ($selection['id'] ?? 0);
-      $selection['tickets_id'] = (int) ($selection['tickets_id'] ?? 0);
-      $selection['entities_id'] = (int) ($selection['entities_id'] ?? 0);
-      $selection['plugin_maintenancecosts_costcenters_id'] = (int) ($selection['plugin_maintenancecosts_costcenters_id'] ?? 0);
-      $selection['costcenter_source'] = TicketMaterial::normalizeCostCenterSource((string) ($selection['costcenter_source'] ?? 'legacy'));
+      return $selections;
+   }
 
-      return $selection;
+   public static function getSelectionBySource(int $tickets_id, string $source): array
+   {
+      $source = TicketMaterial::normalizeCostCenterSource($source);
+      $selections = self::getSelections($tickets_id);
+      return $selections[$source] ?? self::getEmptySelection($tickets_id, $source);
    }
 
    public static function getDisplayLabel(int $tickets_id): string
@@ -64,21 +99,15 @@ class TicketCostCenter extends CommonDBTM
 
    public static function saveForTicket(int $tickets_id, int $costcenter_id, string $source, int $entities_id = 0): bool
    {
+      return self::saveSelectionsForTicket($tickets_id, [$source => $costcenter_id], $entities_id);
+   }
+
+   public static function saveSelectionsForTicket(int $tickets_id, array $valuesBySource, int $entities_id = 0): bool
+   {
       global $DB;
 
       $tickets_id = (int) $tickets_id;
-      $costcenter_id = (int) $costcenter_id;
-      $source = TicketMaterial::normalizeCostCenterSource($source);
-
       if ($tickets_id <= 0) {
-         return false;
-      }
-
-      if ($costcenter_id <= 0) {
-         return self::clearForTicket($tickets_id);
-      }
-
-      if (!self::validateSelectionChange($tickets_id, $costcenter_id, $source)) {
          return false;
       }
 
@@ -88,42 +117,67 @@ class TicketCostCenter extends CommonDBTM
       }
 
       $entities_id = $entities_id > 0 ? $entities_id : (int) ($ticket->fields['entities_id'] ?? 0);
-      $current = self::getSelection($tickets_id);
-      $payload = [
-         'tickets_id'                              => $tickets_id,
-         'entities_id'                             => $entities_id,
-         'plugin_maintenancecosts_costcenters_id' => $costcenter_id,
-         'costcenter_source'                       => $source,
-         'users_id'                                => (int) ($_SESSION['glpiID'] ?? 0),
-         'date_mod'                                => date('Y-m-d H:i:s'),
-      ];
+      $selections = self::getSelections($tickets_id);
 
-      $ok = false;
-      if ((int) ($current['id'] ?? 0) > 0) {
-         $ok = (bool) $DB->update(self::getTable(), $payload, ['id' => (int) $current['id']]);
-         $itemId = (int) $current['id'];
-      } else {
-         $payload['date_creation'] = date('Y-m-d H:i:s');
-         $ok = (bool) $DB->insert(self::getTable(), $payload);
-         $itemId = $ok ? (int) $DB->insertId() : 0;
+      foreach (['legacy', 'new'] as $source) {
+         $costcenter_id = isset($valuesBySource[$source])
+            ? (int) $valuesBySource[$source]
+            : (int) ($selections[$source]['plugin_maintenancecosts_costcenters_id'] ?? 0);
+
+         if (!self::validateSelectionChange($tickets_id, $costcenter_id, $source)) {
+            return false;
+         }
       }
 
-      if ($ok && $itemId > 0) {
-         AuditLog::record(
-            self::class,
-            $itemId,
-            'ticket_costcenter_save',
-            $current,
-            $payload,
-            __('Centro de custo vinculado ao chamado.', 'maintenancecosts'),
-            $entities_id
-         );
+      $allOk = true;
+      foreach (['legacy', 'new'] as $source) {
+         $costcenter_id = isset($valuesBySource[$source])
+            ? (int) $valuesBySource[$source]
+            : (int) ($selections[$source]['plugin_maintenancecosts_costcenters_id'] ?? 0);
+         $current = $selections[$source];
+
+         if ($costcenter_id <= 0) {
+            $allOk = self::clearForTicket($tickets_id, $source) && $allOk;
+            continue;
+         }
+
+         $payload = [
+            'tickets_id'                              => $tickets_id,
+            'entities_id'                             => $entities_id,
+            'plugin_maintenancecosts_costcenters_id' => $costcenter_id,
+            'costcenter_source'                       => $source,
+            'users_id'                                => (int) ($_SESSION['glpiID'] ?? 0),
+            'date_mod'                                => date('Y-m-d H:i:s'),
+         ];
+
+         if ((int) ($current['id'] ?? 0) > 0) {
+            $ok = (bool) $DB->update(self::getTable(), $payload, ['id' => (int) $current['id']]);
+            $itemId = (int) $current['id'];
+         } else {
+            $payload['date_creation'] = date('Y-m-d H:i:s');
+            $ok = (bool) $DB->insert(self::getTable(), $payload);
+            $itemId = $ok ? (int) $DB->insertId() : 0;
+         }
+
+         if ($ok && $itemId > 0) {
+            AuditLog::record(
+               self::class,
+               $itemId,
+               'ticket_costcenter_save',
+               $current,
+               $payload,
+               __('Centro de custo vinculado ao chamado.', 'maintenancecosts'),
+               $entities_id
+            );
+         }
+
+         $allOk = $ok && $allOk;
       }
 
-      return $ok;
+      return $allOk;
    }
 
-   public static function clearForTicket(int $tickets_id): bool
+   public static function clearForTicket(int $tickets_id, ?string $source = null): bool
    {
       global $DB;
 
@@ -132,31 +186,40 @@ class TicketCostCenter extends CommonDBTM
          return false;
       }
 
-      if (count(self::getMaterialCostCenters($tickets_id)) > 0) {
+      $source = $source !== null ? TicketMaterial::normalizeCostCenterSource($source) : null;
+      if (($source === null || $source === 'legacy') && count(self::getMaterialCostCenters($tickets_id)) > 0) {
          Session::addMessageAfterRedirect(
-            __('Não é possível remover o centro de custo do chamado enquanto houver materiais consumidos ativos vinculados.', 'maintenancecosts'),
+            __('NÃ£o Ã© possÃ­vel remover o centro de custo do chamado enquanto houver materiais consumidos ativos vinculados.', 'maintenancecosts'),
             false,
             ERROR
          );
          return false;
       }
 
-      $current = self::getSelection($tickets_id);
-      if ((int) ($current['id'] ?? 0) <= 0) {
-         return true;
-      }
+      $targets = $source === null
+         ? self::getSelections($tickets_id)
+         : [$source => self::getSelectionBySource($tickets_id, $source)];
 
-      $ok = (bool) $DB->delete(self::getTable(), ['id' => (int) $current['id']]);
-      if ($ok) {
-         AuditLog::record(
-            self::class,
-            (int) $current['id'],
-            'ticket_costcenter_clear',
-            $current,
-            [],
-            __('Centro de custo removido do chamado.', 'maintenancecosts'),
-            (int) ($current['entities_id'] ?? 0)
-         );
+      $ok = true;
+      foreach ($targets as $current) {
+         if ((int) ($current['id'] ?? 0) <= 0) {
+            continue;
+         }
+
+         $deleted = (bool) $DB->delete(self::getTable(), ['id' => (int) $current['id']]);
+         if ($deleted) {
+            AuditLog::record(
+               self::class,
+               (int) $current['id'],
+               'ticket_costcenter_clear',
+               $current,
+               [],
+               __('Centro de custo removido do chamado.', 'maintenancecosts'),
+               (int) ($current['entities_id'] ?? 0)
+            );
+         }
+
+         $ok = $deleted && $ok;
       }
 
       return $ok;
@@ -172,7 +235,7 @@ class TicketCostCenter extends CommonDBTM
          return true;
       }
 
-      $selection = self::getSelection($tickets_id);
+      $selection = self::getMaterialSelection($tickets_id);
       $linkedId = (int) ($selection['plugin_maintenancecosts_costcenters_id'] ?? 0);
       if ($linkedId > 0) {
          if ($costcenter_id <= 0 || $linkedId !== $costcenter_id || (string) ($selection['costcenter_source'] ?? 'legacy') !== $source) {
@@ -255,7 +318,7 @@ class TicketCostCenter extends CommonDBTM
             continue;
          }
 
-         $current = self::getSelection($ticketId);
+         $current = self::getMaterialSelection($ticketId);
          if ((int) ($current['plugin_maintenancecosts_costcenters_id'] ?? 0) > 0) {
             continue;
          }
@@ -279,7 +342,7 @@ class TicketCostCenter extends CommonDBTM
       return [
          [
             'id'   => 'maintenancecosts',
-            'name' => __('Custos de Manutenção', 'maintenancecosts'),
+            'name' => __('Custos de ManutenÃ§Ã£o', 'maintenancecosts'),
          ],
          [
             'id'            => '9501',
@@ -326,6 +389,11 @@ class TicketCostCenter extends CommonDBTM
 
    private static function validateSelectionChange(int $tickets_id, int $costcenter_id, string $source): bool
    {
+      $source = TicketMaterial::normalizeCostCenterSource($source);
+      if ($source !== 'legacy') {
+         return true;
+      }
+
       $summaries = self::getMaterialCostCenters($tickets_id);
       if (!count($summaries)) {
          return true;
@@ -333,7 +401,7 @@ class TicketCostCenter extends CommonDBTM
 
       if (count($summaries) > 1) {
          Session::addMessageAfterRedirect(
-            __('Este chamado possui materiais ativos vinculados a centros de custo diferentes. Não é seguro alterar o vínculo direto do chamado agora.', 'maintenancecosts'),
+            __('Este chamado possui materiais ativos vinculados a centros de custo diferentes. NÃ£o Ã© seguro alterar o vÃ­nculo direto do chamado agora.', 'maintenancecosts'),
             false,
             ERROR
          );
@@ -395,14 +463,14 @@ class TicketCostCenter extends CommonDBTM
       return $rows;
    }
 
-   private static function getEmptySelection(int $tickets_id): array
+   private static function getEmptySelection(int $tickets_id, string $source = 'legacy'): array
    {
       return [
          'id'                                      => 0,
          'tickets_id'                              => $tickets_id,
          'entities_id'                             => 0,
          'plugin_maintenancecosts_costcenters_id' => 0,
-         'costcenter_source'                       => 'legacy',
+         'costcenter_source'                       => TicketMaterial::normalizeCostCenterSource($source),
          'users_id'                                => 0,
       ];
    }
@@ -428,8 +496,12 @@ class TicketCostCenter extends CommonDBTM
 
       $count = 0;
       if (!empty($_SESSION['glpishow_count_on_tabs'])) {
-         $selection = self::getSelection((int) $item->getID());
-         $count = (int) ($selection['plugin_maintenancecosts_costcenters_id'] ?? 0) > 0 ? 1 : 0;
+         $selections = self::getSelections((int) $item->getID());
+         foreach ($selections as $selection) {
+            if ((int) ($selection['plugin_maintenancecosts_costcenters_id'] ?? 0) > 0) {
+               $count++;
+            }
+         }
       }
 
       return self::createTabEntry(__('Centro de Custos', 'maintenancecosts'), $count, $item::getType(), self::getIcon());

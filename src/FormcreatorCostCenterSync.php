@@ -44,9 +44,13 @@ class FormcreatorCostCenterSync
          self::syncTicketDescription($ticketId, $cc);
       }
 
-      $toLink = $allCCs['legacy'] ?? $allCCs['new'] ?? null;
-      if ($toLink !== null) {
-         TicketCostCenter::saveForTicket($ticketId, (int) $toLink['id'], (string) $toLink['source']);
+      $valuesBySource = [];
+      foreach ($allCCs as $source => $selection) {
+         $valuesBySource[$source] = (int) ($selection['id'] ?? 0);
+      }
+
+      if ($valuesBySource !== []) {
+         TicketCostCenter::saveSelectionsForTicket($ticketId, $valuesBySource);
       }
    }
 
@@ -152,7 +156,7 @@ class FormcreatorCostCenterSync
          return;
       }
 
-      $content = (string) ($ticket->fields['content'] ?? '');
+      $content = self::normalizeTicketContent((string) ($ticket->fields['content'] ?? ''));
       if ($content === '') {
          return;
       }
@@ -168,44 +172,99 @@ class FormcreatorCostCenterSync
          return;
       }
 
-      $updated = $content;
-      $patterns = [];
-      if ($plainLabel !== '') {
-         $patterns[] = [$questionName . ': ' . $plainLabel, $questionName . ': ' . $friendlyLabel];
-         $patterns[] = [$questionName . ' : ' . $plainLabel, $questionName . ' : ' . $friendlyLabel];
-         $patterns[] = [$plainLabel, $friendlyLabel];
-      }
-
-      foreach ($patterns as [$from, $to]) {
-         if ($from !== '' && mb_strpos($updated, $from) !== false) {
-            $updated = preg_replace('/' . preg_quote($from, '/') . '/u', $to, $updated, 1) ?? $updated;
-            break;
-         }
-      }
+      $updated = self::rewriteQuestionLine($content, $questionName, $friendlyLabel, $plainLabel);
 
       if ($updated === $content && mb_strpos($updated, $friendlyLabel) === false) {
-         // O GLPI pode persistir HTML literal, entidades nomeadas (&lt;)
-         // ou entidades numericas (&#60;). Mantemos o mesmo formato para
-         // evitar lixo visual na descricao do ticket.
-         if (mb_strpos($updated, '&#60;') !== false) {
-            $lineBreak = '&#60;br&#62;&#60;br&#62;';
-         } elseif (mb_strpos($updated, '&lt;') !== false) {
-            $lineBreak = '&lt;br&gt;&lt;br&gt;';
-         } elseif (mb_strpos($updated, '<') !== false) {
-            $lineBreak = '<br><br>';
-         } else {
-            $lineBreak = "\n\n";
+         $updated = rtrim($updated);
+         if ($updated !== '') {
+            $updated .= "\n\n";
          }
-         $updated = rtrim($updated) . $lineBreak . $questionName . ': ' . $friendlyLabel;
+         $updated .= $questionName . ': ' . $friendlyLabel;
       }
 
       if ($updated === $content) {
          return;
       }
 
+      $updated = preg_replace("/\r\n|\r|\n/", '<br>', $updated) ?? $updated;
+
       $ticket->update([
          'id'      => $ticketId,
          'content' => $updated,
       ]);
    }
+
+   private static function normalizeTicketContent(string $content): string
+   {
+      if ($content === '') {
+         return '';
+      }
+
+      $decoded = html_entity_decode($content, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+      $decoded = preg_replace('/<\s*br\s*\/?\s*>/i', "\n", $decoded) ?? $decoded;
+      $decoded = preg_replace('/<\/\s*(div|p|li|tr|td|th|table)\s*>/i', "\n", $decoded) ?? $decoded;
+      $decoded = strip_tags($decoded);
+      $decoded = preg_replace("/\r\n|\r/", "\n", $decoded) ?? $decoded;
+      $decoded = preg_replace('/[ \t]+/u', ' ', $decoded) ?? $decoded;
+      $decoded = preg_replace('/\n{3,}/', "\n\n", $decoded) ?? $decoded;
+
+      return trim($decoded);
+   }
+
+   private static function rewriteQuestionLine(
+      string $content,
+      string $questionName,
+      string $friendlyLabel,
+      string $plainLabel
+   ): string {
+      $segments = preg_split("/(\r\n|\n|\r)/", $content);
+      if (!is_array($segments) || $segments === []) {
+         return $content;
+      }
+
+      $updated = $segments;
+      $questionNeedle = self::normalizeText($questionName);
+      $friendlyNeedle = self::normalizeText($friendlyLabel);
+      $plainNeedle = self::normalizeText($plainLabel);
+
+      foreach ($updated as $index => $segment) {
+         $decoded = html_entity_decode($segment, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+         $plainSegment = self::normalizeText(strip_tags($decoded));
+
+         if ($plainSegment === '' || mb_strpos($plainSegment, $questionNeedle) === false) {
+            continue;
+         }
+
+         if (
+            $friendlyNeedle !== ''
+            && mb_strpos($plainSegment, $friendlyNeedle) === false
+            && $plainNeedle !== ''
+            && mb_strpos($plainSegment, $plainNeedle) === false
+         ) {
+            continue;
+         }
+
+         $updated[$index] = self::buildQuestionLineLike($segment, $questionName, $friendlyLabel);
+         return implode("\n", $updated);
+      }
+
+      return $content;
+   }
+
+   private static function buildQuestionLineLike(string $originalSegment, string $questionName, string $friendlyLabel): string
+   {
+      // Keep the line as plain text to avoid inheriting editor-specific
+      // wrappers or inline styles that can render as a bordered block in the
+      // ticket description.
+      return $questionName . ': ' . $friendlyLabel;
+   }
+
+   private static function normalizeText(string $value): string
+   {
+      $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+      $value = strip_tags($value);
+      $value = preg_replace('/\s+/u', ' ', $value) ?? $value;
+      return trim($value);
+   }
+
 }
