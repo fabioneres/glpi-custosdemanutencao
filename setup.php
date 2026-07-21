@@ -70,10 +70,24 @@ function plugin_init_maintenancecosts(): void {
    $CFG_GLPI['glpitablesitemtype'][CostCenterLegacy::class] = CostCenterLegacy::getTable();
    $CFG_GLPI['glpiitemtypetables'][CostCenterLegacy::getTable()] = CostCenterLegacy::class;
 
-   $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['maintenancecosts'][] = 'js/ticketmaterial-v2.js';
-   $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT_ANONYMOUS_PAGE]['maintenancecosts'][] = 'js/ticketmaterial-v2.js';
-   $PLUGIN_HOOKS[Hooks::ADD_CSS]['maintenancecosts'][] = 'css/maintenancecosts.css';
-   $PLUGIN_HOOKS[Hooks::ADD_CSS_ANONYMOUS_PAGE]['maintenancecosts'][] = 'css/maintenancecosts.css';
+   $assetVersion = '?v=' . rawurlencode((string) PLUGIN_MAINTENANCECOSTS_VERSION);
+   $jsFile = __DIR__ . '/js/ticketmaterial-v3.js';
+   if (is_file($jsFile)) {
+      $jsVersion = '?v=' . rawurlencode((string) PLUGIN_MAINTENANCECOSTS_VERSION . '-' . filemtime($jsFile));
+   } else {
+      $jsVersion = $assetVersion;
+   }
+   $cssFile = __DIR__ . '/css/maintenancecosts.css';
+   if (is_file($cssFile)) {
+      $cssVersion = '?v=' . rawurlencode((string) PLUGIN_MAINTENANCECOSTS_VERSION . '-' . filemtime($cssFile));
+   } else {
+      $cssVersion = $assetVersion;
+   }
+
+   $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['maintenancecosts'][] = 'js/ticketmaterial-v3.js' . $jsVersion;
+   $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT_ANONYMOUS_PAGE]['maintenancecosts'][] = 'js/ticketmaterial-v3.js' . $jsVersion;
+   $PLUGIN_HOOKS[Hooks::ADD_CSS]['maintenancecosts'][] = 'css/maintenancecosts.css' . $cssVersion;
+   $PLUGIN_HOOKS[Hooks::ADD_CSS_ANONYMOUS_PAGE]['maintenancecosts'][] = 'css/maintenancecosts.css' . $cssVersion;
    $PLUGIN_HOOKS['formcreator_get_glpi_object_types']['maintenancecosts'] = 'plugin_maintenancecosts_formcreator_get_glpi_object_types';
    $PLUGIN_HOOKS['item_add']['maintenancecosts']['Item_Ticket'] = [
       FormcreatorCostCenterSync::class,

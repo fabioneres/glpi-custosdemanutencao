@@ -66,7 +66,7 @@ if ($isQuote) {
    echo "<div class='plugin-maintenancecosts-panel-header'><i class='ti ti-table-import'></i> " . Html::clean(__('Layout esperado da cotação', 'maintenancecosts')) . "</div>";
    echo "<div class='plugin-maintenancecosts-panel-body'>";
    echo "<p>" . Html::clean(__('Use esta importação somente para a tabela de Cotação/Mercado. Os registros serão gravados como preços de cotação, separados dos preços SINAPI.', 'maintenancecosts')) . "</p>";
-   echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table'><thead><tr>";
+   echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table'><thead><tr class='tab_bg_2'>";
    foreach (['Código', 'Descrição Produto', 'UNID.', 'QDT', 'Valor', 'COT1', 'COT. 2', 'COT. 3'] as $column) {
       echo "<th>" . Html::clean(__($column, 'maintenancecosts')) . "</th>";
    }
@@ -116,7 +116,7 @@ $history = $DB->request([
 echo "<div class='spaced'>";
 echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
 echo "<thead><tr class='tab_bg_2'><th colspan='9'>" . Html::clean($isQuote ? __('Histórico de importações de cotação', 'maintenancecosts') : __('Histórico de importações SINAPI', 'maintenancecosts')) . "</th></tr>";
-echo "<tr><th data-sort='text'>" . __('Arquivo', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Competência', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Tipo de preço', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Status') . "</th><th data-sort='number'>" . __('Linhas', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Linhas importadas', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Linhas com erro', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Usuário', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Data') . "</th></tr></thead><tbody>";
+echo "<tr class='tab_bg_2'><th data-sort='text'>" . __('Arquivo', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Competência', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Tipo de preço', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Status') . "</th><th data-sort='number'>" . __('Linhas', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Linhas importadas', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Linhas com erro', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Usuário', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Data') . "</th></tr></thead><tbody>";
 foreach ($history as $row) {
    echo "<tr class='tab_bg_1'>";
    echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['filename']) . "</td>";

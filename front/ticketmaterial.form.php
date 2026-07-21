@@ -41,10 +41,12 @@ if (isset($_POST['update'])) {
 
 if (isset($_POST['save_ticket_costcenter'])) {
    Config::checkRight(Config::RIGHT_CONSUMPTION, UPDATE);
-   $ok = TicketCostCenter::saveForTicket(
+   $ok = TicketCostCenter::saveSelectionsForTicket(
       (int) ($_POST['tickets_id'] ?? 0),
-      (int) ($_POST['plugin_maintenancecosts_costcenters_id'] ?? 0),
-      (string) ($_POST['costcenter_source'] ?? 'legacy'),
+      [
+         'legacy' => (int) ($_POST['plugin_maintenancecosts_costcenters_legacy_id'] ?? 0),
+         'new'    => (int) ($_POST['plugin_maintenancecosts_costcenters_new_id'] ?? 0),
+      ],
       (int) ($_POST['entities_id'] ?? ($_SESSION['glpiactive_entity'] ?? 0))
    );
    Session::addMessageAfterRedirect(

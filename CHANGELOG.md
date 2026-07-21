@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.0.10 - Hotfix de instalacao e refinamentos de centros de custo
+
+- Corrige a rotina de instalacao/upgrade em ambientes onde a camada `DB` nao expoe `listIndexes()`, usando `SHOW INDEX` para reparar o indice composto de `ticketcostcenters`.
+- Alinha o schema instalado e o schema de migracao para permitir um centro de custo `Antigo` e um `Novo` por chamado, sem conflito de chave unica.
+- Consolida o salvamento da aba `Centro de Custos` do chamado com suporte a selecoes separadas para as bases `Antigo` e `Novo`.
+- Ajusta os scripts JavaScript e o carregamento versionado de assets para respeitar dropdowns vinculados e evitar divergencias entre a base escolhida e o centro de custo exibido.
+- Aproxima os cabecalhos das tabelas do plugin ao padrao visual nativo do GLPI, incluindo listagens de materiais, precos, importacoes, relatorios e centros de custo.
+
 ## v1.0.9 - Ajuste do sync do FormCreator para centro de custo antigo e novo
 
 - Corrige o preenchimento dos centros de custo no FormCreator para gravar corretamente as selecoes de Antigo e Novo quando ambas existem.

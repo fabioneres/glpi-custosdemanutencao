@@ -112,7 +112,7 @@
    }
 
    function initColumnViews(root) {
-      (root || document).querySelectorAll('table.plugin-maintenancecosts-table').forEach(function(table, index) {
+      (root || document).querySelectorAll('table.plugin-maintenancecosts-table, table.plugin-maintenancecosts-consumption-table').forEach(function(table, index) {
          if (table.dataset.maintenancecostsColumnsReady) {
             return;
          }
@@ -440,7 +440,6 @@
             return;
          }
          select.dataset.maintenancecostsCostcenterSourceReady = '1';
-
          select.addEventListener('change', function() {
             var form = select.closest('form');
             if (!form) {
@@ -455,6 +454,21 @@
 
             var dropdown = form.querySelector('select[name="plugin_maintenancecosts_costcenters_id"]');
             if (!dropdown) {
+               return;
+            }
+
+            if (dropdown.dataset.maintenancecostsLinkedDropdown === '1') {
+               var selectedOption = select.querySelector('option[value="' + source + '"]')
+                  || select.options[select.selectedIndex]
+                  || select.querySelector('option:checked');
+               var linkedId = selectedOption && selectedOption.dataset ? (selectedOption.dataset.costcenterId || '0') : '0';
+               var linkedLabel = selectedOption && selectedOption.dataset ? (selectedOption.dataset.costcenterLabel || '') : '';
+               dropdown.innerHTML = '';
+               var option = document.createElement('option');
+               option.value = linkedId;
+               option.textContent = linkedLabel;
+               option.selected = true;
+               dropdown.appendChild(option);
                return;
             }
 
@@ -831,12 +845,6 @@
       }
       if (event.target.name === 'plugin_maintenancecosts_materialorigins_id') {
          updateContractRow(form);
-      }
-      if (event.target.matches('[data-maintenancecosts-costcenter-source]')) {
-         var hidden = form.querySelector('[data-maintenancecosts-costcenter-source-hidden]');
-         if (hidden) {
-            hidden.value = event.target.value === 'new' ? 'new' : 'legacy';
-         }
       }
       if (event.target.name === 'unit_price_applied') {
          event.target.value = formatDecimal(event.target.value);

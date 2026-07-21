@@ -40,7 +40,7 @@ echo "<div class='plugin-maintenancecosts-panel'>";
 echo "<div class='plugin-maintenancecosts-panel-header'><i class='ti ti-list-check'></i> " . __('Fluxo operacional', 'maintenancecosts') . "</div>";
 echo "<div class='plugin-maintenancecosts-panel-body'>";
 echo "<table class='tab_cadre_fixe plugin-maintenancecosts-table'>";
-echo "<tr><th>#</th><th>" . __('Etapa', 'maintenancecosts') . "</th><th>" . __('O que acontece', 'maintenancecosts') . "</th></tr>";
+echo "<tr class='tab_bg_2'><th>#</th><th>" . __('Etapa', 'maintenancecosts') . "</th><th>" . __('O que acontece', 'maintenancecosts') . "</th></tr>";
 foreach ([
    [1, __('Configuração', 'maintenancecosts'), __('Habilite o plugin, defina se centro de custo é obrigatório e revise permissões por perfil.', 'maintenancecosts')],
    [2, __('Centros de custo', 'maintenancecosts'), __('Cadastre ou importe os cadastros de Centro de Custos Novo e Centro de Custos Antigo conforme a necessidade operacional.', 'maintenancecosts')],

@@ -202,7 +202,7 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_maintenancecosts_ticketcostcenters` (
    `date_creation` timestamp NULL DEFAULT NULL,
    `date_mod` timestamp NULL DEFAULT NULL,
    PRIMARY KEY (`id`),
-   UNIQUE KEY `uniq_ticket` (`tickets_id`),
+   UNIQUE KEY `uniq_ticket_source` (`tickets_id`, `costcenter_source`),
    KEY `idx_entity` (`entities_id`),
    KEY `idx_costcenter` (`plugin_maintenancecosts_costcenters_id`),
    KEY `idx_source` (`costcenter_source`)

@@ -119,24 +119,25 @@
    user-select: none;
 }
 
-.plugin-maintenancecosts-sortable th[data-sort]::after {
-   content: "  \2195";
-   color: #6b778c;
-   font-size: 11px;
-}
-
-.plugin-maintenancecosts-sortable th[data-sort][data-dir="asc"]::after {
-   content: "  \2191";
-}
-
-.plugin-maintenancecosts-sortable th[data-sort][data-dir="desc"]::after {
-   content: "  \2193";
-}
-
-.plugin-maintenancecosts-table th,
-.plugin-maintenancecosts-table td {
-   text-align: center;
+.plugin-maintenancecosts-table thead th {
    vertical-align: middle;
+   font-size: 1.1em;
+   font-weight: bold;
+   padding: 10px 5px;
+   background-color: #F8F8F8;
+   color: #2E2E2E;
+   border-bottom: 1px solid #eee;
+}
+
+.plugin-maintenancecosts-table td {
+   vertical-align: middle;
+}
+
+.plugin-maintenancecosts-table th.center,
+.plugin-maintenancecosts-table td.center,
+.plugin-maintenancecosts-table th.text-center,
+.plugin-maintenancecosts-table td.text-center {
+   text-align: center;
 }
 
 .plugin-maintenancecosts-table td.text-start,
@@ -221,6 +222,11 @@
    display: block;
    margin-top: 6px;
    font-size: 22px;
+}
+
+.plugin-maintenancecosts-linked-costcenter {
+   width: 360px;
+   max-width: 100%;
 }
 
 .plugin-maintenancecosts-bar-row {

@@ -55,7 +55,7 @@ echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/fro
 echo "</div>";
 
 echo "<div class='spaced'><table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
-echo "<thead><tr>";
+echo "<thead><tr class='tab_bg_2'>";
 echo "<th data-sort='text'>" . Material::getTypeName(1) . "</th>";
 echo "<th data-sort='text'>" . __('Competência', 'maintenancecosts') . "</th>";
 echo "<th data-sort='text'>" . __('Tipo de preço', 'maintenancecosts') . "</th>";

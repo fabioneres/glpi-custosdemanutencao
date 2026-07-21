@@ -99,7 +99,7 @@ echo "</div></form>";
 
 Pager::render($totalRows, $page, $perPage, ['q' => $search]);
 echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
-echo "<thead><tr>";
+echo "<thead><tr class='tab_bg_2'>";
 foreach ([
    ['number', __('Chamado', 'maintenancecosts')],
    ['text', __('Título', 'maintenancecosts')],

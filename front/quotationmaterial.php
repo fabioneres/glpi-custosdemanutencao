@@ -123,7 +123,7 @@ echo "</div></form>";
 
 Pager::render($totalRows, $page, $perPage, ['q' => $search]);
 echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
-echo "<thead><tr>";
+echo "<thead><tr class='tab_bg_2'>";
 echo "<th data-sort='text'>" . Html::clean(__('Código', 'maintenancecosts')) . "</th>";
 echo "<th data-sort='text'>" . Html::clean(__('Nome', 'maintenancecosts')) . "</th>";
 echo "<th data-sort='text'>" . Html::clean(__('Unidade', 'maintenancecosts')) . "</th>";

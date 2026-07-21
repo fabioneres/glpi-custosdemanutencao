@@ -116,7 +116,7 @@ $pagerParams = ['q' => $search, 'price_type' => $priceType];
 Pager::render($totalRows, $page, $perPage, $pagerParams);
 
 echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
-echo "<thead><tr>";
+echo "<thead><tr class='tab_bg_2'>";
 echo "<th data-sort='text'>" . Html::clean($isQuote ? __('Código', 'maintenancecosts') : __('Código SINAPI', 'maintenancecosts')) . "</th>";
 echo "<th data-sort='text'>" . Html::clean($isQuote ? __('Material', 'maintenancecosts') : Material::getTypeName(1)) . "</th>";
 echo "<th data-sort='text'>" . __('Unidade', 'maintenancecosts') . "</th>";

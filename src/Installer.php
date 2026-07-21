@@ -168,6 +168,7 @@ class Installer
          self::ensureField($migration, TicketCostCenter::getTable(), 'users_id', 'int unsigned NOT NULL DEFAULT 0');
          self::ensureField($migration, TicketCostCenter::getTable(), 'date_creation', 'timestamp NULL DEFAULT NULL');
          self::ensureField($migration, TicketCostCenter::getTable(), 'date_mod', 'timestamp NULL DEFAULT NULL');
+         self::ensureTicketCostCenterIndexes();
       }
 
          self::ensureConfigTable();
@@ -284,12 +285,52 @@ class Installer
             `date_creation` timestamp NULL DEFAULT NULL,
             `date_mod` timestamp NULL DEFAULT NULL,
             PRIMARY KEY (`id`),
-            UNIQUE KEY `uniq_ticket` (`tickets_id`),
+            UNIQUE KEY `uniq_ticket_source` (`tickets_id`, `costcenter_source`),
             KEY `idx_entity` (`entities_id`),
             KEY `idx_costcenter` (`plugin_maintenancecosts_costcenters_id`),
             KEY `idx_source` (`costcenter_source`)
          ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC"
       );
+   }
+
+   private static function ensureTicketCostCenterIndexes(): void
+   {
+      global $DB;
+
+      if (!$DB->tableExists(TicketCostCenter::getTable())) {
+         return;
+      }
+
+      $indexes = self::getTableIndexNames(TicketCostCenter::getTable());
+
+      if (isset($indexes['uniq_ticket']) && !isset($indexes['uniq_ticket_source'])) {
+         $DB->doQuery("ALTER TABLE `" . TicketCostCenter::getTable() . "` DROP INDEX `uniq_ticket`");
+      }
+
+      $indexes = self::getTableIndexNames(TicketCostCenter::getTable());
+
+      if (!isset($indexes['uniq_ticket_source'])) {
+         $DB->doQuery(
+            "ALTER TABLE `" . TicketCostCenter::getTable() . "` "
+            . "ADD UNIQUE KEY `uniq_ticket_source` (`tickets_id`, `costcenter_source`)"
+         );
+      }
+   }
+
+   private static function getTableIndexNames(string $table): array
+   {
+      global $DB;
+
+      $indexes = [];
+      $result = $DB->doQuery("SHOW INDEX FROM `" . $table . "`");
+      while ($row = $DB->fetchAssoc($result)) {
+         $name = (string) ($row['Key_name'] ?? '');
+         if ($name !== '') {
+            $indexes[$name] = true;
+         }
+      }
+
+      return $indexes;
    }
 
    private static function ensureAuditLogTable(): void

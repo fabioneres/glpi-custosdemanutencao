@@ -71,7 +71,7 @@ echo "</div></form>";
 Pager::render($totalRows, $page, $perPage, ['q' => $search]);
 
 echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
-echo "<thead><tr><th data-sort='text'>" . __('Código SINAPI', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Nome', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Unidade', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Categoria', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Ativo', 'maintenancecosts') . "</th><th>" . __('Ações', 'maintenancecosts') . "</th></tr></thead><tbody>";
+echo "<thead><tr class='tab_bg_2'><th data-sort='text'>" . __('Código SINAPI', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Nome', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Unidade', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Categoria', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Ativo', 'maintenancecosts') . "</th><th>" . __('Ações', 'maintenancecosts') . "</th></tr></thead><tbody>";
 
 $iterator = $DB->request($criteria);
 foreach ($iterator as $row) {

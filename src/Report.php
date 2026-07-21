@@ -526,7 +526,7 @@ class Report extends CommonDBTM
       $grouped = self::limitRows(self::groupRows($rows, $field), $limit);
       echo "<div class='spaced'><table class='tab_cadre_fixe plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
       echo "<thead><tr class='tab_bg_2'><th colspan='4'>" . Html::clean($title) . "</th></tr>";
-      echo "<tr><th data-sort='text'>" . __('Nome', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Itens', 'maintenancecosts') . "</th><th data-sort='number'>" . \Ticket::getTypeName(2) . "</th><th data-sort='currency'>" . __('Total') . "</th></tr></thead><tbody>";
+      echo "<tr class='tab_bg_2'><th data-sort='text'>" . __('Nome', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Itens', 'maintenancecosts') . "</th><th data-sort='number'>" . \Ticket::getTypeName(2) . "</th><th data-sort='currency'>" . __('Total') . "</th></tr></thead><tbody>";
       foreach ($grouped as $row) {
          echo "<tr class='tab_bg_1'><td class='text-start'>" . Html::clean($row['name']) . "</td><td data-value='" . (int) $row['items'] . "'>" . (int) $row['items'] . "</td><td data-value='" . (int) $row['tickets_count'] . "'>" . (int) $row['tickets_count'] . "</td><td data-value='" . Html::clean((string) (float) $row['total']) . "'>" . Config::formatCurrency((float) $row['total']) . "</td></tr>";
       }
@@ -548,7 +548,7 @@ class Report extends CommonDBTM
       $grouped = self::limitRows($grouped, $limit);
       echo "<div class='spaced'><table class='tab_cadre_fixe plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
       echo "<thead><tr class='tab_bg_2'><th colspan='4'>" . __('Custo por chamado', 'maintenancecosts') . "</th></tr>";
-      echo "<tr><th data-sort='number'>" . \Ticket::getTypeName(1) . "</th><th data-sort='text'>" . __('Título', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Itens', 'maintenancecosts') . "</th><th data-sort='currency'>" . __('Total') . "</th></tr></thead><tbody>";
+      echo "<tr class='tab_bg_2'><th data-sort='number'>" . \Ticket::getTypeName(1) . "</th><th data-sort='text'>" . __('Título', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Itens', 'maintenancecosts') . "</th><th data-sort='currency'>" . __('Total') . "</th></tr></thead><tbody>";
       foreach ($grouped as $row) {
          echo "<tr class='tab_bg_1'><td data-value='" . (int) $row['ticket'] . "'>" . (int) $row['ticket'] . "</td><td class='text-start'>" . Html::clean($row['name']) . "</td><td data-value='" . (int) $row['items'] . "'>" . (int) $row['items'] . "</td><td data-value='" . Html::clean((string) (float) $row['total']) . "'>" . Config::formatCurrency((float) $row['total']) . "</td></tr>";
       }
@@ -560,7 +560,7 @@ class Report extends CommonDBTM
       $grouped = self::limitRows(self::groupMaterialRows($rows), $limit);
       echo "<div class='spaced'><table class='tab_cadre_fixe plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
       echo "<thead><tr class='tab_bg_2'><th colspan='5'>" . __('Custos por material', 'maintenancecosts') . "</th></tr>";
-      echo "<tr><th data-sort='text'>" . __('Código', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Material', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Quantidade', 'maintenancecosts') . "</th><th data-sort='number'>" . \Ticket::getTypeName(2) . "</th><th data-sort='currency'>" . __('Total') . "</th></tr></thead><tbody>";
+      echo "<tr class='tab_bg_2'><th data-sort='text'>" . __('Código', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Material', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Quantidade', 'maintenancecosts') . "</th><th data-sort='number'>" . \Ticket::getTypeName(2) . "</th><th data-sort='currency'>" . __('Total') . "</th></tr></thead><tbody>";
       foreach ($grouped as $row) {
          $sortCode = preg_match('/^\d+$/', (string) $row['code']) ? str_pad((string) $row['code'], 8, '0', STR_PAD_LEFT) : (string) $row['code'];
          echo "<tr class='tab_bg_1'><td data-value='" . Html::clean($sortCode) . "'>" . Html::clean($row['code']) . "</td><td class='text-start'>" . Html::clean($row['name']) . "</td><td data-value='" . Html::clean((string) (float) $row['quantity']) . "'>" . TicketMaterial::formatQuantity((float) $row['quantity']) . "</td><td data-value='" . count($row['tickets']) . "'>" . count($row['tickets']) . "</td><td data-value='" . Html::clean((string) (float) $row['total']) . "'>" . Config::formatCurrency((float) $row['total']) . "</td></tr>";
@@ -612,7 +612,7 @@ class Report extends CommonDBTM
       $grouped = self::limitRows(array_values($grouped), $limit);
       echo "<div class='spaced'><table class='tab_cadre_fixe plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
       echo "<thead><tr class='tab_bg_2'><th colspan='4'>" . __('Evolução mensal de custos', 'maintenancecosts') . "</th></tr>";
-      echo "<tr><th data-sort='text'>" . __('Mês', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Itens', 'maintenancecosts') . "</th><th data-sort='number'>" . \Ticket::getTypeName(2) . "</th><th data-sort='currency'>" . __('Total') . "</th></tr></thead><tbody>";
+      echo "<tr class='tab_bg_2'><th data-sort='text'>" . __('Mês', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Itens', 'maintenancecosts') . "</th><th data-sort='number'>" . \Ticket::getTypeName(2) . "</th><th data-sort='currency'>" . __('Total') . "</th></tr></thead><tbody>";
       foreach ($grouped as $row) {
          echo "<tr class='tab_bg_1'><td>" . Html::clean($row['month']) . "</td><td data-value='" . (int) $row['items'] . "'>" . (int) $row['items'] . "</td><td data-value='" . count($row['tickets']) . "'>" . count($row['tickets']) . "</td><td data-value='" . Html::clean((string) (float) $row['total']) . "'>" . Config::formatCurrency((float) $row['total']) . "</td></tr>";
       }

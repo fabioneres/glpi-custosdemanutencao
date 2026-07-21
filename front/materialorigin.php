@@ -26,7 +26,7 @@ $iterator = $DB->request([
 ]);
 
 echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
-echo "<thead><tr><th data-sort='text'>" . __('Nome', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Ativo', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Comentários', 'maintenancecosts') . "</th><th>" . __('Ações', 'maintenancecosts') . "</th></tr></thead><tbody>";
+echo "<thead><tr class='tab_bg_2'><th data-sort='text'>" . __('Nome', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Ativo', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Comentários', 'maintenancecosts') . "</th><th>" . __('Ações', 'maintenancecosts') . "</th></tr></thead><tbody>";
 foreach ($iterator as $row) {
    echo "<tr class='tab_bg_1'>";
    echo "<td>" . Html::clean($row['name']) . "</td>";
