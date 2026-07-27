@@ -76,23 +76,29 @@ function show_materials(string $search, int $limit, int $offset, string $priceTy
 
    $materialTable = Material::getTable();
    $priceTable = Price::getTable();
+   $priceType = Config::normalizePriceType($priceType);
    $where = [
       $materialTable . '.is_active' => 1,
-      $priceTable . '.price_type'   => Config::normalizePriceType($priceType),
+      $priceTable . '.price_type'   => $priceType,
    ];
    if ($oneId > 0) {
       $where[$materialTable . '.id'] = $oneId;
    }
    if ($search !== '') {
       $like = '%' . $search . '%';
+      $searchNorm = preg_replace('/[^0-9A-Za-z]/', '', $search);
+      $orConditions = [
+         [$materialTable . '.code' => ['LIKE', $like]],
+         [$materialTable . '.name' => ['LIKE', $like]],
+         [$materialTable . '.description' => ['LIKE', $like]],
+      ];
+      if ($searchNorm !== '') {
+         $orConditions[] = new \QueryExpression(
+            "REPLACE(REPLACE(REPLACE(REPLACE(" . $materialTable . ".`code`, '.', ''), '-', ''), '/', ''), ' ', '') LIKE " . $DB->quote('%' . $searchNorm . '%')
+         );
+      }
       $where[] = [
-         'OR' => [
-            [$materialTable . '.code' => ['LIKE', $like]],
-            [$materialTable . '.name' => ['LIKE', $like]],
-            [$materialTable . '.description' => ['LIKE', $like]],
-            [$priceTable . '.competence' => ['LIKE', $like]],
-            [$priceTable . '.source' => ['LIKE', $like]],
-         ],
+         'OR' => $orConditions,
       ];
    }
 
@@ -103,9 +109,9 @@ function show_materials(string $search, int $limit, int $offset, string $priceTy
          $materialTable . '.name AS name',
          $materialTable . '.unit AS unit',
       ],
-      'FROM'   => $priceTable,
-      'LEFT JOIN' => [
-         $materialTable => [
+      'FROM'   => $materialTable,
+      'INNER JOIN' => [
+         $priceTable => [
             'FKEY' => [$priceTable => 'plugin_maintenancecosts_materials_id', $materialTable => 'id'],
          ],
       ],

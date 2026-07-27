@@ -189,7 +189,7 @@ class TicketCostCenter extends CommonDBTM
       $source = $source !== null ? TicketMaterial::normalizeCostCenterSource($source) : null;
       if (($source === null || $source === 'legacy') && count(self::getMaterialCostCenters($tickets_id)) > 0) {
          Session::addMessageAfterRedirect(
-            __('NÃ£o Ã© possÃ­vel remover o centro de custo do chamado enquanto houver materiais consumidos ativos vinculados.', 'maintenancecosts'),
+            __('Não é possível remover o centro de custo do chamado enquanto houver materiais consumidos ativos vinculados.', 'maintenancecosts'),
             false,
             ERROR
          );
@@ -342,7 +342,7 @@ class TicketCostCenter extends CommonDBTM
       return [
          [
             'id'   => 'maintenancecosts',
-            'name' => __('Custos de ManutenÃ§Ã£o', 'maintenancecosts'),
+            'name' => __('Custos de Manutenção', 'maintenancecosts'),
          ],
          [
             'id'            => '9501',
@@ -401,7 +401,7 @@ class TicketCostCenter extends CommonDBTM
 
       if (count($summaries) > 1) {
          Session::addMessageAfterRedirect(
-            __('Este chamado possui materiais ativos vinculados a centros de custo diferentes. NÃ£o Ã© seguro alterar o vÃ­nculo direto do chamado agora.', 'maintenancecosts'),
+            __('Este chamado possui materiais ativos vinculados a centros de custo diferentes. Não é seguro alterar o vínculo direto do chamado agora.', 'maintenancecosts'),
             false,
             ERROR
          );

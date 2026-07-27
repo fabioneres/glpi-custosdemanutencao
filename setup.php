@@ -70,7 +70,6 @@ function plugin_init_maintenancecosts(): void {
    $CFG_GLPI['glpitablesitemtype'][CostCenterLegacy::class] = CostCenterLegacy::getTable();
    $CFG_GLPI['glpiitemtypetables'][CostCenterLegacy::getTable()] = CostCenterLegacy::class;
 
-   $assetVersion = '?v=' . rawurlencode((string) PLUGIN_MAINTENANCECOSTS_VERSION);
    $jsRelativePath = 'js/ticketmaterial-v3.js';
    $jsFile = __DIR__ . '/' . $jsRelativePath;
    if (!is_file($jsFile)) {
@@ -84,22 +83,13 @@ function plugin_init_maintenancecosts(): void {
          $jsFile = __DIR__ . '/' . $jsRelativePath;
       }
    }
-   if (is_file($jsFile)) {
-      $jsVersion = '?v=' . rawurlencode((string) PLUGIN_MAINTENANCECOSTS_VERSION . '-' . filemtime($jsFile));
-   } else {
-      $jsVersion = $assetVersion;
-   }
-   $cssFile = __DIR__ . '/css/maintenancecosts.css';
-   if (is_file($cssFile)) {
-      $cssVersion = '?v=' . rawurlencode((string) PLUGIN_MAINTENANCECOSTS_VERSION . '-' . filemtime($cssFile));
-   } else {
-      $cssVersion = $assetVersion;
-   }
-
-   $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['maintenancecosts'][] = $jsRelativePath . $jsVersion;
-   $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT_ANONYMOUS_PAGE]['maintenancecosts'][] = $jsRelativePath . $jsVersion;
-   $PLUGIN_HOOKS[Hooks::ADD_CSS]['maintenancecosts'][] = 'css/maintenancecosts.css' . $cssVersion;
-   $PLUGIN_HOOKS[Hooks::ADD_CSS_ANONYMOUS_PAGE]['maintenancecosts'][] = 'css/maintenancecosts.css' . $cssVersion;
+   // O GLPI aplica o versionamento dos assets do plugin ao renderizar a tag final.
+   // Se registrarmos "arquivo.js?v=..." aqui, o core tenta validar literalmente esse
+   // caminho como arquivo físico e deixa de incluir o asset.
+   $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['maintenancecosts'][] = $jsRelativePath;
+   $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT_ANONYMOUS_PAGE]['maintenancecosts'][] = $jsRelativePath;
+   $PLUGIN_HOOKS[Hooks::ADD_CSS]['maintenancecosts'][] = 'css/maintenancecosts.css';
+   $PLUGIN_HOOKS[Hooks::ADD_CSS_ANONYMOUS_PAGE]['maintenancecosts'][] = 'css/maintenancecosts.css';
    $PLUGIN_HOOKS['formcreator_get_glpi_object_types']['maintenancecosts'] = 'plugin_maintenancecosts_formcreator_get_glpi_object_types';
    $PLUGIN_HOOKS['item_add']['maintenancecosts']['Item_Ticket'] = [
       FormcreatorCostCenterSync::class,

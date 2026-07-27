@@ -17,6 +17,8 @@ A rotina de instalacao tambem executa reparos idempotentes de schema e direitos.
 
 ## Documentacao de uso
 
+- [PRD do plugin](C:\Projetos\glpi\plugins\meusplugins\maintenancecosts\docs\prd-plugin-custos-de-manutencao.md)
+- [PRD do plugin em DOCX](C:\Projetos\glpi\plugins\meusplugins\maintenancecosts\docs\prd-plugin-custos-de-manutencao.docx)
 - [Manual de uso do plugin](C:\Projetos\glpi\plugins\meusplugins\maintenancecosts\docs\manual-de-uso.md)
 - [Checklist de validacao para o Claude - 1.0.8](C:\Projetos\glpi\plugins\meusplugins\maintenancecosts\docs\session\maintenancecosts-1.0.8-validacao-claude.md)
 - [Modelo de resultado da validacao - 1.0.8](C:\Projetos\glpi\plugins\meusplugins\maintenancecosts\docs\session\maintenancecosts-1.0.8-validacao-resultado.md)

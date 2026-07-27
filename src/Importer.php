@@ -355,14 +355,14 @@ class Importer
    private static function buildCostCenterLegacyHeaderMap(array $header): array
    {
       $aliases = [
-         'code'           => ['centro de custo', 'codigo', 'cÃ³digo', 'code'],
+         'code'           => ['centro de custo', 'codigo', 'código', 'code'],
          'campus'         => ['campus'],
          'department'     => ['departamento /disc./setor', 'departamento/disc./setor', 'departamento / disc. / setor', 'departamento'],
          'address_type'   => ['tipo'],
          'address_street' => ['logradouro'],
-         'address_number' => ['nº', 'n°', 'nÂº', 'nÃºmero', 'numero', 'nÂ°', 'no'],
+         'address_number' => ['nº', 'n°', 'nÂº', 'número', 'numero', 'nÂ°', 'no'],
          'floor'          => ['piso', 'andar', 'floor'],
-         'usage_type'     => ['utilizacao', 'utilizaÃ§Ã£o', 'uso', 'usage', 'utilization'],
+         'usage_type'     => ['utilizacao', 'utilização', 'uso', 'usage', 'utilization'],
       ];
 
       $map = [];
@@ -637,7 +637,7 @@ class Importer
          return __('competencia invalida', 'maintenancecosts');
       }
       if ((float) $data['unit_price'] < 0) {
-         return __('valor unitÃ¡rio invÃ¡lido', 'maintenancecosts');
+         return __('valor unitário inválido', 'maintenancecosts');
       }
       return '';
    }

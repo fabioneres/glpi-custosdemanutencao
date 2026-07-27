@@ -118,7 +118,7 @@ class TicketMaterial extends CommonDBTM
    {
       $settings = Config::getSettings();
       if (!(int) $settings['is_enabled']) {
-         Session::addMessageAfterRedirect(__('O plugin Custos de ManutenÃ§Ã£o estÃ¡ desabilitado.', 'maintenancecosts'), false, ERROR);
+         Session::addMessageAfterRedirect(__('O plugin Custos de Manutenção está desabilitado.', 'maintenancecosts'), false, ERROR);
          return [];
       }
 
@@ -169,7 +169,7 @@ class TicketMaterial extends CommonDBTM
       }
 
       if (!empty($input['tickets_id']) && !$this->ticketCategoryAllowed((int) $input['tickets_id'], (string) ($settings['allowed_itilcategories'] ?? ''))) {
-         Session::addMessageAfterRedirect(__('Categoria do chamado nÃ£o permitida para lanÃ§amento de materiais.', 'maintenancecosts'), false, ERROR);
+         Session::addMessageAfterRedirect(__('Categoria do chamado não permitida para lançamento de materiais.', 'maintenancecosts'), false, ERROR);
          return [];
       }
 
@@ -215,7 +215,7 @@ class TicketMaterial extends CommonDBTM
       }
 
       if ((int) $settings['costcenter_required'] && empty($input['plugin_maintenancecosts_costcenters_id'])) {
-         Session::addMessageAfterRedirect(__('Centro de custo Ã© obrigatÃ³rio.', 'maintenancecosts'), false, ERROR);
+         Session::addMessageAfterRedirect(__('Centro de custo é obrigatório.', 'maintenancecosts'), false, ERROR);
          return [];
       }
 
@@ -243,7 +243,7 @@ class TicketMaterial extends CommonDBTM
                $input['competence'] = (string) $price['competence'];
             }
          } elseif ($input['price_type'] === 'sinapi' && !(int) $settings['allow_manual_unit_price']) {
-            Session::addMessageAfterRedirect(__('NÃ£o hÃ¡ preÃ§o cadastrado para o material/competÃªncia selecionado.', 'maintenancecosts'), false, ERROR);
+            Session::addMessageAfterRedirect(__('Não há preço cadastrado para o material/competência selecionado.', 'maintenancecosts'), false, ERROR);
             return [];
          }
       }
@@ -581,11 +581,11 @@ class TicketMaterial extends CommonDBTM
       $tab[1] = ['id' => 1, 'table' => 'glpi_tickets', 'field' => 'id', 'linkfield' => 'tickets_id', 'name' => Ticket::getTypeName(1), 'datatype' => 'number'];
       $tab[2] = ['id' => 2, 'table' => Material::getTable(), 'field' => 'name', 'linkfield' => 'plugin_maintenancecosts_materials_id', 'name' => Material::getTypeName(1), 'datatype' => 'dropdown'];
       $tab[3] = ['id' => 3, 'table' => self::getTable(), 'field' => 'quantity', 'name' => __('Quantidade', 'maintenancecosts'), 'datatype' => 'decimal'];
-      $tab[4] = ['id' => 4, 'table' => self::getTable(), 'field' => 'unit_price_applied', 'name' => __('Valor unitÃ¡rio', 'maintenancecosts'), 'datatype' => 'decimal'];
+      $tab[4] = ['id' => 4, 'table' => self::getTable(), 'field' => 'unit_price_applied', 'name' => __('Valor unitário', 'maintenancecosts'), 'datatype' => 'decimal'];
       $tab[5] = ['id' => 5, 'table' => self::getTable(), 'field' => 'total_price', 'name' => __('Total'), 'datatype' => 'decimal'];
       $tab[6] = ['id' => 6, 'table' => CostCenter::getTable(), 'field' => 'name', 'linkfield' => 'plugin_maintenancecosts_costcenters_id', 'name' => CostCenter::getTypeName(1), 'datatype' => 'dropdown'];
       $tab[7] = ['id' => 7, 'table' => MaterialOrigin::getTable(), 'field' => 'name', 'linkfield' => 'plugin_maintenancecosts_materialorigins_id', 'name' => MaterialOrigin::getTypeName(1), 'datatype' => 'dropdown'];
-      $tab[8] = ['id' => 8, 'table' => self::getTable(), 'field' => 'price_type', 'name' => __('Tipo de preÃ§o', 'maintenancecosts'), 'datatype' => 'string'];
+      $tab[8] = ['id' => 8, 'table' => self::getTable(), 'field' => 'price_type', 'name' => __('Tipo de preço', 'maintenancecosts'), 'datatype' => 'string'];
       $tab[9] = ['id' => 9, 'table' => self::getTable(), 'field' => 'is_deleted', 'name' => __('Canceled', 'maintenancecosts'), 'datatype' => 'bool'];
       return $tab;
    }
@@ -791,7 +791,7 @@ class TicketMaterial extends CommonDBTM
 
       echo "<tr class='tab_bg_1'><td>" . MaterialOrigin::getTypeName(1) . "</td><td>";
       $this->showOriginDropdown((int) ($this->fields['plugin_maintenancecosts_materialorigins_id'] ?? 0));
-      echo "</td><td>" . __('Tipo de preÃ§o', 'maintenancecosts') . "</td><td>";
+      echo "</td><td>" . __('Tipo de preço', 'maintenancecosts') . "</td><td>";
       echo "<select name='price_type' class='form-select'>";
       foreach (Config::getPriceTypes() as $value => $label) {
          $selected = $priceType === $value ? ' selected' : '';
@@ -829,7 +829,7 @@ class TicketMaterial extends CommonDBTM
          }
          echo "</select>";
       }
-      echo "</td><td>" . __('CompetÃªncia', 'maintenancecosts') . "</td>";
+      echo "</td><td>" . __('Competência', 'maintenancecosts') . "</td>";
       echo "<td><input type='text' name='competence' placeholder='AAAA-MM' maxlength='7' value='" . self::escape($competenceValue) . "' class='form-control plugin-maintenancecosts-competence'></td></tr>";
 
       echo "<tr class='tab_bg_1'><td>" . __('Centro de custo', 'maintenancecosts') . "</td><td>";
@@ -848,7 +848,7 @@ class TicketMaterial extends CommonDBTM
 
       echo "<tr class='tab_bg_1'><td>" . __('Quantidade', 'maintenancecosts') . "</td>";
       echo "<td><input type='number' step='1' min='0' name='quantity' value='" . self::escape(self::formatQuantity((float) ($this->fields['quantity'] ?? 0))) . "' class='form-control'></td>";
-      echo "<td>" . __('Valor unitÃ¡rio aplicado', 'maintenancecosts') . "</td>";
+      echo "<td>" . __('Valor unitário aplicado', 'maintenancecosts') . "</td>";
       $readonly = (int) $settings['allow_manual_unit_price'] ? '' : ' readonly';
       echo "<td><input type='text' inputmode='decimal' name='unit_price_applied' value='" . self::escape(Config::formatDecimalInput((float) ($this->fields['unit_price_applied'] ?? 0))) . "' class='form-control plugin-maintenancecosts-money'" . $readonly . " data-readonly-for-sinapi='" . ((int) $settings['allow_manual_unit_price'] ? '0' : '1') . "'></td></tr>";
 
@@ -1082,7 +1082,7 @@ class TicketMaterial extends CommonDBTM
             $id = (int) ($selections[$source]['plugin_maintenancecosts_costcenters_id'] ?? 0);
             $label = $id > 0
                ? self::getCostCenterDisplayName($id, $source)
-               : __('NÃ£o definido', 'maintenancecosts');
+               : __('Não definido', 'maintenancecosts');
             echo "<tr><td>" . self::escape($tableLabel) . "</td><td>" . self::escape($label) . "</td></tr>";
          }
          echo "</table>";
@@ -1133,7 +1133,7 @@ class TicketMaterial extends CommonDBTM
          echo "</div>";
       }
       echo "</div>";
-      echo "<div class='text-muted small' style='margin-top:8px; width:100%;'>" . self::escape(__('Os materiais consumidos deste chamado continuam usando o centro de custo antigo como referÃªncia operacional.', 'maintenancecosts')) . "</div>";
+      echo "<div class='text-muted small' style='margin-top:8px; width:100%;'>" . self::escape(__('Os materiais consumidos deste chamado continuam usando o centro de custo antigo como referência operacional.', 'maintenancecosts')) . "</div>";
       echo "</form>";
       echo "</div>";
    }
