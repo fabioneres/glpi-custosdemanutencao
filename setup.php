@@ -71,7 +71,19 @@ function plugin_init_maintenancecosts(): void {
    $CFG_GLPI['glpiitemtypetables'][CostCenterLegacy::getTable()] = CostCenterLegacy::class;
 
    $assetVersion = '?v=' . rawurlencode((string) PLUGIN_MAINTENANCECOSTS_VERSION);
-   $jsFile = __DIR__ . '/js/ticketmaterial-v3.js';
+   $jsRelativePath = 'js/ticketmaterial-v3.js';
+   $jsFile = __DIR__ . '/' . $jsRelativePath;
+   if (!is_file($jsFile)) {
+      $fallbackJsRelativePath = 'js/ticketmaterial-v2.js';
+      $fallbackJsFile = __DIR__ . '/' . $fallbackJsRelativePath;
+      if (is_file($fallbackJsFile)) {
+         $jsRelativePath = $fallbackJsRelativePath;
+         $jsFile = $fallbackJsFile;
+      } else {
+         $jsRelativePath = 'js/ticketmaterial.js';
+         $jsFile = __DIR__ . '/' . $jsRelativePath;
+      }
+   }
    if (is_file($jsFile)) {
       $jsVersion = '?v=' . rawurlencode((string) PLUGIN_MAINTENANCECOSTS_VERSION . '-' . filemtime($jsFile));
    } else {
@@ -84,8 +96,8 @@ function plugin_init_maintenancecosts(): void {
       $cssVersion = $assetVersion;
    }
 
-   $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['maintenancecosts'][] = 'js/ticketmaterial-v3.js' . $jsVersion;
-   $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT_ANONYMOUS_PAGE]['maintenancecosts'][] = 'js/ticketmaterial-v3.js' . $jsVersion;
+   $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT]['maintenancecosts'][] = $jsRelativePath . $jsVersion;
+   $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT_ANONYMOUS_PAGE]['maintenancecosts'][] = $jsRelativePath . $jsVersion;
    $PLUGIN_HOOKS[Hooks::ADD_CSS]['maintenancecosts'][] = 'css/maintenancecosts.css' . $cssVersion;
    $PLUGIN_HOOKS[Hooks::ADD_CSS_ANONYMOUS_PAGE]['maintenancecosts'][] = 'css/maintenancecosts.css' . $cssVersion;
    $PLUGIN_HOOKS['formcreator_get_glpi_object_types']['maintenancecosts'] = 'plugin_maintenancecosts_formcreator_get_glpi_object_types';

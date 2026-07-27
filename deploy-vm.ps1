@@ -37,6 +37,7 @@ if ((Test-Path $plinkPath) -and (Test-Path $pscpPath)) {
         "install/uninstall.sql",
         "js/ticketmaterial.js",
         "js/ticketmaterial-v2.js",
+        "js/ticketmaterial-v3.js",
         "setup.php",
         "src/Config.php",
         "src/CostCenter.php",

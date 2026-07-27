@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.0.11 - Hotfix de lancamento de materiais e cotacao
+
+- Corrige o lancamento de `Materiais consumidos` em ambientes onde o deploy parcial nao copiava o arquivo `js/ticketmaterial-v3.js`, impedindo a abertura do formulario ao clicar em `Adicionar material`.
+- Adiciona fallback no carregamento de JavaScript do plugin para usar `ticketmaterial-v2.js` ou `ticketmaterial.js` quando o asset mais novo nao estiver presente no servidor.
+- Atualiza os scripts de deploy da VM e da producao para sempre publicar o `ticketmaterial-v3.js`.
+- Corrige a listagem principal de `Cotacao/Mercado` para exibir apenas o preco vigente de cada material, mantendo competencias anteriores apenas em `Historico de precos`.
+
 ## v1.0.10 - Hotfix de instalacao e refinamentos de centros de custo
 
 - Corrige a rotina de instalacao/upgrade em ambientes onde a camada `DB` nao expoe `listIndexes()`, usando `SHOW INDEX` para reparar o indice composto de `ticketcostcenters`.
