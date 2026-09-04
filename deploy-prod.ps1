@@ -30,9 +30,12 @@ if ((Test-Path $plinkPath) -and (Test-Path $pscpPath)) {
     $files = @(
         "ajax/dropdown.php",
         "bootstrap.php",
+        "css/maintenancecosts.css",
         "front/about.php",
         "front/config.form.php",
+        "front/costcenter.php",
         "front/costcenter.form.php",
+        "front/costcenterlegacy.php",
         "front/import.form.php",
         "front/material.form.php",
         "front/price.form.php",

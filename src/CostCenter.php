@@ -249,15 +249,16 @@ class CostCenter extends CommonDBTM
       $itemId = (int) ($this->fields['id'] ?? 0);
       $isNew = $itemId <= 0;
       $requiredRight = $isNew ? CREATE : UPDATE;
+      $canDelete = !$isNew && Session::haveRight(static::$rightname, PURGE);
 
       echo "<tr class='tab_bg_2'>";
       echo "<td class='center' colspan='4'>";
 
-      if (Session::haveRight(static::$rightname, $requiredRight)) {
-         if (!$isNew) {
-            echo Html::hidden('id', ['value' => $itemId]);
-         }
+      if (!$isNew && (Session::haveRight(static::$rightname, UPDATE) || $canDelete)) {
+         echo Html::hidden('id', ['value' => $itemId]);
+      }
 
+      if (Session::haveRight(static::$rightname, $requiredRight)) {
          echo Html::submit(
             _sx('button', $isNew ? 'Add' : 'Save'),
             [
@@ -265,6 +266,14 @@ class CostCenter extends CommonDBTM
                'class' => 'btn btn-primary',
             ]
          );
+      }
+
+      if ($canDelete) {
+         $confirmation = json_encode(
+            __('Deseja mesmo excluir este centro de custo?', 'maintenancecosts'),
+            JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
+         );
+         echo "<button type='submit' name='delete' value='1' class='btn btn-outline-danger ms-2' onclick='return window.confirm(" . Html::clean($confirmation) . ");'><i class='ti ti-trash me-1'></i>" . Html::clean(__('Excluir permanentemente', 'maintenancecosts')) . "</button>";
       }
 
       echo "</td>";

@@ -1,5 +1,14 @@
 # Changelog
 
+## v1.1.0 - Aperfeicoamentos de operacao e interface
+
+- Substitui o botao textual `Editar` nas tabelas de Centro de Custos Antigo e Novo por icone de lapis, mantendo acesso direto a edicao.
+- Adiciona icone de lixeira e confirmacao antes da exclusao de um centro de custo nas duas tabelas.
+- Disponibiliza a acao `Excluir permanentemente` tambem no formulario de edicao, com a mesma confirmacao de seguranca.
+- Ajusta o campo de pesquisa e selecao de material em `Materiais consumidos` para ocupar toda a largura util do formulario, inclusive apos selecionar ou limpar um item.
+- Reforca os scripts de deploy para publicar os assets CSS e as telas de centros de custo junto com as demais classes alteradas.
+- Atualiza a versao declarada do plugin para renovar os assets em cache do GLPI apos a atualizacao.
+
 ## v1.0.12 - Hotfix de busca dos materiais SINAPI
 
 - Ajusta a busca AJAX do lancamento de `Materiais consumidos` para consultar primeiro a tabela de materiais e apenas filtrar a existencia de preco do tipo selecionado.

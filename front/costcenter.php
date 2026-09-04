@@ -164,7 +164,22 @@ foreach ($iterator as $row) {
    echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['address'] ?? '') . "</td>";
    echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['responsible'] ?? '') . "</td>";
    echo "<td class='center'>" . ((int) $row['is_active'] ? __('Yes') : __('No')) . "</td>";
-   echo "<td class='center'><a class='btn btn-sm btn-secondary' href='" . Html::clean(CostCenter::getFormURL() . '?id=' . (int) $row['id']) . "'>" . __('Edit') . "</a></td>";
+   echo "<td class='center'><div class='d-inline-flex gap-1'>";
+   if (Session::haveRight(Config::RIGHT_COSTCENTERS, UPDATE)) {
+      echo "<a class='btn btn-icon btn-sm btn-outline-secondary' href='" . Html::clean(CostCenter::getFormURL() . '?id=' . (int) $row['id']) . "' title='" . Html::clean(__('Editar', 'maintenancecosts')) . "' aria-label='" . Html::clean(__('Editar', 'maintenancecosts')) . "'><i class='ti ti-pencil'></i></a>";
+   }
+   if (Session::haveRight(Config::RIGHT_COSTCENTERS, PURGE)) {
+      $confirmation = json_encode(
+         __('Deseja mesmo excluir este centro de custo?', 'maintenancecosts'),
+         JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
+      );
+      echo "<form method='post' action='" . Html::clean(CostCenter::getFormURL()) . "' class='d-inline' onsubmit='return window.confirm(" . Html::clean($confirmation) . ");'>";
+      echo Html::hidden('_glpi_csrf_token', ['value' => Session::getNewCSRFToken()]);
+      echo Html::hidden('id', ['value' => (int) $row['id']]);
+      echo "<button class='btn btn-icon btn-sm btn-outline-danger' type='submit' name='delete' value='1' title='" . Html::clean(__('Excluir', 'maintenancecosts')) . "' aria-label='" . Html::clean(__('Excluir', 'maintenancecosts')) . "'><i class='ti ti-trash'></i></button>";
+      echo "</form>";
+   }
+   echo "</div></td>";
    echo "</tr>";
 }
 

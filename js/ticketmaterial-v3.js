@@ -217,6 +217,37 @@
       return options && options.ajax && options.ajax.url ? String(options.ajax.url) : '';
    }
 
+   function enforceMaterialDropdownWidth(select) {
+      if (!select || select.getAttribute('data-dropdown-type') !== 'material') {
+         return;
+      }
+
+      var field = select.closest('.plugin-maintenancecosts-material-field');
+      if (field) {
+         field.style.setProperty('width', '100%', 'important');
+         field.style.setProperty('max-width', '100%');
+      }
+
+      var container = select.nextElementSibling;
+      if (!container || !container.classList.contains('select2-container')) {
+         container = null;
+      }
+      if (!container) {
+         return;
+      }
+
+      container.style.setProperty('width', '100%', 'important');
+      container.style.setProperty('max-width', '100%');
+   }
+
+   function scheduleMaterialDropdownWidth(select) {
+      [0, 100, 500, 1200].forEach(function(delay) {
+         window.setTimeout(function() {
+            enforceMaterialDropdownWidth(select);
+         }, delay);
+      });
+   }
+
    function initPluginDropdowns(root) {
       if (typeof jQuery === 'undefined' || !jQuery.fn.select2) {
          return;
@@ -261,6 +292,7 @@
             };
          }
          select.select2(options);
+         scheduleMaterialDropdownWidth(select[0]);
       });
 
       jQuery(root || document).find('select[name="plugin_maintenancecosts_materials_id"]').each(function() {
@@ -270,12 +302,14 @@
          }
          materialSelect.data('maintenancecosts-autofill-ready', 1);
          materialSelect.on('select2:select', function() {
+            scheduleMaterialDropdownWidth(materialSelect[0]);
             var form = materialSelect.closest('form')[0];
             if (form) {
                loadMaterialInfo(form);
             }
          });
          materialSelect.on('select2:clear', function() {
+            scheduleMaterialDropdownWidth(materialSelect[0]);
             var form = materialSelect.closest('form')[0];
             if (form) {
                loadMaterialInfo(form);

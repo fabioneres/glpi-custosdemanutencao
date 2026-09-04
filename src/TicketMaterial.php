@@ -774,7 +774,7 @@ class TicketMaterial extends CommonDBTM
          echo "<div class='card-header'><h3 class='card-title'>" . self::escape($is_new ? __('Novo item - Material consumido', 'maintenancecosts') : self::getTypeName(1)) . "</h3></div>";
       }
       echo "<div class='card-body'>";
-      echo "<table class='tab_cadre_fixe'>";
+      echo "<table class='tab_cadre_fixe plugin-maintenancecosts-ticketmaterial-form' style='width:100%;'>";
 
       $showContractRow = $tickets_id > 0
          && self::isContractOriginId((int) ($this->fields['plugin_maintenancecosts_materialorigins_id'] ?? 0));
@@ -786,7 +786,9 @@ class TicketMaterial extends CommonDBTM
       } else {
          echo "<tr class='tab_bg_1'><td style='width:160px'>" . __('Material', 'maintenancecosts') . "</td><td colspan='3'>";
       }
+      echo "<div class='plugin-maintenancecosts-material-field'>";
       $this->showPluginDropdown('material', 'plugin_maintenancecosts_materials_id', (int) ($this->fields['plugin_maintenancecosts_materials_id'] ?? 0));
+      echo "</div>";
       echo "</td></tr>";
 
       echo "<tr class='tab_bg_1'><td>" . MaterialOrigin::getTypeName(1) . "</td><td>";
@@ -887,7 +889,14 @@ class TicketMaterial extends CommonDBTM
 
    private function showPluginDropdown(string $type, string $name, int $value): void
    {
-      echo "<select name='" . Html::cleanInputText($name) . "' class='form-control plugin-maintenancecosts-dropdown' data-dropdown-type='" . Html::cleanInputText($type) . "'>";
+      $classes = 'form-control plugin-maintenancecosts-dropdown';
+      $style = '';
+      if ($type === 'material') {
+         $classes .= ' plugin-maintenancecosts-material-dropdown';
+         $style = " style='width:100%'";
+      }
+
+      echo "<select name='" . Html::cleanInputText($name) . "' class='" . $classes . "' data-dropdown-type='" . Html::cleanInputText($type) . "'" . $style . ">";
       echo "<option value='0'>-----</option>";
       if ($value > 0) {
          $label = self::getAsyncDropdownLabel($type, $value);
