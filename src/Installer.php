@@ -35,6 +35,7 @@ class Installer
          self::ensureSchema();
          Config::ensureDefaultConfig();
          self::ensureDefaultCostCenter();
+         self::ensureDefaultSearchDisplayPreferences();
          self::syncStoredCostCenterNames();
          TicketMaterial::syncAllTicketCosts();
          TicketCostCenter::syncFromTicketMaterials();
@@ -511,6 +512,48 @@ class Installer
          'date_creation' => date('Y-m-d H:i:s'),
          'date_mod'      => date('Y-m-d H:i:s'),
       ]);
+   }
+
+   /**
+    * Define uma visualizacao inicial util para as listas nativas do GLPI.
+    * Preferencias pessoais sempre prevalecem e configuracoes globais ja
+    * existentes nao sao alteradas.
+    */
+   private static function ensureDefaultSearchDisplayPreferences(): void
+   {
+      /** @var DBmysql $DB */
+      global $DB;
+
+      $defaults = [
+         Material::class => [2, 3, 4, 5],
+         CostCenter::class => [2, 3, 4, 5, 6, 7, 8, 10, 11],
+         CostCenterLegacy::class => [2, 3, 4, 5, 6, 7],
+      ];
+
+      $table = \DisplayPreference::getTable();
+      foreach ($defaults as $itemtype => $columns) {
+         $hasGlobalPreference = $DB->request([
+            'FROM'   => $table,
+            'WHERE'  => [
+               'itemtype' => $itemtype,
+               'users_id' => 0,
+            ],
+            'LIMIT'  => 1,
+         ])->current();
+
+         if ($hasGlobalPreference) {
+            continue;
+         }
+
+         foreach ($columns as $rank => $column) {
+            $DB->insert($table, [
+               'itemtype' => $itemtype,
+               'users_id' => 0,
+               'num'      => $column,
+               'rank'     => $rank + 1,
+            ]);
+         }
+      }
    }
 
    private static function ensureField(\Migration $migration, string $table, string $field, string $definition): void

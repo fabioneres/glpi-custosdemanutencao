@@ -35,7 +35,7 @@ class CostCenterLegacy extends CostCenter
       return Config::pluginUrl('/front/costcenterlegacy.form.php', $full);
    }
 
-   public function getSearchOptions()
+   public function rawSearchOptions()
    {
       $options = [];
       $options[] = ['id' => 'common', 'name' => self::getTypeName(1)];

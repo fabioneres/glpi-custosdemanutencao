@@ -165,7 +165,7 @@ class CostCenter extends CommonDBTM
       return $input;
    }
 
-   public function getSearchOptions()
+   public function rawSearchOptions()
    {
       $tab = [];
       $tab[] = ['id' => 'common', 'name' => self::getTypeName(1)];

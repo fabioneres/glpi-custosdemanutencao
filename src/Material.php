@@ -94,7 +94,7 @@ class Material extends CommonDBTM
       return trim($value);
    }
 
-   public function getSearchOptions()
+   public function rawSearchOptions()
    {
       $tab = [];
 

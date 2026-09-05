@@ -4,7 +4,6 @@ use GlpiPlugin\Maintenancecosts\Config;
 use GlpiPlugin\Maintenancecosts\CostCenterLegacy;
 use GlpiPlugin\Maintenancecosts\Importer;
 use GlpiPlugin\Maintenancecosts\Menu;
-use GlpiPlugin\Maintenancecosts\Pager;
 
 if (!defined('GLPI_ROOT')) {
    require_once dirname(__DIR__, 3) . '/inc/includes.php';
@@ -12,8 +11,6 @@ if (!defined('GLPI_ROOT')) {
 require_once dirname(__DIR__) . '/bootstrap.php';
 
 Config::checkRight(Config::RIGHT_COSTCENTERS, READ);
-
-global $DB;
 
 $summary = null;
 if (isset($_POST['import_costcenters_legacy'])) {
@@ -32,44 +29,6 @@ if (isset($_POST['import_costcenters_legacy'])) {
          $delimiter
       );
    }
-}
-
-$search = trim((string) ($_GET['q'] ?? ''));
-$page = Pager::page();
-$perPage = Pager::perPage();
-$where = [];
-if ($search !== '') {
-   $where[] = [
-      'OR' => [
-         ['code' => ['LIKE', '%' . $search . '%']],
-         ['campus' => ['LIKE', '%' . $search . '%']],
-         ['department' => ['LIKE', '%' . $search . '%']],
-         ['address' => ['LIKE', '%' . $search . '%']],
-         ['floor' => ['LIKE', '%' . $search . '%']],
-         ['usage_type' => ['LIKE', '%' . $search . '%']],
-      ],
-   ];
-}
-
-$countCriteria = [
-   'COUNT' => 'cpt',
-   'FROM'  => CostCenterLegacy::getTable(),
-];
-if (count($where)) {
-   $countCriteria['WHERE'] = $where;
-}
-$countRow = $DB->request($countCriteria)->current();
-$totalRows = (int) ($countRow['cpt'] ?? 0);
-$start = Pager::start($page, $perPage, $totalRows);
-
-$criteria = [
-   'FROM'  => CostCenterLegacy::getTable(),
-   'ORDER' => ['code ASC'],
-   'START' => $start,
-   'LIMIT' => $perPage,
-];
-if (count($where)) {
-   $criteria['WHERE'] = $where;
 }
 
 Html::header(CostCenterLegacy::getTypeName(Session::getPluralNumber()), $_SERVER['PHP_SELF'], 'plugins', Menu::class);
@@ -121,60 +80,6 @@ if (is_array($summary)) {
    echo "</table></div></div>";
 }
 
-echo "<form method='get' class='mb-3'>";
-echo "<div class='d-flex gap-2'>";
-echo "<input type='text' name='q' value='" . Html::cleanInputText($search) . "' class='form-control' placeholder='" . Html::clean(__('Pesquisar por código, campus, departamento, endereço, piso ou utilização', 'maintenancecosts')) . "'>";
-echo Html::hidden('per_page', ['value' => $perPage]);
-echo "<button class='btn btn-primary' type='submit'>" . __('Pesquisar', 'maintenancecosts') . "</button>";
-echo "</div></form>";
-
-Pager::render($totalRows, $page, $perPage, ['q' => $search]);
-echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
-echo "<thead><tr class='tab_bg_2'>";
-echo "<th data-sort='text'>" . __('Código', 'maintenancecosts') . "</th>";
-echo "<th data-sort='text'>" . __('Campus', 'maintenancecosts') . "</th>";
-echo "<th data-sort='text'>" . __('Departamento/Disc./Setor', 'maintenancecosts') . "</th>";
-echo "<th data-sort='text'>" . __('Endereço', 'maintenancecosts') . "</th>";
-echo "<th data-sort='text'>" . __('Piso', 'maintenancecosts') . "</th>";
-echo "<th data-sort='text'>" . __('Utilização', 'maintenancecosts') . "</th>";
-echo "<th data-sort='text'>" . __('Ativo', 'maintenancecosts') . "</th>";
-echo "<th data-maintenancecosts-fixed-column='1'>" . __('Ações', 'maintenancecosts') . "</th>";
-echo "</tr></thead><tbody>";
-
-$iterator = $DB->request($criteria);
-foreach ($iterator as $row) {
-   echo "<tr class='tab_bg_1'>";
-   echo "<td class='center'>" . Html::clean($row['code']) . "</td>";
-   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['campus'] ?? '') . "</td>";
-   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['department'] ?? '') . "</td>";
-   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['address'] ?? '') . "</td>";
-   echo "<td class='center'>" . Html::clean($row['floor'] ?? '') . "</td>";
-   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['usage_type'] ?? '') . "</td>";
-   echo "<td class='center'>" . ((int) ($row['is_active'] ?? 0) ? __('Yes') : __('No')) . "</td>";
-   echo "<td class='center'><div class='d-inline-flex gap-1'>";
-   if (Session::haveRight(Config::RIGHT_COSTCENTERS, UPDATE)) {
-      echo "<a class='btn btn-icon btn-sm btn-outline-secondary' href='" . Html::clean(CostCenterLegacy::getFormURL() . '?id=' . (int) $row['id']) . "' title='" . Html::clean(__('Editar', 'maintenancecosts')) . "' aria-label='" . Html::clean(__('Editar', 'maintenancecosts')) . "'><i class='ti ti-pencil'></i></a>";
-   }
-   if (Session::haveRight(Config::RIGHT_COSTCENTERS, PURGE)) {
-      $confirmation = json_encode(
-         __('Deseja mesmo excluir este centro de custo?', 'maintenancecosts'),
-         JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
-      );
-      echo "<form method='post' action='" . Html::clean(CostCenterLegacy::getFormURL()) . "' class='d-inline' onsubmit='return window.confirm(" . Html::clean($confirmation) . ");'>";
-      echo Html::hidden('_glpi_csrf_token', ['value' => Session::getNewCSRFToken()]);
-      echo Html::hidden('id', ['value' => (int) $row['id']]);
-      echo "<button class='btn btn-icon btn-sm btn-outline-danger' type='submit' name='delete' value='1' title='" . Html::clean(__('Excluir', 'maintenancecosts')) . "' aria-label='" . Html::clean(__('Excluir', 'maintenancecosts')) . "'><i class='ti ti-trash'></i></button>";
-      echo "</form>";
-   }
-   echo "</div></td>";
-   echo "</tr>";
-}
-
-if ($iterator->count() === 0) {
-   echo "<tr class='tab_bg_1'><td colspan='8' class='center'>" . __('Nenhum centro de custo encontrado.', 'maintenancecosts') . "</td></tr>";
-}
-
-echo "</tbody></table>";
-Pager::render($totalRows, $page, $perPage, ['q' => $search]);
+Search::show(CostCenterLegacy::class);
 Config::renderPluginLayoutEnd();
 Html::footer();
