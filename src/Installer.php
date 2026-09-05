@@ -88,7 +88,13 @@ class Installer
          self::ensureField($migration, Price::getTable(), 'quote_price_2', 'decimal(20,6) NOT NULL DEFAULT 0.000000');
          self::ensureField($migration, Price::getTable(), 'quote_price_3', 'decimal(20,6) NOT NULL DEFAULT 0.000000');
          self::ensureField($migration, Price::getTable(), 'price_type', "varchar(32) NOT NULL DEFAULT 'sinapi'");
+         self::ensureField($migration, Price::getTable(), 'is_current', 'tinyint NOT NULL DEFAULT 0');
          self::ensureField($migration, Price::getTable(), 'date_mod', 'timestamp NULL DEFAULT NULL');
+         $migration->addKey(
+            Price::getTable(),
+            ['price_type', 'plugin_maintenancecosts_materials_id', 'is_current'],
+            'idx_current_price'
+         );
       }
 
       if ($DB->tableExists(ImportBatch::getTable())) {
@@ -197,6 +203,7 @@ class Installer
       }
 
       $migration->executeMigration();
+      Price::syncAllCurrentPrices();
    }
 
    private static function ensureCostCenterLegacyTable(): void

@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_maintenancecosts_prices` (
    `quote_price_2` decimal(20,6) NOT NULL DEFAULT '0.000000',
    `quote_price_3` decimal(20,6) NOT NULL DEFAULT '0.000000',
    `price_type` varchar(32) NOT NULL DEFAULT 'sinapi',
+   `is_current` tinyint NOT NULL DEFAULT '0',
    `source` varchar(255) NOT NULL DEFAULT '',
    `plugin_maintenancecosts_importbatches_id` int unsigned NOT NULL DEFAULT '0',
    `users_id` int unsigned NOT NULL DEFAULT '0',
@@ -39,6 +40,7 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_maintenancecosts_prices` (
    KEY `idx_material` (`plugin_maintenancecosts_materials_id`),
    KEY `idx_competence` (`competence`),
    KEY `idx_price_type` (`price_type`),
+   KEY `idx_current_price` (`price_type`, `plugin_maintenancecosts_materials_id`, `is_current`),
    KEY `idx_importbatch` (`plugin_maintenancecosts_importbatches_id`),
    KEY `idx_user` (`users_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC;

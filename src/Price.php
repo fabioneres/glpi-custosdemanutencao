@@ -63,6 +63,10 @@ class Price extends CommonDBTM
          'users_id'                                 => (int) ($this->fields['users_id'] ?? ($_SESSION['glpiID'] ?? 0)),
          'justification'                            => (string) ($this->fields['comment'] ?? ''),
       ]);
+      self::syncCurrentForMaterialAndType(
+         (int) ($this->fields['plugin_maintenancecosts_materials_id'] ?? 0),
+         (string) ($this->fields['price_type'] ?? 'sinapi')
+      );
    }
 
    public function post_updateItem($history = true)
@@ -94,6 +98,66 @@ class Price extends CommonDBTM
             'users_id'                                 => (int) ($this->fields['users_id'] ?? ($_SESSION['glpiID'] ?? 0)),
             'justification'                            => (string) ($this->fields['comment'] ?? ''),
          ]);
+      }
+
+      self::syncCurrentForMaterialAndType(
+         (int) ($this->fields['plugin_maintenancecosts_materials_id'] ?? 0),
+         (string) ($this->fields['price_type'] ?? 'sinapi')
+      );
+      self::syncCurrentForMaterialAndType(
+         (int) ($this->oldvalues['plugin_maintenancecosts_materials_id'] ?? 0),
+         (string) ($this->oldvalues['price_type'] ?? '')
+      );
+   }
+
+   public function post_deleteFromDB()
+   {
+      self::syncCurrentForMaterialAndType(
+         (int) ($this->fields['plugin_maintenancecosts_materials_id'] ?? 0),
+         (string) ($this->fields['price_type'] ?? '')
+      );
+   }
+
+   public static function syncAllCurrentPrices(): void
+   {
+      global $DB;
+
+      foreach ($DB->request([
+         'SELECT'  => ['plugin_maintenancecosts_materials_id', 'price_type'],
+         'FROM'    => self::getTable(),
+         'GROUPBY' => ['plugin_maintenancecosts_materials_id', 'price_type'],
+      ]) as $row) {
+         self::syncCurrentForMaterialAndType(
+            (int) ($row['plugin_maintenancecosts_materials_id'] ?? 0),
+            (string) ($row['price_type'] ?? '')
+         );
+      }
+   }
+
+   public static function syncCurrentForMaterialAndType(int $materialsId, string $priceType): void
+   {
+      global $DB;
+
+      $priceType = Config::normalizePriceType($priceType);
+      if ($materialsId <= 0 || $priceType === '') {
+         return;
+      }
+
+      $where = [
+         'plugin_maintenancecosts_materials_id' => $materialsId,
+         'price_type'                           => $priceType,
+      ];
+      $DB->update(self::getTable(), ['is_current' => 0], $where);
+
+      $latest = $DB->request([
+         'SELECT' => ['id'],
+         'FROM'   => self::getTable(),
+         'WHERE'  => $where,
+         'ORDER'  => ['competence DESC', 'id DESC'],
+         'LIMIT'  => 1,
+      ])->current();
+      if ($latest) {
+         $DB->update(self::getTable(), ['is_current' => 1], ['id' => (int) $latest['id']]);
       }
    }
 
@@ -230,6 +294,13 @@ class Price extends CommonDBTM
          'linkfield' => 'plugin_maintenancecosts_materials_id',
          'name'      => __('Unidade', 'maintenancecosts'),
          'datatype'  => 'string',
+      ];
+      $tab[13] = [
+         'id'       => 13,
+         'table'    => self::getTable(),
+         'field'    => 'is_current',
+         'name'     => __('Preço vigente', 'maintenancecosts'),
+         'datatype' => 'bool',
       ];
       $tab[2] = ['id' => 2, 'table' => self::getTable(), 'field' => 'competence', 'name' => __('Competência', 'maintenancecosts'), 'datatype' => 'string'];
       $tab[3] = ['id' => 3, 'table' => self::getTable(), 'field' => 'unit_price', 'name' => __('Valor unitário', 'maintenancecosts'), 'datatype' => 'decimal'];
