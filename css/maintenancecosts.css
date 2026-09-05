@@ -1,6 +1,6 @@
 .plugin-maintenancecosts-page {
-   max-width: 1680px;
-   margin: 0 auto;
+   max-width: none;
+   width: 100%;
 }
 
 .plugin-maintenancecosts-actions {

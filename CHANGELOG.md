@@ -6,6 +6,7 @@
 - Migra as listagens de Materiais SINAPI e Centros de Custos Antigo/Novo para o mecanismo nativo de pesquisa e listagem do GLPI, com filtros, ordenacao, configuracao de colunas e acoes em massa.
 - Migra a listagem de Origens do material para a pesquisa nativa do GLPI.
 - Remove a rolagem vertical duplicada das listas nativas dentro do layout do plugin.
+- Permite que o layout e as tabelas do plugin ocupem toda a largura disponivel da tela.
 
 ## v1.1.0 - Aperfeicoamentos de operacao e interface
 
