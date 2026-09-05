@@ -45,6 +45,12 @@
    min-width: 0;
 }
 
+/* The GLPI search page already sits inside the plugin page scroll area. */
+.plugin-maintenancecosts-main .search_page .search-container {
+   height: auto;
+   overflow-y: visible;
+}
+
 .plugin-maintenancecosts-panel {
    background: #fff;
    border: 1px solid #d8dee9;
