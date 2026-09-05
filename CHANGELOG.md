@@ -1,5 +1,9 @@
 # Changelog
 
+## Em desenvolvimento
+
+- Amplia os campos de Centro de Custo no lancamento de materiais e na aba `Centro de Custos` do chamado, preservando a busca e selecao por Select2.
+
 ## v1.1.0 - Aperfeicoamentos de operacao e interface
 
 - Substitui o botao textual `Editar` nas tabelas de Centro de Custos Antigo e Novo por icone de lapis, mantendo acesso direto a edicao.

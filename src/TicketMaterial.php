@@ -834,9 +834,9 @@ class TicketMaterial extends CommonDBTM
       echo "</td><td>" . __('Competência', 'maintenancecosts') . "</td>";
       echo "<td><input type='text' name='competence' placeholder='AAAA-MM' maxlength='7' value='" . self::escape($competenceValue) . "' class='form-control plugin-maintenancecosts-competence'></td></tr>";
 
-      echo "<tr class='tab_bg_1'><td>" . __('Centro de custo', 'maintenancecosts') . "</td><td>";
+      echo "<tr class='tab_bg_1'><td>" . __('Centro de custo', 'maintenancecosts') . "</td><td colspan='3'><div class='plugin-maintenancecosts-costcenter-field'>";
       if (count($linkedSelections) > 0) {
-         echo "<select name='plugin_maintenancecosts_costcenters_id' class='form-select plugin-maintenancecosts-linked-costcenter' data-maintenancecosts-linked-dropdown='1'>";
+         echo "<select name='plugin_maintenancecosts_costcenters_id' class='form-select plugin-maintenancecosts-linked-costcenter plugin-maintenancecosts-costcenter-dropdown' data-maintenancecosts-linked-dropdown='1'>";
          echo "<option value='" . (int) $ticketCostCenterId . "' selected>" . self::escape(self::getCostCenterDisplayName($ticketCostCenterId, $costcenterSource)) . "</option>";
          echo "</select>";
       } else {
@@ -846,7 +846,7 @@ class TicketMaterial extends CommonDBTM
             $materialCostCenterId
          );
       }
-      echo "</td><td></td><td></td></tr>";
+      echo "</div></td></tr>";
 
       echo "<tr class='tab_bg_1'><td>" . __('Quantidade', 'maintenancecosts') . "</td>";
       echo "<td><input type='number' step='1' min='0' name='quantity' value='" . self::escape(self::formatQuantity((float) ($this->fields['quantity'] ?? 0))) . "' class='form-control'></td>";
@@ -893,6 +893,9 @@ class TicketMaterial extends CommonDBTM
       $style = '';
       if ($type === 'material') {
          $classes .= ' plugin-maintenancecosts-material-dropdown';
+         $style = " style='width:100%'";
+      } elseif ($type === 'costcenter' || $type === 'costcenter_legacy') {
+         $classes .= ' plugin-maintenancecosts-costcenter-dropdown';
          $style = " style='width:100%'";
       }
 
@@ -1084,7 +1087,7 @@ class TicketMaterial extends CommonDBTM
       echo "<div style='margin-bottom:8px;'><strong>" . self::escape(__('Centro de custo do chamado', 'maintenancecosts')) . "</strong></div>";
 
       if (!Config::canManageConsumption()) {
-         echo "<table class='tab_cadre' style='width:auto; min-width:640px; max-width:760px; margin:0;'>";
+         echo "<table class='tab_cadre plugin-maintenancecosts-ticket-costcenter-table' style='margin:0;'>";
          echo "<tr class='tab_bg_2'><th style='width:220px;'>" . self::escape(__('Tabela de centro de custo', 'maintenancecosts')) . "</th>";
          echo "<th style='min-width:360px;'>" . self::escape(__('Centro de custo', 'maintenancecosts')) . "</th></tr>";
          foreach (['legacy' => __('Antigo', 'maintenancecosts'), 'new' => __('Novo', 'maintenancecosts')] as $source => $tableLabel) {
@@ -1103,7 +1106,7 @@ class TicketMaterial extends CommonDBTM
       echo "<input type='hidden' name='_glpi_csrf_token' value='" . self::escape(Session::getNewCSRFToken()) . "'>";
       echo "<input type='hidden' name='tickets_id' value='" . $tickets_id . "'>";
       echo "<input type='hidden' name='entities_id' value='" . (int) ($ticket->fields['entities_id'] ?? ($_SESSION['glpiactive_entity'] ?? 0)) . "'>";
-      echo "<table class='tab_cadre' style='width:auto; min-width:640px; max-width:760px; margin:0;'>";
+      echo "<table class='tab_cadre plugin-maintenancecosts-ticket-costcenter-table' style='margin:0;'>";
       echo "<tr class='tab_bg_2'><th style='width:220px;'>" . self::escape(__('Tabela de centro de custo', 'maintenancecosts')) . "</th>";
       echo "<th style='min-width:360px;'>" . self::escape(__('Centro de custo', 'maintenancecosts')) . "</th></tr>";
       foreach ([
@@ -1120,8 +1123,8 @@ class TicketMaterial extends CommonDBTM
             'id'    => $newId,
          ],
       ] as $source => $row) {
-         echo "<tr><td>" . self::escape($row['label']) . "</td><td>";
-         echo "<select name='" . self::escape($row['name']) . "' class='form-control plugin-maintenancecosts-dropdown' data-dropdown-type='" . self::escape($row['type']) . "'>";
+         echo "<tr><td>" . self::escape($row['label']) . "</td><td><div class='plugin-maintenancecosts-costcenter-field'>";
+         echo "<select name='" . self::escape($row['name']) . "' class='form-control plugin-maintenancecosts-dropdown plugin-maintenancecosts-costcenter-dropdown' data-dropdown-type='" . self::escape($row['type']) . "'>";
          echo "<option value='0'>-----</option>";
          if ((int) $row['id'] > 0) {
             $label = self::getCostCenterDisplayName((int) $row['id'], $source);
@@ -1129,7 +1132,7 @@ class TicketMaterial extends CommonDBTM
                echo "<option value='" . (int) $row['id'] . "' selected>" . self::escape($label) . "</option>";
             }
          }
-         echo "</select></td></tr>";
+         echo "</select></div></td></tr>";
       }
       echo "</table>";
       echo "<div class='d-flex flex-wrap align-items-end' style='gap:12px; margin-top:12px; justify-content:flex-start;'>";

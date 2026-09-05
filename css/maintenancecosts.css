@@ -246,6 +246,28 @@ select[name="plugin_maintenancecosts_materials_id"] + .select2-container .select
    width: 100% !important;
 }
 
+.plugin-maintenancecosts-ticket-costcenter-table {
+   width: 100% !important;
+   max-width: none !important;
+}
+
+.plugin-maintenancecosts-costcenter-field,
+.plugin-maintenancecosts-costcenter-field .plugin-maintenancecosts-costcenter-dropdown,
+.plugin-maintenancecosts-costcenter-field .select2-container,
+.plugin-maintenancecosts-ticketmaterial-form select[name="plugin_maintenancecosts_costcenters_id"] + .select2-container,
+.plugin-maintenancecosts-ticket-costcenter-table .plugin-maintenancecosts-costcenter-dropdown + .select2-container {
+   width: 100% !important;
+   max-width: 100%;
+}
+
+.plugin-maintenancecosts-costcenter-field .select2-selection,
+.plugin-maintenancecosts-ticketmaterial-form select[name="plugin_maintenancecosts_costcenters_id"] + .select2-container .select2-selection,
+.plugin-maintenancecosts-ticket-costcenter-table .plugin-maintenancecosts-costcenter-dropdown + .select2-container .select2-selection {
+   box-sizing: border-box;
+   max-width: none !important;
+   width: 100% !important;
+}
+
 .plugin-maintenancecosts-bar-row {
    display: grid;
    grid-template-columns: minmax(220px, 1.4fr) 3fr 150px;
