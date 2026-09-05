@@ -61,6 +61,36 @@ class MaterialOrigin extends CommonDBTM
       return $input;
    }
 
+   public function rawSearchOptions()
+   {
+      $tab = [];
+      $tab[] = ['id' => 'common', 'name' => self::getTypeName(1)];
+      $tab[] = [
+         'id'            => 1,
+         'table'         => self::getTable(),
+         'field'         => 'name',
+         'name'          => __('Name'),
+         'datatype'      => 'itemlink',
+         'massiveaction' => false,
+      ];
+      $tab[] = [
+         'id'       => 2,
+         'table'    => self::getTable(),
+         'field'    => 'is_active',
+         'name'     => __('Active'),
+         'datatype' => 'bool',
+      ];
+      $tab[] = [
+         'id'       => 3,
+         'table'    => self::getTable(),
+         'field'    => 'comment',
+         'name'     => __('Comments'),
+         'datatype' => 'text',
+      ];
+
+      return $tab;
+   }
+
    public function showForm($ID, $options = [])
    {
       $this->initForm($ID, $options);
