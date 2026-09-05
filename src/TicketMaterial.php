@@ -258,6 +258,14 @@ class TicketMaterial extends CommonDBTM
          $input['total_price'] = $quantity * $unit_price;
       }
 
+      $costcenterId = (int) ($input['plugin_maintenancecosts_costcenters_id']
+         ?? $this->fields['plugin_maintenancecosts_costcenters_id']
+         ?? 0);
+      $costcenterSource = self::normalizeCostCenterSource((string) ($input['costcenter_source']
+         ?? $this->fields['costcenter_source']
+         ?? 'legacy'));
+      $input['costcenter_label'] = self::getCostCenterDisplayName($costcenterId, $costcenterSource);
+
       return $input;
    }
 
@@ -574,19 +582,29 @@ class TicketMaterial extends CommonDBTM
       ]);
    }
 
-   public function getSearchOptions()
+   public function rawSearchOptions()
    {
       $tab = [];
       $tab[] = ['id' => 'common', 'name' => self::getTypeName(1)];
-      $tab[1] = ['id' => 1, 'table' => 'glpi_tickets', 'field' => 'id', 'linkfield' => 'tickets_id', 'name' => Ticket::getTypeName(1), 'datatype' => 'number'];
-      $tab[2] = ['id' => 2, 'table' => Material::getTable(), 'field' => 'name', 'linkfield' => 'plugin_maintenancecosts_materials_id', 'name' => Material::getTypeName(1), 'datatype' => 'dropdown'];
-      $tab[3] = ['id' => 3, 'table' => self::getTable(), 'field' => 'quantity', 'name' => __('Quantidade', 'maintenancecosts'), 'datatype' => 'decimal'];
-      $tab[4] = ['id' => 4, 'table' => self::getTable(), 'field' => 'unit_price_applied', 'name' => __('Valor unitário', 'maintenancecosts'), 'datatype' => 'decimal'];
-      $tab[5] = ['id' => 5, 'table' => self::getTable(), 'field' => 'total_price', 'name' => __('Total'), 'datatype' => 'decimal'];
-      $tab[6] = ['id' => 6, 'table' => CostCenter::getTable(), 'field' => 'name', 'linkfield' => 'plugin_maintenancecosts_costcenters_id', 'name' => CostCenter::getTypeName(1), 'datatype' => 'dropdown'];
-      $tab[7] = ['id' => 7, 'table' => MaterialOrigin::getTable(), 'field' => 'name', 'linkfield' => 'plugin_maintenancecosts_materialorigins_id', 'name' => MaterialOrigin::getTypeName(1), 'datatype' => 'dropdown'];
-      $tab[8] = ['id' => 8, 'table' => self::getTable(), 'field' => 'price_type', 'name' => __('Tipo de preço', 'maintenancecosts'), 'datatype' => 'string'];
-      $tab[9] = ['id' => 9, 'table' => self::getTable(), 'field' => 'is_deleted', 'name' => __('Canceled', 'maintenancecosts'), 'datatype' => 'bool'];
+      $tab[1] = ['id' => 1, 'table' => self::getTable(), 'field' => 'id', 'name' => __('ID'), 'datatype' => 'itemlink'];
+      $tab[2] = ['id' => 2, 'table' => Ticket::getTable(), 'field' => 'name', 'linkfield' => 'tickets_id', 'name' => Ticket::getTypeName(1), 'datatype' => 'itemlink'];
+      $tab[3] = ['id' => 3, 'table' => Material::getTable(), 'field' => 'code', 'linkfield' => 'plugin_maintenancecosts_materials_id', 'name' => __('Código', 'maintenancecosts'), 'datatype' => 'string'];
+      $tab[4] = ['id' => 4, 'table' => Material::getTable(), 'field' => 'name', 'linkfield' => 'plugin_maintenancecosts_materials_id', 'name' => Material::getTypeName(1), 'datatype' => 'dropdown'];
+      $tab[5] = ['id' => 5, 'table' => self::getTable(), 'field' => 'quantity', 'name' => __('Quantidade', 'maintenancecosts'), 'datatype' => 'decimal'];
+      $tab[6] = ['id' => 6, 'table' => self::getTable(), 'field' => 'unit', 'name' => __('Unidade', 'maintenancecosts'), 'datatype' => 'string'];
+      $tab[7] = ['id' => 7, 'table' => self::getTable(), 'field' => 'unit_price_applied', 'name' => __('Valor unitário', 'maintenancecosts'), 'datatype' => 'decimal'];
+      $tab[8] = ['id' => 8, 'table' => self::getTable(), 'field' => 'total_price', 'name' => __('Total'), 'datatype' => 'decimal'];
+      $tab[9] = ['id' => 9, 'table' => self::getTable(), 'field' => 'costcenter_label', 'name' => __('Centro de custo', 'maintenancecosts'), 'datatype' => 'string'];
+      $tab[10] = ['id' => 10, 'table' => MaterialOrigin::getTable(), 'field' => 'name', 'linkfield' => 'plugin_maintenancecosts_materialorigins_id', 'name' => MaterialOrigin::getTypeName(1), 'datatype' => 'dropdown'];
+      $tab[11] = ['id' => 11, 'table' => self::getTable(), 'field' => 'price_type', 'name' => __('Tipo de preço', 'maintenancecosts'), 'datatype' => 'string'];
+      $tab[12] = ['id' => 12, 'table' => \Contract::getTable(), 'field' => 'name', 'linkfield' => 'contracts_id', 'name' => \Contract::getTypeName(1), 'datatype' => 'dropdown'];
+      $tab[13] = ['id' => 13, 'table' => self::getTable(), 'field' => 'consumption_date', 'name' => __('Data', 'maintenancecosts'), 'datatype' => 'date'];
+      $tab[14] = ['id' => 14, 'table' => 'glpi_users', 'field' => 'name', 'linkfield' => 'users_id', 'name' => \User::getTypeName(1), 'datatype' => 'dropdown'];
+      $tab[15] = ['id' => 15, 'table' => self::getTable(), 'field' => 'costcenter_source', 'name' => __('Tabela de centro de custo', 'maintenancecosts'), 'datatype' => 'string'];
+      $tab[16] = ['id' => 16, 'table' => self::getTable(), 'field' => 'competence', 'name' => __('Competência', 'maintenancecosts'), 'datatype' => 'string'];
+      $tab[17] = ['id' => 17, 'table' => 'glpi_entities', 'field' => 'completename', 'linkfield' => 'entities_id', 'name' => \Entity::getTypeName(1), 'datatype' => 'dropdown'];
+      $tab[18] = ['id' => 18, 'table' => self::getTable(), 'field' => 'is_deleted', 'name' => __('Cancelado', 'maintenancecosts'), 'datatype' => 'bool'];
+      $tab[19] = ['id' => 19, 'table' => self::getTable(), 'field' => 'comment', 'name' => __('Comments'), 'datatype' => 'text'];
       return $tab;
    }
 

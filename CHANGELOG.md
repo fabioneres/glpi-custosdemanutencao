@@ -10,6 +10,8 @@
 - Migra a listagem de Precos SINAPI para o mecanismo nativo de pesquisa e listagem do GLPI, preservando o filtro fixo para a tabela SINAPI.
 - Migra Cotacao/Mercado para a pesquisa nativa do GLPI e passa a identificar de forma persistente o preco vigente de cada material.
 - Migra Materiais Cotacao para a pesquisa nativa do GLPI, exibindo somente materiais com cotacao vigente.
+- Migra a listagem global de Materiais consumidos para a pesquisa nativa do GLPI, com filtros, ordenacao, configuracao de colunas e acoes em massa.
+- Preserva no lancamento o rotulo consolidado do centro de custo (`codigo - nome`) para permitir pesquisa correta nas bases Antigo e Novo.
 
 ## v1.1.0 - Aperfeicoamentos de operacao e interface
 

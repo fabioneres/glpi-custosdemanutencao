@@ -37,6 +37,7 @@ class Installer
          self::ensureDefaultCostCenter();
          self::ensureDefaultSearchDisplayPreferences();
          self::syncStoredCostCenterNames();
+         self::syncTicketMaterialCostCenterLabels();
          TicketMaterial::syncAllTicketCosts();
          TicketCostCenter::syncFromTicketMaterials();
       } catch (Throwable $e) {
@@ -158,6 +159,7 @@ class Installer
          self::ensureField($migration, TicketMaterial::getTable(), 'itemtype', "varchar(100) NOT NULL DEFAULT 'Ticket'");
          self::ensureField($migration, TicketMaterial::getTable(), 'items_id', 'int unsigned NOT NULL DEFAULT 0');
          self::ensureField($migration, TicketMaterial::getTable(), 'costcenter_source', "varchar(16) NOT NULL DEFAULT 'new'");
+         self::ensureField($migration, TicketMaterial::getTable(), 'costcenter_label', "varchar(255) NOT NULL DEFAULT ''");
          self::ensureField($migration, TicketMaterial::getTable(), 'plugin_maintenancecosts_materialorigins_id', 'int unsigned NOT NULL DEFAULT 0');
          self::ensureField($migration, TicketMaterial::getTable(), 'contracts_id', 'int unsigned NOT NULL DEFAULT 0');
          self::ensureField($migration, TicketMaterial::getTable(), 'contractcosts_id', 'int unsigned NOT NULL DEFAULT 0');
@@ -166,6 +168,7 @@ class Installer
          self::ensureField($migration, TicketMaterial::getTable(), 'deleted_at', 'timestamp NULL DEFAULT NULL');
          self::ensureField($migration, TicketMaterial::getTable(), 'deleted_by', 'int unsigned NOT NULL DEFAULT 0');
          self::ensureField($migration, TicketMaterial::getTable(), 'delete_reason', 'text NULL');
+         $migration->addKey(TicketMaterial::getTable(), 'costcenter_label', 'idx_costcenter_label');
       }
 
       self::ensureTicketCostCenterTable();
@@ -206,6 +209,36 @@ class Installer
 
       $migration->executeMigration();
       Price::syncAllCurrentPrices();
+   }
+
+   private static function syncTicketMaterialCostCenterLabels(): void
+   {
+      /** @var DBmysql $DB */
+      global $DB;
+
+      if (!$DB->tableExists(TicketMaterial::getTable())
+         || !$DB->fieldExists(TicketMaterial::getTable(), 'costcenter_label')) {
+         return;
+      }
+
+      foreach ($DB->request([
+         'SELECT' => ['id', 'plugin_maintenancecosts_costcenters_id', 'costcenter_source', 'costcenter_label'],
+         'FROM'   => TicketMaterial::getTable(),
+      ]) as $row) {
+         $label = TicketMaterial::getCostCenterDisplayName(
+            (int) ($row['plugin_maintenancecosts_costcenters_id'] ?? 0),
+            (string) ($row['costcenter_source'] ?? 'legacy')
+         );
+         if ($label === (string) ($row['costcenter_label'] ?? '')) {
+            continue;
+         }
+
+         $DB->update(
+            TicketMaterial::getTable(),
+            ['costcenter_label' => $label],
+            ['id' => (int) $row['id']]
+         );
+      }
    }
 
    private static function ensureCostCenterLegacyTable(): void
@@ -537,6 +570,7 @@ class Installer
            Material::class => [2, 3, 4, 5],
            Price::class => [11, 1, 12, 2, 3, 5, 6],
            MaterialOrigin::class => [2, 3],
+         TicketMaterial::class => [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14],
          CostCenter::class => [2, 3, 4, 5, 6, 7, 8, 10, 11],
          CostCenterLegacy::class => [2, 3, 4, 5, 6, 7],
       ];
