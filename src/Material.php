@@ -144,6 +144,41 @@ class Material extends CommonDBTM
          'datatype' => 'bool',
       ];
 
+      $tab[20] = [
+         'id'       => 20,
+         'table'    => self::getTable(),
+         'field'    => 'has_current_quote',
+         'name'     => __('Possui cotação vigente', 'maintenancecosts'),
+         'datatype' => 'bool',
+      ];
+
+      $quoteJoin = [
+         'jointype'  => 'child',
+         'condition' => [
+            'NEWTABLE.price_type' => 'cotacao_mercado',
+            'NEWTABLE.is_current' => 1,
+         ],
+      ];
+      $quoteFields = [
+         21 => ['competence', __('Última competência', 'maintenancecosts'), 'string'],
+         22 => ['quote_quantity', __('Quantidade cotada', 'maintenancecosts'), 'decimal'],
+         23 => ['unit_price', __('Valor aplicado', 'maintenancecosts'), 'decimal'],
+         24 => ['quote_price_1', __('Cotação 1', 'maintenancecosts'), 'decimal'],
+         25 => ['quote_price_2', __('Cotação 2', 'maintenancecosts'), 'decimal'],
+         26 => ['quote_price_3', __('Cotação 3', 'maintenancecosts'), 'decimal'],
+         27 => ['source', __('Origem', 'maintenancecosts'), 'string'],
+      ];
+      foreach ($quoteFields as $id => [$field, $name, $datatype]) {
+         $tab[$id] = [
+            'id'         => $id,
+            'table'      => Price::getTable(),
+            'field'      => $field,
+            'name'       => $name,
+            'datatype'   => $datatype,
+            'joinparams' => $quoteJoin,
+         ];
+      }
+
       $tab[80] = [
          'id'       => 80,
          'table'    => 'glpi_entities',

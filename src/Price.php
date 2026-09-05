@@ -159,6 +159,14 @@ class Price extends CommonDBTM
       if ($latest) {
          $DB->update(self::getTable(), ['is_current' => 1], ['id' => (int) $latest['id']]);
       }
+
+      if ($priceType === 'cotacao_mercado') {
+         $DB->update(Material::getTable(), [
+            'has_current_quote' => $latest ? 1 : 0,
+         ], [
+            'id' => $materialsId,
+         ]);
+      }
    }
 
    public static function getLatestForMaterial(int $materials_id): ?array

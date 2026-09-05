@@ -9,6 +9,7 @@
 - Permite que o layout e as tabelas do plugin ocupem toda a largura disponivel da tela.
 - Migra a listagem de Precos SINAPI para o mecanismo nativo de pesquisa e listagem do GLPI, preservando o filtro fixo para a tabela SINAPI.
 - Migra Cotacao/Mercado para a pesquisa nativa do GLPI e passa a identificar de forma persistente o preco vigente de cada material.
+- Migra Materiais Cotacao para a pesquisa nativa do GLPI, exibindo somente materiais com cotacao vigente.
 
 ## v1.1.0 - Aperfeicoamentos de operacao e interface
 

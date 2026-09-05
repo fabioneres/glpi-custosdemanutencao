@@ -77,8 +77,10 @@ class Installer
          self::ensureField($migration, Material::getTable(), 'entities_id', 'int unsigned NOT NULL DEFAULT 0');
          self::ensureField($migration, Material::getTable(), 'is_recursive', 'tinyint NOT NULL DEFAULT 0');
          self::ensureField($migration, Material::getTable(), 'is_active', 'tinyint NOT NULL DEFAULT 1');
+         self::ensureField($migration, Material::getTable(), 'has_current_quote', 'tinyint NOT NULL DEFAULT 0');
          self::ensureField($migration, Material::getTable(), 'date_creation', 'timestamp NULL DEFAULT NULL');
          self::ensureField($migration, Material::getTable(), 'date_mod', 'timestamp NULL DEFAULT NULL');
+         $migration->addKey(Material::getTable(), 'has_current_quote', 'idx_current_quote');
       }
 
       if ($DB->tableExists(Price::getTable())) {

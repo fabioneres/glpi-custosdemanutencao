@@ -42,6 +42,7 @@ if ((Test-Path $plinkPath) -and (Test-Path $pscpPath)) {
         "front/materialorigin.php",
         "front/price.php",
         "front/price.form.php",
+        "front/quotationmaterial.php",
         "front/ticketmaterial.form.php",
         "hook.php",
         "install/install.sql",
