@@ -202,11 +202,35 @@ class Price extends CommonDBTM
       return $input;
    }
 
-   public function getSearchOptions()
+   public function rawSearchOptions()
    {
       $tab = [];
       $tab[] = ['id' => 'common', 'name' => self::getTypeName(1)];
-      $tab[1] = ['id' => 1, 'table' => Material::getTable(), 'field' => 'name', 'linkfield' => 'plugin_maintenancecosts_materials_id', 'name' => Material::getTypeName(1), 'datatype' => 'dropdown'];
+      $tab[1] = [
+         'id'            => 1,
+         'table'         => Material::getTable(),
+         'field'         => 'name',
+         'linkfield'     => 'plugin_maintenancecosts_materials_id',
+         'name'          => Material::getTypeName(1),
+         'datatype'      => 'itemlink',
+         'massiveaction' => false,
+      ];
+      $tab[11] = [
+         'id'        => 11,
+         'table'     => Material::getTable(),
+         'field'     => 'code',
+         'linkfield' => 'plugin_maintenancecosts_materials_id',
+         'name'      => __('Código SINAPI', 'maintenancecosts'),
+         'datatype'  => 'string',
+      ];
+      $tab[12] = [
+         'id'        => 12,
+         'table'     => Material::getTable(),
+         'field'     => 'unit',
+         'linkfield' => 'plugin_maintenancecosts_materials_id',
+         'name'      => __('Unidade', 'maintenancecosts'),
+         'datatype'  => 'string',
+      ];
       $tab[2] = ['id' => 2, 'table' => self::getTable(), 'field' => 'competence', 'name' => __('Competência', 'maintenancecosts'), 'datatype' => 'string'];
       $tab[3] = ['id' => 3, 'table' => self::getTable(), 'field' => 'unit_price', 'name' => __('Valor unitário', 'maintenancecosts'), 'datatype' => 'decimal'];
       $tab[4] = ['id' => 4, 'table' => self::getTable(), 'field' => 'price_type', 'name' => __('Tipo de preço', 'maintenancecosts'), 'datatype' => 'string'];

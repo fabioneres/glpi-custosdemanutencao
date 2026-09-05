@@ -28,6 +28,43 @@ $quoteNumber = static function (float $value): string {
       : rtrim(rtrim(number_format($value, 2, ',', '.'), '0'), ',');
 };
 
+if (!$isQuote) {
+   Html::header($pageTitle, $_SERVER['PHP_SELF'], 'plugins', Menu::class);
+   Config::renderPluginLayoutStart($activeTab);
+
+   echo "<div class='center mb-3'>";
+   if (Config::canManagePrices()) {
+      echo "<a class='btn btn-primary' href='" . Html::clean(Price::getFormURL() . '?price_type=sinapi') . "'>"
+         . Html::clean(__('Adicionar preço SINAPI', 'maintenancecosts')) . "</a> ";
+      echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/import.form.php?price_type=sinapi')) . "'>"
+         . Html::clean(__('Importar SINAPI', 'maintenancecosts')) . "</a> ";
+   }
+   echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/pricehistory.php?price_type=sinapi')) . "'>" . __('Histórico de preços', 'maintenancecosts') . "</a> ";
+   echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/export.php?type=prices&price_type=sinapi')) . "'>" . __('Exportar CSV', 'maintenancecosts') . "</a> ";
+   echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/export.php?type=prices&format=pdf&price_type=sinapi')) . "'>" . __('Exportar PDF', 'maintenancecosts') . "</a>";
+   echo "</div>";
+
+   echo "<div class='plugin-maintenancecosts-panel mb-3'>";
+   echo "<div class='plugin-maintenancecosts-panel-header'><i class='ti ti-info-circle'></i> "
+      . Html::clean(__('Materiais SINAPI x Preços SINAPI', 'maintenancecosts')) . "</div>";
+   echo "<div class='plugin-maintenancecosts-panel-body'><p><strong>" . Material::getTypeName(2) . ":</strong> "
+      . __('cadastro do item: código, nome, unidade e categoria.', 'maintenancecosts') . "</p><p><strong>" . Price::getTypeName(2) . ":</strong> "
+      . __('valores SINAPI por competência. Reimportações atualizam o preço vigente e registram histórico sem alterar lançamentos já gravados no chamado.', 'maintenancecosts') . "</p></div></div>";
+
+   // Keep this native list restricted to the SINAPI table, even when users change visible criteria.
+   $_GET['criteria'] = is_array($_GET['criteria'] ?? null) ? $_GET['criteria'] : [];
+   $_GET['criteria'][] = [
+      'link'       => 'AND',
+      'field'      => 4,
+      'searchtype' => 'equals',
+      'value'      => 'sinapi',
+   ];
+   Search::show(Price::class);
+   Config::renderPluginLayoutEnd();
+   Html::footer();
+   exit;
+}
+
 $priceTable = Price::getTable();
 $materialTable = Material::getTable();
 

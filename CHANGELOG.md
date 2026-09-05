@@ -7,6 +7,7 @@
 - Migra a listagem de Origens do material para a pesquisa nativa do GLPI.
 - Remove a rolagem vertical duplicada das listas nativas dentro do layout do plugin.
 - Permite que o layout e as tabelas do plugin ocupem toda a largura disponivel da tela.
+- Migra a listagem de Precos SINAPI para o mecanismo nativo de pesquisa e listagem do GLPI, preservando o filtro fixo para a tabela SINAPI.
 
 ## v1.1.0 - Aperfeicoamentos de operacao e interface
 

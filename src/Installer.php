@@ -525,8 +525,9 @@ class Installer
       global $DB;
 
       $defaults = [
-         Material::class => [2, 3, 4, 5],
-         MaterialOrigin::class => [2, 3],
+           Material::class => [2, 3, 4, 5],
+           Price::class => [11, 1, 12, 2, 3, 5, 6],
+           MaterialOrigin::class => [2, 3],
          CostCenter::class => [2, 3, 4, 5, 6, 7, 8, 10, 11],
          CostCenterLegacy::class => [2, 3, 4, 5, 6, 7],
       ];
