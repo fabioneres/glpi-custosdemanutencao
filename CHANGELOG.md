@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.15 - Catalogo SINAPI sem filtro predefinido
+
+- Mantem a separacao entre Materiais SINAPI e Materiais Cotacao diretamente na listagem, sem exibir um filtro fixo na pesquisa nativa do GLPI.
+- Preserva todos os recursos de pesquisa, ordenacao, configuracao de colunas e acoes em massa para o usuario.
+
 ## v1.1.14 - Correcoes de centros de custo e catalogo SINAPI
 
 - Impede que o sincronismo do plugin replique respostas de centro de custo que o FormCreator ja gravou na descricao do chamado.

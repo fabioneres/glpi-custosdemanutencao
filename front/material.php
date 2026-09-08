@@ -22,15 +22,32 @@ echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/fro
 echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/export.php?type=materials&format=pdf')) . "'>" . __('Exportar PDF', 'maintenancecosts') . "</a>";
 echo "</div>";
 
-// The SINAPI catalog contains every material whose code is not from quotation.
-$_GET['criteria'] = is_array($_GET['criteria'] ?? null) ? $_GET['criteria'] : [];
-$_GET['criteria'][] = [
+// Keep the SINAPI restriction internal to this dedicated view. The user can
+// still use all native GLPI search controls without seeing a fixed criterion.
+$searchParams = Search::manageParams(Material::class, $_GET);
+$searchParams['display_type'] = Search::HTML_OUTPUT;
+$searchParams['criteria'] = array_values(array_filter(
+   $searchParams['criteria'] ?? [],
+   static function (array $criterion): bool {
+      return !(
+         (int) ($criterion['field'] ?? 0) === 2
+         && (string) ($criterion['searchtype'] ?? '') === 'notcontains'
+         && strtoupper(trim((string) ($criterion['value'] ?? ''))) === 'COT'
+      );
+   }
+));
+
+echo "<div class='search_page row'><div class='col search-container'>";
+Search::showGenericSearch(Material::class, $searchParams);
+
+$listParams = $searchParams;
+$listParams['criteria'][] = [
    'link'       => 'AND',
    'field'      => 2,
    'searchtype' => 'notcontains',
    'value'      => 'COT',
 ];
-
-Search::show(Material::class);
+Search::showList(Material::class, $listParams);
+echo "</div></div>";
 Config::renderPluginLayoutEnd();
 Html::footer();
