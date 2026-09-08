@@ -20,6 +20,7 @@ header('Content-Type: application/json; charset=UTF-8');
 Session::checkLoginUser();
 
 $type = (string) ($_GET['type'] ?? $_POST['type'] ?? '');
+$formcreatorRequest = (string) ($_GET['formcreator'] ?? $_POST['formcreator'] ?? '') === '1';
 if ($type === 'material'
    && !Config::canViewConsumption()
    && !Config::canViewReports()
@@ -33,6 +34,7 @@ if (($type === 'costcenter' || $type === 'costcenter_legacy')
    && !Config::canViewConsumption()
    && !Config::canViewReports()
    && !Config::canViewCostCenters()
+   && !$formcreatorRequest
 ) {
    http_response_code(403);
    echo json_encode(['results' => []]);

@@ -83,6 +83,7 @@
             data: function(requestParams) {
                return {
                   type: dropdownType,
+                  formcreator: 1,
                   q: requestParams.term || '',
                   page: requestParams.page || 1
                };
@@ -119,6 +120,7 @@
          type: 'GET',
          data: {
             type: dropdownType,
+            formcreator: 1,
             _one_id: value
          }
       }).done(function(data) {

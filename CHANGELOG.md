@@ -15,6 +15,7 @@
 - Migra a tabela da aba Materiais consumidos do chamado para a pesquisa nativa do GLPI, mantendo o filtro interno pelo chamado aberto e o lancamento de materiais.
 - Separa os catalogos Materiais SINAPI e Materiais Cotacao pelo preco vigente de cada tipo e restringe as tabelas de precos a competencia vigente, mantendo historico separado.
 - Ajusta os campos e filtros da tela Cotacao/Mercado para usar a nomenclatura propria de cotacao.
+- Corrige o carregamento de centros de custo Antigo e Novo no FormCreator para perfis que respondem formularios sem permissao administrativa do plugin.
 
 ## v1.1.0 - Aperfeicoamentos de operacao e interface
 
