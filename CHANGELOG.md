@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.16 - Preservacao do conteudo do FormCreator
+
+- O sincronismo de centros de custo nao le, normaliza, complementa nem atualiza a descricao do chamado.
+- O conteudo do chamado passa a ser exclusivamente aquele definido pelo alvo do FormCreator; o plugin mantem somente o vinculo interno dos centros de custo.
+
 ## v1.1.15 - Catalogo SINAPI sem filtro predefinido
 
 - Mantem a separacao entre Materiais SINAPI e Materiais Cotacao diretamente na listagem, sem exibir um filtro fixo na pesquisa nativa do GLPI.
