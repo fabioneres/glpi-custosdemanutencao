@@ -962,12 +962,7 @@ class TicketMaterial extends CommonDBTM
       }
 
       if ($type === 'costcenter') {
-         $item = new CostCenter();
-         if ($item->getFromDB($id)) {
-            return trim((string) ($item->fields['code'] ?? '')) !== ''
-               ? (string) $item->fields['code'] . ' - ' . $item->getName()
-               : $item->getName();
-         }
+         return self::getCostCenterDisplayName($id, 'new');
       }
 
       if ($type === 'costcenter_legacy') {
@@ -1032,26 +1027,37 @@ class TicketMaterial extends CommonDBTM
       if ($source === 'legacy') {
          $item = new CostCenterLegacy();
          if ($item->getFromDB($id)) {
-            $code = trim((string) ($item->fields['code'] ?? ''));
-            $name = trim((string) $item->getName());
-            if ($code !== '' && $name !== '' && stripos($name, $code . ' - ') === 0) {
-               return $name;
-            }
-            return $code !== '' && $name !== '' ? $code . ' - ' . $name : ($code !== '' ? $code : $name);
+            return self::composeCostCenterDisplayName($item, ['department', 'campus']);
          }
       }
 
       $item = new CostCenter();
       if ($item->getFromDB($id)) {
-         $code = trim((string) ($item->fields['code'] ?? ''));
-         $name = trim((string) $item->getName());
-         if ($code !== '' && $name !== '' && stripos($name, $code . ' - ') === 0) {
-            return $name;
-         }
-         return $code !== '' && $name !== '' ? $code . ' - ' . $name : ($code !== '' ? $code : $name);
+         return self::composeCostCenterDisplayName($item, ['section', 'division', 'department', 'academic_unit', 'campus']);
       }
 
       return '';
+   }
+
+   private static function composeCostCenterDisplayName(CommonDBTM $item, array $fallbackFields): string
+   {
+      $code = trim((string) ($item->fields['code'] ?? ''));
+      $name = trim((string) ($item->fields['name'] ?? ''));
+      $normalizedCode = preg_replace('/[^0-9A-Za-z]/', '', $code) ?? '';
+      $normalizedName = preg_replace('/[^0-9A-Za-z]/', '', $name) ?? '';
+
+      if ($normalizedCode !== '' && $normalizedCode === $normalizedName) {
+         $name = '';
+      }
+
+      foreach ($fallbackFields as $field) {
+         if ($name !== '') {
+            break;
+         }
+         $name = trim((string) ($item->fields[$field] ?? ''));
+      }
+
+      return CostCenter::composeFriendlyLabel($code, $name);
    }
 
    private static function isContractOriginId(int $id): bool

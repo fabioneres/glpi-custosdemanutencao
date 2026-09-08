@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.1.14 - Correcoes de centros de custo e catalogo SINAPI
+
+- Impede que o sincronismo do plugin replique respostas de centro de custo que o FormCreator ja gravou na descricao do chamado.
+- Evita a exibicao incorreta de `codigo - codigo` em centros de custo com dados legados e usa o nome organizacional disponivel.
+- Exibe em Materiais SINAPI todos os materiais cujo codigo nao pertence a cotacao (`COT`), sem depender de uma marca de preco vigente que pode estar desatualizada apos importacoes.
+
 ## v1.1.13 - Otimizacao da atualizacao
 
 - Evita reprocessar todos os precos, materiais, centros de custo e chamados durante atualizacoes que nao alteram o esquema do banco de dados.

@@ -349,6 +349,10 @@ class CostCenter extends CommonDBTM
       $code = trim($code);
       $name = trim($name);
 
+      if ($code !== '' && self::normalizeFriendlyCode($code) === self::normalizeFriendlyCode($name)) {
+         return $code;
+      }
+
       if ($code !== '' && $name !== '' && stripos($name, $code . ' - ') === 0) {
          return $name;
       }

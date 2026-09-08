@@ -22,13 +22,13 @@ echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/fro
 echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/export.php?type=materials&format=pdf')) . "'>" . __('Exportar PDF', 'maintenancecosts') . "</a>";
 echo "</div>";
 
-// The SINAPI catalog contains only materials that currently have a SINAPI price.
+// The SINAPI catalog contains every material whose code is not from quotation.
 $_GET['criteria'] = is_array($_GET['criteria'] ?? null) ? $_GET['criteria'] : [];
 $_GET['criteria'][] = [
    'link'       => 'AND',
-   'field'      => 28,
-   'searchtype' => 'equals',
-   'value'      => 1,
+   'field'      => 2,
+   'searchtype' => 'notcontains',
+   'value'      => 'COT',
 ];
 
 Search::show(Material::class);

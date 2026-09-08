@@ -40,10 +40,6 @@ class FormcreatorCostCenterSync
          return;
       }
 
-      foreach ($allCCs as $cc) {
-         self::syncTicketDescription($ticketId, $cc);
-      }
-
       $valuesBySource = [];
       foreach ($allCCs as $source => $selection) {
          $valuesBySource[$source] = (int) ($selection['id'] ?? 0);
