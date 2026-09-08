@@ -8,6 +8,7 @@ if (!defined('GLPI_ROOT')) {
 
 use CommonDBTM;
 use Html;
+use Search;
 use Session;
 use Ticket;
 
@@ -605,6 +606,7 @@ class TicketMaterial extends CommonDBTM
       $tab[17] = ['id' => 17, 'table' => 'glpi_entities', 'field' => 'completename', 'linkfield' => 'entities_id', 'name' => \Entity::getTypeName(1), 'datatype' => 'dropdown'];
       $tab[18] = ['id' => 18, 'table' => self::getTable(), 'field' => 'is_deleted', 'name' => __('Cancelado', 'maintenancecosts'), 'datatype' => 'bool'];
       $tab[19] = ['id' => 19, 'table' => self::getTable(), 'field' => 'comment', 'name' => __('Comments'), 'datatype' => 'text'];
+      $tab[20] = ['id' => 20, 'table' => self::getTable(), 'field' => 'tickets_id', 'name' => __('ID do chamado', 'maintenancecosts'), 'datatype' => 'number'];
       return $tab;
    }
 
@@ -654,82 +656,50 @@ class TicketMaterial extends CommonDBTM
 
    public static function showForTicket(Ticket $ticket): void
    {
-      global $DB;
-
       Config::checkRight(Config::RIGHT_CONSUMPTION, READ);
       $tickets_id = (int) $ticket->getID();
 
       echo "<div class='spaced'>";
-      echo "<table class='tab_cadre_fixe plugin-maintenancecosts-table plugin-maintenancecosts-sortable plugin-maintenancecosts-consumption-table' style='table-layout:fixed; width:100%;'>";
-      echo "<colgroup><col style='width:28%'><col style='width:6%'><col style='width:5%'><col style='width:8%'><col style='width:8%'><col style='width:13%'><col style='width:10%'><col style='width:9%'><col style='width:6%'><col style='width:5%'><col style='width:8%'></colgroup>";
-      echo "<tr class='tab_bg_2'><th colspan='11'>" . self::getTypeName(2) . "</th></tr>";
-      echo "<tr class='tab_bg_1'><td colspan='11'><strong>" . __('Total') . ":</strong> " . Config::formatCurrency(self::getTicketTotal($tickets_id)) . "</td></tr>";
+      echo "<div class='mb-3'><strong>" . self::getTypeName(2) . "</strong><br>";
+      echo "<span>" . __('Total') . ": " . Config::formatCurrency(self::getTicketTotal($tickets_id)) . "</span></div>";
       if (Config::canManageConsumption()) {
-         echo "<tr class='tab_bg_1'><td colspan='11'>";
+         echo "<div class='mb-3'>";
          echo "<button type='button' class='btn btn-primary' data-maintenancecosts-toggle-add>" . __('Adicionar material', 'maintenancecosts') . "</button>";
          echo "<div data-maintenancecosts-add-form style='display:none; margin-top:12px;'>";
          $form = new self();
          $form->showForm(0, ['tickets_id' => $tickets_id, 'embedded' => true]);
          echo "</div>";
-         echo "</td></tr>";
-      }
-      echo "<tr class='tab_bg_2'><th>" . Material::getTypeName(1) . "</th><th class='center'>" . __('Quantidade', 'maintenancecosts') . "</th><th>" . __('Unidade', 'maintenancecosts') . "</th><th class='center'>" . __('Valor unitário', 'maintenancecosts') . "</th><th class='center'>" . __('Total') . "</th><th>" . CostCenter::getTypeName(1) . "</th><th>" . MaterialOrigin::getTypeName(1) . "</th><th>" . __('Tipo de preço', 'maintenancecosts') . "</th><th>" . __('Data', 'maintenancecosts') . "</th><th>" . __('Técnico', 'maintenancecosts') . "</th><th>" . __('Ações', 'maintenancecosts') . "</th></tr>";
-
-      $iterator = $DB->request([
-         'FROM'   => self::getTable(),
-         'WHERE'  => [
-            'tickets_id'  => $tickets_id,
-            'is_deleted' => 0,
-         ],
-         'ORDER'  => 'consumption_date DESC, id DESC',
-      ]);
-
-      foreach ($iterator as $row) {
-         $material = new Material();
-         $material_name = $material->getFromDB((int) $row['plugin_maintenancecosts_materials_id'])
-            ? $material->getName()
-            : '';
-         $costcenter_name = self::getCostCenterDisplayName(
-            (int) $row['plugin_maintenancecosts_costcenters_id'],
-            (string) ($row['costcenter_source'] ?? 'new')
-         );
-         $origin = new MaterialOrigin();
-         $origin_name = $origin->getFromDB((int) ($row['plugin_maintenancecosts_materialorigins_id'] ?? 0))
-            ? $origin->getName()
-            : '';
-
-         echo "<tr class='tab_bg_1'>";
-         echo "<td style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($material_name) . "</td>";
-         echo "<td class='center'>" . self::formatQuantity((float) $row['quantity']) . "</td>";
-         echo "<td>" . Html::clean($row['unit']) . "</td>";
-         echo "<td class='center'>" . Config::formatCurrency((float) $row['unit_price_applied']) . "</td>";
-         echo "<td class='center'>" . Config::formatCurrency((float) $row['total_price']) . "</td>";
-         echo "<td style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($costcenter_name) . "</td>";
-         echo "<td style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($origin_name) . "</td>";
-         echo "<td>" . Html::clean(Config::getPriceTypeLabel((string) ($row['price_type'] ?? 'sinapi'))) . "</td>";
-         echo "<td>" . Html::clean($row['consumption_date']) . "</td>";
-         echo "<td>" . getUserName((int) $row['users_id']) . "</td><td>";
-         if (Config::canManageConsumption()) {
-            echo "<a class='btn btn-sm btn-secondary' href='" . Html::clean(self::getFormURL() . '?id=' . (int) $row['id']) . "'>" . __('Edit') . "</a> ";
-            if ((int) ($row['contracts_id'] ?? 0) > 0 || (int) ($row['contractcosts_id'] ?? 0) > 0) {
-               echo "<form method='post' action='" . Html::clean(self::getFormURL()) . "' style='display:inline; margin-right:4px;'>";
-               echo Html::hidden('id', ['value' => (int) $row['id']]);
-               echo Html::hidden('tickets_id', ['value' => $tickets_id]);
-               echo Html::submit(__('Remover contrato', 'maintenancecosts'), ['name' => 'unlink_contract', 'class' => 'btn btn-sm btn-outline-secondary']);
-               Html::closeForm();
-            }
-            echo "<form method='post' action='" . Html::clean(self::getFormURL()) . "' style='display:inline'>";
-            echo Html::hidden('id', ['value' => (int) $row['id']]);
-            echo Html::hidden('tickets_id', ['value' => $tickets_id]);
-            echo "<input type='text' name='delete_reason' placeholder='" . Html::clean(__('Motivo', 'maintenancecosts')) . "'>";
-            echo Html::submit(__('Cancel', 'maintenancecosts'), ['name' => 'cancel', 'class' => 'btn btn-sm btn-warning']);
-            Html::closeForm();
-         }
-         echo "</td>";
-         echo "</tr>";
+         echo "</div>";
       }
 
-      echo "</table></div>";
+      $searchInput = $_GET;
+      $searchParams = Search::manageParams(self::class, $searchInput);
+      $searchParams['display_type'] = Search::HTML_OUTPUT;
+      $searchParams['target'] = $_SERVER['REQUEST_URI'];
+
+      // Scope the native list to this ticket, regardless of criteria submitted by the user.
+      $listInput = $searchInput;
+      $listInput['criteria'] = is_array($listInput['criteria'] ?? null) ? $listInput['criteria'] : [];
+      $listInput['criteria'][] = [
+         'link'       => 'AND',
+         'field'      => 20,
+         'searchtype' => 'equals',
+         'value'      => $tickets_id,
+      ];
+      $listInput['criteria'][] = [
+         'link'       => 'AND',
+         'field'      => 18,
+         'searchtype' => 'equals',
+         'value'      => 0,
+      ];
+      $listParams = Search::manageParams(self::class, $listInput);
+      $listParams['display_type'] = Search::HTML_OUTPUT;
+      $listParams['target'] = $_SERVER['REQUEST_URI'];
+
+      echo "<div class='search_page row'><div class='col search-container'>";
+      Search::showGenericSearch(self::class, $searchParams);
+      Search::showList(self::class, $listParams);
+      echo "</div></div></div>";
    }
 
    public function showForm($ID, $options = [])
@@ -885,17 +855,23 @@ class TicketMaterial extends CommonDBTM
       echo "<tr class='tab_bg_1'><td>" . __('Comments') . "</td>";
       echo "<td colspan='3'><textarea name='comment' class='form-control' rows='3'>" . self::escape((string) ($this->fields['comment'] ?? '')) . "</textarea></td></tr>";
 
+      if (!$is_new) {
+         echo "<tr class='tab_bg_1'><td>" . self::escape(__('Motivo do cancelamento', 'maintenancecosts')) . "</td>";
+         echo "<td colspan='3'><input type='text' name='delete_reason' value='' class='form-control' placeholder='" . self::escape(__('Informe o motivo somente para cancelar este lançamento.', 'maintenancecosts')) . "'></td></tr>";
+      }
+
       echo "<tr class='tab_bg_1'><td>" . __('Total') . "</td><td colspan='3'><strong data-maintenancecosts-total>" . Config::formatCurrency((float) ($this->fields['total_price'] ?? 0)) . "</strong></td></tr>";
 
       echo "</table>";
       echo "</div>";
-      echo "<div class='card-footer d-flex justify-content-end'>";
+      echo "<div class='card-footer d-flex flex-wrap justify-content-end gap-2'>";
       if (!$is_new && ((int) ($this->fields['contracts_id'] ?? 0) > 0 || (int) ($this->fields['contractcosts_id'] ?? 0) > 0)) {
-         echo "<button type='submit' name='unlink_contract' value='1' class='btn btn-outline-secondary me-2'>" . self::escape(__('Remover contrato', 'maintenancecosts')) . "</button>";
+         echo "<button type='submit' name='unlink_contract' value='1' class='btn btn-outline-secondary'>" . self::escape(__('Remover contrato', 'maintenancecosts')) . "</button>";
       }
       if ($is_new) {
          echo "<button type='submit' name='add' value='1' class='btn btn-primary'>" . self::escape(_x('button', 'Add')) . "</button>";
       } else {
+         echo "<button type='submit' name='cancel' value='1' class='btn btn-outline-warning'>" . self::escape(__('Cancel', 'maintenancecosts')) . "</button>";
          echo "<button type='submit' name='update' value='1' class='btn btn-primary'>" . self::escape(_x('button', 'Update')) . "</button>";
       }
       echo "</div>";
