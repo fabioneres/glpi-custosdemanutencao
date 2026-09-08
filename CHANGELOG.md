@@ -1,11 +1,14 @@
 # Changelog
 
+## v1.1.13 - Otimizacao da atualizacao
+
+- Evita reprocessar todos os precos, materiais, centros de custo e chamados durante atualizacoes que nao alteram o esquema do banco de dados.
+
 ## v1.1.12 - Hotfix do FormCreator
 
 - Corrige o carregamento de centros de custo Antigo e Novo no FormCreator para perfis que respondem formularios sem permissao administrativa do plugin.
 
 ## Em desenvolvimento
-
 - Amplia os campos de Centro de Custo no lancamento de materiais e na aba `Centro de Custos` do chamado, preservando a busca e selecao por Select2.
 - Migra as listagens de Materiais SINAPI e Centros de Custos Antigo/Novo para o mecanismo nativo de pesquisa e listagem do GLPI, com filtros, ordenacao, configuracao de colunas e acoes em massa.
 - Migra a listagem de Origens do material para a pesquisa nativa do GLPI.

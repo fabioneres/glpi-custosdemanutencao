@@ -27,19 +27,25 @@ class Installer
       global $DB;
 
       try {
-         $sqlfile = PLUGIN_MAINTENANCECOSTS_DIR . '/install/install.sql';
-         if (file_exists($sqlfile)) {
-         $DB->runFile($sqlfile);
+         $schemaUpgradeRequired = self::isSchemaUpgradeRequired();
+         if ($schemaUpgradeRequired) {
+            $sqlfile = PLUGIN_MAINTENANCECOSTS_DIR . '/install/install.sql';
+            if (file_exists($sqlfile)) {
+               $DB->runFile($sqlfile);
+            }
+
+            self::ensureSchema();
          }
 
-         self::ensureSchema();
          Config::ensureDefaultConfig();
          self::ensureDefaultCostCenter();
          self::ensureDefaultSearchDisplayPreferences();
-         self::syncStoredCostCenterNames();
-         self::syncTicketMaterialCostCenterLabels();
-         TicketMaterial::syncAllTicketCosts();
-         TicketCostCenter::syncFromTicketMaterials();
+         if ($schemaUpgradeRequired) {
+            self::syncStoredCostCenterNames();
+            self::syncTicketMaterialCostCenterLabels();
+            TicketMaterial::syncAllTicketCosts();
+            TicketCostCenter::syncFromTicketMaterials();
+         }
       } catch (Throwable $e) {
          Toolbox::logInFile(
             'plugin_maintenancecosts',
@@ -65,6 +71,19 @@ class Installer
       ]);
 
       return true;
+   }
+
+   /**
+    * Evita reprocessar todos os registros quando a release altera somente PHP,
+    * JavaScript ou CSS. A instalacao inicial nao possui a chave dbversion e,
+    * portanto, continua executando a criacao completa do esquema.
+    */
+   private static function isSchemaUpgradeRequired(): bool
+   {
+      $configuration = \Config::getConfigurationValues('plugin:maintenancecosts', ['dbversion']);
+      $installedVersion = (string) ($configuration['dbversion'] ?? '0');
+
+      return version_compare($installedVersion, PLUGIN_MAINTENANCECOSTS_SCHEMA_VERSION, '<');
    }
 
    private static function ensureSchema(): void
