@@ -13,6 +13,8 @@
 - Migra a listagem global de Materiais consumidos para a pesquisa nativa do GLPI, com filtros, ordenacao, configuracao de colunas e acoes em massa.
 - Preserva no lancamento o rotulo consolidado do centro de custo (`codigo - nome`) para permitir pesquisa correta nas bases Antigo e Novo.
 - Migra a tabela da aba Materiais consumidos do chamado para a pesquisa nativa do GLPI, mantendo o filtro interno pelo chamado aberto e o lancamento de materiais.
+- Separa os catalogos Materiais SINAPI e Materiais Cotacao pelo preco vigente de cada tipo e restringe as tabelas de precos a competencia vigente, mantendo historico separado.
+- Ajusta os campos e filtros da tela Cotacao/Mercado para usar a nomenclatura propria de cotacao.
 
 ## v1.1.0 - Aperfeicoamentos de operacao e interface
 

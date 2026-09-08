@@ -30,6 +30,10 @@ class Price extends CommonDBTM
 
    public static function getSearchURL($full = true)
    {
+      if (Config::normalizePriceType((string) ($_GET['price_type'] ?? 'sinapi')) === 'cotacao_mercado') {
+         return Config::pluginUrl('/front/quotationprice.php', $full);
+      }
+
       return Config::pluginUrl('/front/price.php', $full);
    }
 
@@ -160,13 +164,14 @@ class Price extends CommonDBTM
          $DB->update(self::getTable(), ['is_current' => 1], ['id' => (int) $latest['id']]);
       }
 
-      if ($priceType === 'cotacao_mercado') {
-         $DB->update(Material::getTable(), [
-            'has_current_quote' => $latest ? 1 : 0,
-         ], [
-            'id' => $materialsId,
-         ]);
-      }
+      $currentField = $priceType === 'cotacao_mercado'
+         ? 'has_current_quote'
+         : 'has_current_sinapi';
+      $DB->update(Material::getTable(), [
+         $currentField => $latest ? 1 : 0,
+      ], [
+         'id' => $materialsId,
+      ]);
    }
 
    public static function getLatestForMaterial(int $materials_id): ?array
@@ -276,14 +281,20 @@ class Price extends CommonDBTM
 
    public function rawSearchOptions()
    {
+      $isQuote = Config::normalizePriceType((string) ($_GET['price_type'] ?? 'sinapi')) === 'cotacao_mercado';
+      $materialLabel = $isQuote ? __('Material Cotação', 'maintenancecosts') : Material::getTypeName(1);
+      $codeLabel = $isQuote ? __('Código cotação', 'maintenancecosts') : __('Código SINAPI', 'maintenancecosts');
+      $currentPriceLabel = $isQuote
+         ? __('Preço Cotação - Preço vigente', 'maintenancecosts')
+         : __('Preço SINAPI - Preço vigente', 'maintenancecosts');
       $tab = [];
-      $tab[] = ['id' => 'common', 'name' => self::getTypeName(1)];
+      $tab[] = ['id' => 'common', 'name' => $isQuote ? __('Preço Cotação', 'maintenancecosts') : self::getTypeName(1)];
       $tab[1] = [
          'id'            => 1,
          'table'         => Material::getTable(),
          'field'         => 'name',
          'linkfield'     => 'plugin_maintenancecosts_materials_id',
-         'name'          => Material::getTypeName(1),
+         'name'          => $materialLabel,
          'datatype'      => 'itemlink',
          'massiveaction' => false,
       ];
@@ -292,7 +303,7 @@ class Price extends CommonDBTM
          'table'     => Material::getTable(),
          'field'     => 'code',
          'linkfield' => 'plugin_maintenancecosts_materials_id',
-         'name'      => __('Código SINAPI', 'maintenancecosts'),
+         'name'      => $codeLabel,
          'datatype'  => 'string',
       ];
       $tab[12] = [
@@ -307,7 +318,7 @@ class Price extends CommonDBTM
          'id'       => 13,
          'table'    => self::getTable(),
          'field'    => 'is_current',
-         'name'     => __('Preço vigente', 'maintenancecosts'),
+         'name'     => $currentPriceLabel,
          'datatype' => 'bool',
       ];
       $tab[2] = ['id' => 2, 'table' => self::getTable(), 'field' => 'competence', 'name' => __('Competência', 'maintenancecosts'), 'datatype' => 'string'];

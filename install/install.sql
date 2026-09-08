@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_maintenancecosts_materials` (
    `unit` varchar(32) NOT NULL DEFAULT '',
    `category` varchar(255) NOT NULL DEFAULT '',
    `is_active` tinyint NOT NULL DEFAULT '1',
+   `has_current_sinapi` tinyint NOT NULL DEFAULT '0',
    `has_current_quote` tinyint NOT NULL DEFAULT '0',
    `date_creation` timestamp NULL DEFAULT NULL,
    `date_mod` timestamp NULL DEFAULT NULL,
@@ -16,6 +17,7 @@ CREATE TABLE IF NOT EXISTS `glpi_plugin_maintenancecosts_materials` (
    KEY `idx_entity` (`entities_id`),
    KEY `idx_recursive` (`is_recursive`),
    KEY `idx_active` (`is_active`),
+   KEY `idx_current_sinapi` (`has_current_sinapi`),
    KEY `idx_current_quote` (`has_current_quote`),
    KEY `idx_name` (`name`),
    KEY `idx_category` (`category`)

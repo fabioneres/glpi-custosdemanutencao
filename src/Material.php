@@ -31,6 +31,10 @@ class Material extends CommonDBTM
 
    public static function getSearchURL($full = true)
    {
+      if (($_GET['context'] ?? '') === 'quote') {
+         return Config::pluginUrl('/front/quotationmaterial.php', $full);
+      }
+
       return Config::pluginUrl('/front/material.php', $full);
    }
 
@@ -96,11 +100,18 @@ class Material extends CommonDBTM
 
    public function rawSearchOptions()
    {
+      $isQuoteContext = ($_GET['context'] ?? '') === 'quote';
+      $materialLabel = $isQuoteContext
+         ? __('Material Cotação', 'maintenancecosts')
+         : self::getTypeName(1);
+      $codeLabel = $isQuoteContext
+         ? __('Código cotação', 'maintenancecosts')
+         : __('Código SINAPI', 'maintenancecosts');
       $tab = [];
 
       $tab[] = [
          'id'   => 'common',
-         'name' => self::getTypeName(1),
+         'name' => $materialLabel,
       ];
 
       $tab[1] = [
@@ -116,7 +127,7 @@ class Material extends CommonDBTM
          'id'       => 2,
          'table'    => self::getTable(),
          'field'    => 'code',
-         'name'     => __('Código SINAPI', 'maintenancecosts'),
+         'name'     => $codeLabel,
          'datatype' => 'string',
       ];
 
@@ -149,6 +160,14 @@ class Material extends CommonDBTM
          'table'    => self::getTable(),
          'field'    => 'has_current_quote',
          'name'     => __('Possui cotação vigente', 'maintenancecosts'),
+         'datatype' => 'bool',
+      ];
+
+      $tab[28] = [
+         'id'       => 28,
+         'table'    => self::getTable(),
+         'field'    => 'has_current_sinapi',
+         'name'     => __('Possui preço SINAPI vigente', 'maintenancecosts'),
          'datatype' => 'bool',
       ];
 

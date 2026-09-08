@@ -42,23 +42,20 @@ if ($isQuote) {
 }
 echo "</div>";
 
-// The table type is fixed by its menu. Quotes also expose only the current price per material.
+// The table type is fixed by its menu and only its current price is shown.
 $_GET['criteria'] = is_array($_GET['criteria'] ?? null) ? $_GET['criteria'] : [];
+$_GET['criteria'][] = [
+   'link'       => 'AND',
+   'field'      => 13,
+   'searchtype' => 'equals',
+   'value'      => 1,
+];
 $_GET['criteria'][] = [
    'link'       => 'AND',
    'field'      => 4,
    'searchtype' => 'equals',
    'value'      => $priceType,
 ];
-if ($isQuote) {
-   $_GET['criteria'][] = [
-      'link'       => 'AND',
-      'field'      => 13,
-      'searchtype' => 'equals',
-      'value'      => 1,
-   ];
-}
-
 Search::show(Price::class);
 Config::renderPluginLayoutEnd();
 Html::footer();

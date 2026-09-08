@@ -11,6 +11,9 @@ require_once dirname(__DIR__) . '/bootstrap.php';
 
 Config::checkRight(Config::RIGHT_MATERIALS, READ);
 
+// Lets the shared Material itemtype render quotation-specific labels and URLs.
+$_GET['context'] = 'quote';
+
 Html::header(__('Materiais Cotação', 'maintenancecosts'), $_SERVER['PHP_SELF'], 'plugins', Menu::class);
 Config::renderPluginLayoutStart('quote_materials');
 
@@ -28,7 +31,7 @@ echo "<div class='plugin-maintenancecosts-panel mb-3'>";
 echo "<div class='plugin-maintenancecosts-panel-header'><i class='ti ti-info-circle'></i> " . Html::clean(__('Materiais Cotação', 'maintenancecosts')) . "</div>";
 echo "<div class='plugin-maintenancecosts-panel-body'><p>" . Html::clean(__('Esta aba mostra os materiais que possuem cotação vigente. As informações de quantidade, valores e competência correspondem sempre ao preço vigente.', 'maintenancecosts')) . "</p></div></div>";
 
-// Restrict this view to materials with exactly one current quotation.
+// Restrict this view to materials with a current quotation.
 $_GET['criteria'] = is_array($_GET['criteria'] ?? null) ? $_GET['criteria'] : [];
 $_GET['criteria'][] = [
    'link'       => 'AND',
