@@ -99,6 +99,12 @@ class CostCenter extends CommonDBTM
    public function prepareInputForAdd($input)
    {
       $input = $this->normalizeInput($input);
+      if (!isset($input['is_active'])) {
+         $input['is_active'] = 1;
+      }
+      if (!isset($input['is_recursive'])) {
+         $input['is_recursive'] = 0;
+      }
       if (empty($input['entities_id']) && isset($_SESSION['glpiactive_entity'])) {
          $input['entities_id'] = (int) $_SESSION['glpiactive_entity'];
       }
@@ -159,8 +165,12 @@ class CostCenter extends CommonDBTM
       }
 
       $input['name'] = self::computeStoredName($input);
-      $input['is_active'] = isset($input['is_active']) ? (int) $input['is_active'] : 0;
-      $input['is_recursive'] = isset($input['is_recursive']) ? (int) $input['is_recursive'] : 0;
+      if (isset($input['is_active'])) {
+         $input['is_active'] = (int) $input['is_active'];
+      }
+      if (isset($input['is_recursive'])) {
+         $input['is_recursive'] = (int) $input['is_recursive'];
+      }
 
       return $input;
    }

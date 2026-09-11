@@ -1,0 +1,5 @@
+# Keep repository-only artifacts out of the installable GLPI package.
+dist export-ignore
+docs export-ignore
+deploy-prod.ps1 export-ignore
+deploy-vm.ps1 export-ignore

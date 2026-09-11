@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.17 - Preservacao de status dos centros de custo
+
+- Corrige atualizacoes parciais de centros de custo novos e antigos para preservar os campos `Ativo` e `Recursivo` quando eles nao forem enviados na requisicao.
+- Novos centros de custo continuam sendo criados como ativos e nao-recursivos por padrao.
+
 ## v1.1.16 - Preservacao do conteudo do FormCreator
 
 - O sincronismo de centros de custo nao le, normaliza, complementa nem atualiza a descricao do chamado.
