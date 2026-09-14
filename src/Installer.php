@@ -40,6 +40,7 @@ class Installer
          Config::ensureDefaultConfig();
          self::ensureDefaultCostCenter();
          self::ensureDefaultSearchDisplayPreferences();
+         self::syncStoredCostCenterNamesForFormcreator();
          if ($schemaUpgradeRequired) {
             self::syncStoredCostCenterNames();
             self::syncTicketMaterialCostCenterLabels();
@@ -481,6 +482,28 @@ class Installer
             );
          }
       }
+   }
+
+   /**
+    * FormCreator resolves dropdown answers directly from the database name
+    * column. Imported records created before the friendly label rule may have
+    * only the code in that column, so normalize them once without touching
+    * ticket content or the more expensive ticket/material synchronization.
+    */
+   private static function syncStoredCostCenterNamesForFormcreator(): void
+   {
+      $configuration = \Config::getConfigurationValues(
+         'plugin:maintenancecosts',
+         ['formcreator_costcenter_label_sync']
+      );
+      if (($configuration['formcreator_costcenter_label_sync'] ?? '') === '1') {
+         return;
+      }
+
+      self::syncStoredCostCenterNames();
+      \Config::setConfigurationValues('plugin:maintenancecosts', [
+         'formcreator_costcenter_label_sync' => '1',
+      ]);
    }
 
    private static function ensureMaterialOriginTable(): void

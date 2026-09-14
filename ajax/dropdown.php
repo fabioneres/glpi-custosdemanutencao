@@ -156,7 +156,7 @@ function show_costcenters(string $search, int $limit, int $offset, int $oneId = 
 {
    global $DB;
 
-   $where = [];
+   $where = getEntitiesRestrictCriteria(CostCenter::getTable(), '', '', true);
    if ($DB->fieldExists(CostCenter::getTable(), 'is_active')) {
       $where['is_active'] = 1;
    }
@@ -181,7 +181,16 @@ function show_costcenters(string $search, int $limit, int $offset, int $oneId = 
    }
 
    $rows = $DB->request([
-      'SELECT' => ['id', 'code', 'name'],
+      'SELECT' => [
+         'id',
+         'code',
+         'name',
+         'section',
+         'division',
+         'department',
+         'academic_unit',
+         'campus',
+      ],
       'FROM'   => CostCenter::getTable(),
       'WHERE'  => $where,
       'ORDER'  => ['name ASC'],
@@ -196,7 +205,10 @@ function show_costcenters(string $search, int $limit, int $offset, int $oneId = 
       if (count($results) >= $limit) {
          break;
       }
-      $label = CostCenter::composeFriendlyLabel((string) ($row['code'] ?? ''), (string) ($row['name'] ?? ''));
+      // Some legacy imports preserved the organizational fields but left the
+      // stored display name as the code. Rebuild the same friendly label used
+      // by the cost-center model so Select2 always receives "code - name".
+      $label = CostCenter::computeStoredName($row);
       $results[] = ['id' => (int) $row['id'], 'text' => $label];
    }
 
@@ -211,7 +223,7 @@ function show_costcenters_legacy(string $search, int $limit, int $offset, int $o
 {
    global $DB;
 
-   $where = [];
+   $where = getEntitiesRestrictCriteria(CostCenterLegacy::getTable(), '', '', true);
    if ($DB->fieldExists(CostCenterLegacy::getTable(), 'is_active')) {
       $where['is_active'] = 1;
    }

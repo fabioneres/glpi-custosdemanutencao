@@ -1,5 +1,13 @@
 # Changelog
 
+## v1.1.18 - FormCreator para perfil solicitante
+
+- Corrige a inicializacao dos dropdowns de Centro de Custo Antigo e Novo quando os scripts dos campos do FormCreator sao carregados depois do JavaScript do plugin, permitindo o uso por perfis solicitantes sem direito administrativo do Custos de Manutencao.
+- Mantem o endpoint de consulta protegido por sessao autenticada e limita a excecao de permissao ao fluxo identificado do FormCreator; as telas administrativas continuam exigindo os direitos do plugin.
+- Restringe a consulta de centros de custo do FormCreator a entidade ativa e sua arvore visivel, preservando o isolamento multi-entidade.
+- Sincroniza uma unica vez os centros de custo importados cujo campo `name` continha apenas o codigo, para que o alvo do FormCreator receba diretamente o rotulo `codigo - nome`.
+- Restaura a separacao de responsabilidades: o plugin grava somente o vinculo estruturado do centro de custo; a descricao do chamado continua exclusivamente sob controle do alvo do FormCreator.
+
 ## v1.1.17 - Preservacao de status dos centros de custo
 
 - Corrige atualizacoes parciais de centros de custo novos e antigos para preservar os campos `Ativo` e `Recursivo` quando eles nao forem enviados na requisicao.

@@ -14,6 +14,12 @@
          var params = getFormcreatorDropdownParams(select);
          var dropdownType = getFormcreatorCostCenterDropdownType(params);
          if (!dropdownType) {
+            if (select.dataset.maintenancecostsFormcreatorRetry !== '1') {
+               select.dataset.maintenancecostsFormcreatorRetry = '1';
+               window.setTimeout(function() {
+                  initFormcreatorCostCenterDropdowns(document);
+               }, 1000);
+            }
             return;
          }
 
@@ -173,11 +179,12 @@
          return '';
       }
 
-      if (params.itemtype === 'GlpiPlugin\\Maintenancecosts\\CostCenter') {
+      var itemtype = params.itemtype.replace(/^\\+/, '');
+      if (itemtype === 'GlpiPlugin\\Maintenancecosts\\CostCenter') {
          return 'costcenter';
       }
 
-      if (params.itemtype === 'GlpiPlugin\\Maintenancecosts\\CostCenterLegacy') {
+      if (itemtype === 'GlpiPlugin\\Maintenancecosts\\CostCenterLegacy') {
          return 'costcenter_legacy';
       }
 
@@ -191,19 +198,24 @@
 
       if (!window.maintenancecostsFormcreatorItemtypes) {
          window.maintenancecostsFormcreatorItemtypes = {};
-         Array.prototype.slice.call(document.scripts || []).forEach(function(script) {
-            var content = script && script.textContent ? script.textContent : '';
-            if (content.indexOf('params_dropdown_formcreator_field_') === -1) {
-               return;
-            }
-
-            var regex = /var\s+params_(dropdown_formcreator_field_\d+)\s*=\s*\{[\s\S]*?itemtype:\s*"([^"]+)"/g;
-            var match;
-            while ((match = regex.exec(content)) !== null) {
-               window.maintenancecostsFormcreatorItemtypes[match[1]] = String(match[2] || '').replace(/\\\\/g, '\\');
-            }
-         });
       }
+
+      if (window.maintenancecostsFormcreatorItemtypes[selectId]) {
+         return window.maintenancecostsFormcreatorItemtypes[selectId];
+      }
+
+      Array.prototype.slice.call(document.scripts || []).forEach(function(script) {
+         var content = script && script.textContent ? script.textContent : '';
+         if (content.indexOf('dropdown_formcreator_field_') === -1) {
+            return;
+         }
+
+         var regex = /(?:var|let|const)\s+params_(dropdown_formcreator_field_\d+)\s*=\s*\{[\s\S]*?itemtype\s*:\s*["']([^"']+)["']/g;
+         var match;
+         while ((match = regex.exec(content)) !== null) {
+            window.maintenancecostsFormcreatorItemtypes[match[1]] = String(match[2] || '').replace(/\\\\/g, '\\');
+         }
+      });
 
       return window.maintenancecostsFormcreatorItemtypes[selectId] || '';
    }
@@ -1205,6 +1217,10 @@
             mutation.addedNodes.forEach(function(node) {
                if (!node || node.nodeType !== 1) {
                   return;
+               }
+               if (node.tagName === 'SCRIPT') {
+                  window.maintenancecostsFormcreatorItemtypes = {};
+                  initFormcreatorCostCenterDropdowns(document);
                }
                 initPluginDropdowns(node);
                 initFormcreatorCostCenterDropdowns(node);
