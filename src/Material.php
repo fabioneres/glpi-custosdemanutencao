@@ -51,6 +51,8 @@ class Material extends CommonDBTM
    public function prepareInputForAdd($input)
    {
       $input = $this->normalizeInput($input);
+      $input['is_active'] = isset($input['is_active']) ? (int) $input['is_active'] : 0;
+      $input['is_recursive'] = isset($input['is_recursive']) ? (int) $input['is_recursive'] : 0;
       if (empty($input['entities_id']) && isset($_SESSION['glpiactive_entity'])) {
          $input['entities_id'] = (int) $_SESSION['glpiactive_entity'];
       }
@@ -80,8 +82,13 @@ class Material extends CommonDBTM
          }
       }
 
-      $input['is_active'] = isset($input['is_active']) ? (int) $input['is_active'] : 0;
-      $input['is_recursive'] = isset($input['is_recursive']) ? (int) $input['is_recursive'] : 0;
+      // Atualizacao parcial nao pode zerar os flags ausentes do input: a
+      // reimportacao atualiza o material sem enviar is_recursive.
+      foreach (['is_active', 'is_recursive'] as $flag) {
+         if (isset($input[$flag])) {
+            $input[$flag] = (int) $input[$flag];
+         }
+      }
 
       return $input;
    }
@@ -205,6 +212,15 @@ class Material extends CommonDBTM
          'linkfield' => 'entities_id',
          'name'     => \Entity::getTypeName(1),
          'datatype' => 'dropdown',
+      ];
+
+      $tab[86] = [
+         'id'         => 86,
+         'table'      => self::getTable(),
+         'field'      => 'is_recursive',
+         'name'       => __('Recursive'),
+         'datatype'   => 'bool',
+         'searchtype' => 'equals',
       ];
 
       return $tab;

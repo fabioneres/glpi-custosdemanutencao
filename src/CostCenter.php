@@ -191,6 +191,7 @@ class CostCenter extends CommonDBTM
       $tab[10] = ['id' => 10, 'table' => self::getTable(), 'field' => 'responsible', 'name' => __('Responsável', 'maintenancecosts'), 'datatype' => 'string'];
       $tab[11] = ['id' => 11, 'table' => self::getTable(), 'field' => 'is_active', 'name' => __('Ativo', 'maintenancecosts'), 'datatype' => 'bool'];
       $tab[80] = ['id' => 80, 'table' => 'glpi_entities', 'field' => 'completename', 'linkfield' => 'entities_id', 'name' => \Entity::getTypeName(1), 'datatype' => 'dropdown'];
+      $tab[86] = ['id' => 86, 'table' => self::getTable(), 'field' => 'is_recursive', 'name' => __('Recursive'), 'datatype' => 'bool', 'searchtype' => 'equals'];
       return $tab;
    }
 

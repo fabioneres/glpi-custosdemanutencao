@@ -47,6 +47,7 @@ class CostCenterLegacy extends CostCenter
       $options[6] = ['id' => 6, 'table' => self::getTable(), 'field' => 'usage_type', 'name' => __('Utilização', 'maintenancecosts'), 'datatype' => 'string'];
       $options[7] = ['id' => 7, 'table' => self::getTable(), 'field' => 'is_active', 'name' => __('Ativo', 'maintenancecosts'), 'datatype' => 'bool'];
       $options[80] = ['id' => 80, 'table' => 'glpi_entities', 'field' => 'completename', 'linkfield' => 'entities_id', 'name' => \Entity::getTypeName(1), 'datatype' => 'dropdown'];
+      $options[86] = ['id' => 86, 'table' => self::getTable(), 'field' => 'is_recursive', 'name' => __('Recursive'), 'datatype' => 'bool', 'searchtype' => 'equals'];
       return $options;
    }
 
