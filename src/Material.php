@@ -244,14 +244,14 @@ class Material extends CommonDBTM
 
       echo "<tr class='tab_bg_1'>";
       echo "<td>" . Html::clean($isQuote ? __('Código cotação', 'maintenancecosts') : __('Código SINAPI', 'maintenancecosts')) . "</td>";
-      echo "<td><input type='text' name='code' value='" . Html::cleanInputText($this->fields['code'] ?? '') . "' class='form-control'></td>";
+      echo "<td><input type='text' name='code' maxlength='64' value='" . Html::cleanInputText($this->fields['code'] ?? '') . "' class='form-control'></td>";
       echo "<td>" . __('Name') . "</td>";
       echo "<td><input type='text' name='name' value='" . Html::cleanInputText($this->fields['name'] ?? '') . "' class='form-control'></td>";
       echo "</tr>";
 
       echo "<tr class='tab_bg_1'>";
       echo "<td>" . __('Unidade', 'maintenancecosts') . "</td>";
-      echo "<td><input type='text' name='unit' value='" . Html::cleanInputText($this->fields['unit'] ?? '') . "' class='form-control'></td>";
+      echo "<td><input type='text' name='unit' maxlength='32' value='" . Html::cleanInputText($this->fields['unit'] ?? '') . "' class='form-control'></td>";
       echo "<td>" . __('Categoria', 'maintenancecosts') . "</td>";
       echo "<td><input type='text' name='category' value='" . Html::cleanInputText($this->fields['category'] ?? '') . "' class='form-control'></td>";
       echo "</tr>";

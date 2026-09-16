@@ -58,7 +58,7 @@ class CostCenterLegacy extends CostCenter
 
       echo "<tr class='tab_bg_1'>";
       echo "<td>" . __('Código', 'maintenancecosts') . "</td>";
-      echo "<td><input type='text' name='code' value='" . Html::cleanInputText($this->fields['code'] ?? '') . "' class='form-control'></td>";
+      echo "<td><input type='text' name='code' maxlength='64' value='" . Html::cleanInputText($this->fields['code'] ?? '') . "' class='form-control'></td>";
       echo "<td>" . __('Campus', 'maintenancecosts') . "</td>";
       echo "<td><input type='text' name='campus' value='" . Html::cleanInputText($this->fields['campus'] ?? '') . "' class='form-control'></td>";
       echo "</tr>";

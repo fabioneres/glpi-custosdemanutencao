@@ -204,7 +204,7 @@ class CostCenter extends CommonDBTM
 
       echo "<tr class='tab_bg_1'>";
       echo "<td>" . __('Código', 'maintenancecosts') . "</td>";
-      echo "<td><input type='text' name='code' value='" . Html::cleanInputText($this->fields['code'] ?? '') . "' class='form-control'></td>";
+      echo "<td><input type='text' name='code' maxlength='64' value='" . Html::cleanInputText($this->fields['code'] ?? '') . "' class='form-control'></td>";
       echo "<td>" . __('Unidade gestora', 'maintenancecosts') . " <span class='plugin-maintenancecosts-help'>(" . __('Localização nível 1', 'maintenancecosts') . ")</span></td><td>";
       self::showRootLocationDropdown('locations_id', $locationId);
       echo "</td></tr>";
