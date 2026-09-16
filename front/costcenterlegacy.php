@@ -60,8 +60,18 @@ if (Config::canManageCostCenters()) {
 }
 
 if (is_array($summary)) {
+   if (!empty($summary['aborted'])) {
+      echo "<div class='alert alert-danger'>";
+      echo "<strong>" . Html::clean(__('Importação não concluída', 'maintenancecosts')) . "</strong><br>";
+      echo Html::clean(__('Nenhum registro foi gravado. A importação só é aplicada quando o arquivo inteiro está correto. Corrija os problemas indicados abaixo e envie o arquivo novamente.', 'maintenancecosts'));
+      echo "</div>";
+   }
+
+   $resultLabel = !empty($summary['aborted'])
+      ? __('Importação revertida', 'maintenancecosts')
+      : ($summary['dry_run'] ? __('Prévia da importação', 'maintenancecosts') : __('Resultado da importação', 'maintenancecosts'));
    echo "<div class='plugin-maintenancecosts-panel mb-3'>";
-   echo "<div class='plugin-maintenancecosts-panel-header'>" . ($summary['dry_run'] ? __('Prévia da importação', 'maintenancecosts') : __('Resultado da importação', 'maintenancecosts')) . "</div>";
+   echo "<div class='plugin-maintenancecosts-panel-header'>" . Html::clean($resultLabel) . "</div>";
    echo "<div class='plugin-maintenancecosts-panel-body'>";
    echo "<table class='tab_cadre_fixe'>";
    foreach ([

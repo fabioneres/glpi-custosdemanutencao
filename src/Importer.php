@@ -8,6 +8,9 @@ if (!defined('GLPI_ROOT')) {
 
 class Importer
 {
+   private const MAX_CODE_LENGTH = 64;
+   private const MAX_UNIT_LENGTH = 32;
+
    public static function importCostCentersFile(string $path, string $filename, bool $dryRun = true, string $delimiter = 'auto'): array
    {
       $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
@@ -27,6 +30,8 @@ class Importer
 
    public static function importCostCentersCsv(string $path, string $filename, bool $dryRun = true, string $delimiter = 'auto'): array
    {
+      global $DB;
+
       if ($delimiter === 'auto') {
          $delimiter = self::detectDelimiter($path);
       }
@@ -35,6 +40,14 @@ class Importer
       if (!is_readable($path)) {
          $summary['errors'][] = __('Arquivo indisponível para leitura.', 'maintenancecosts');
          return $summary;
+      }
+
+      // A gravacao so comeca depois que o arquivo inteiro passa na validacao.
+      if (!$dryRun) {
+         $preview = self::importCostCentersCsv($path, $filename, true, $delimiter);
+         if (!self::previewIsClean($preview)) {
+            return self::rejectedSummary($preview);
+         }
       }
 
       $handle = fopen($path, 'rb');
@@ -59,33 +72,51 @@ class Importer
          }
       }
 
-      while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
-         $summary['total_rows']++;
-         $data = self::costCenterRowToData($row, $map);
-         if (self::isEmptyCostCenterRow($data)) {
-            $summary['total_rows']--;
-            continue;
-         }
-         $error = self::validateCostCenterRow($data);
-         if ($error !== '') {
-            $summary['invalid_rows']++;
-            $summary['errors'][] = sprintf('Linha %d: %s', $summary['total_rows'] + 1, $error);
-            continue;
-         }
+      if (!$dryRun) {
+         @set_time_limit(0);
+         $DB->beginTransaction();
+      }
 
-         $summary['valid_rows']++;
-         $existing = self::findCostCenterByCode($data['code']);
-         $summary[$existing ? 'updated_costcenters' : 'new_costcenters']++;
+      try {
+         while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+            $summary['total_rows']++;
+            $data = self::costCenterRowToData($row, $map);
+            if (self::isEmptyCostCenterRow($data)) {
+               $summary['total_rows']--;
+               continue;
+            }
+            $error = self::validateCostCenterRow($data);
+            if ($error !== '') {
+               $summary['invalid_rows']++;
+               $summary['errors'][] = sprintf('Linha %d: %s', $summary['total_rows'] + 1, $error);
+               continue;
+            }
+
+            $summary['valid_rows']++;
+            $existing = self::findCostCenterByCode($data['code']);
+            $summary[$existing ? 'updated_costcenters' : 'new_costcenters']++;
+
+            if (!$dryRun && !self::saveCostCenterRow($data, $existing)) {
+               throw new \RuntimeException(sprintf(
+                  __('Linha %d: falha ao gravar o registro.', 'maintenancecosts'),
+                  $summary['total_rows'] + 1
+               ));
+            }
+         }
 
          if (!$dryRun) {
-            self::saveCostCenterRow($data, $existing);
+            $DB->commit();
+            AuditLog::record(CostCenter::class, 0, 'costcenter_import', [], $summary);
          }
+      } catch (\Throwable $e) {
+         if (!$dryRun && $DB->inTransaction()) {
+            $DB->rollBack();
+         }
+         fclose($handle);
+         return self::failedSummary($summary, $e->getMessage());
       }
-      fclose($handle);
 
-      if (!$dryRun) {
-         AuditLog::record(CostCenter::class, 0, 'costcenter_import', [], $summary);
-      }
+      fclose($handle);
 
       return $summary;
    }
@@ -109,6 +140,8 @@ class Importer
 
    public static function importCostCentersLegacyCsv(string $path, string $filename, bool $dryRun = true, string $delimiter = 'auto'): array
    {
+      global $DB;
+
       if ($delimiter === 'auto') {
          $delimiter = self::detectDelimiter($path);
       }
@@ -117,6 +150,14 @@ class Importer
       if (!is_readable($path)) {
          $summary['errors'][] = __('Arquivo indisponível para leitura.', 'maintenancecosts');
          return $summary;
+      }
+
+      // A gravacao so comeca depois que o arquivo inteiro passa na validacao.
+      if (!$dryRun) {
+         $preview = self::importCostCentersLegacyCsv($path, $filename, true, $delimiter);
+         if (!self::previewIsClean($preview)) {
+            return self::rejectedSummary($preview);
+         }
       }
 
       $handle = fopen($path, 'rb');
@@ -141,37 +182,55 @@ class Importer
          }
       }
 
-      while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
-         $summary['total_rows']++;
-         $data = self::costCenterLegacyRowToData($row, $map);
-         if (self::isEmptyCostCenterRow($data)) {
-            $summary['total_rows']--;
-            continue;
-         }
-         if (trim((string) ($data['code'] ?? '')) === '') {
-            $summary['total_rows']--;
-            continue;
-         }
-         $error = self::validateCostCenterRow($data);
-         if ($error !== '') {
-            $summary['invalid_rows']++;
-            $summary['errors'][] = sprintf('Linha %d: %s', $summary['total_rows'] + 1, $error);
-            continue;
-         }
+      if (!$dryRun) {
+         @set_time_limit(0);
+         $DB->beginTransaction();
+      }
 
-         $summary['valid_rows']++;
-         $existing = self::findCostCenterLegacyByCode($data['code']);
-         $summary[$existing ? 'updated_costcenters' : 'new_costcenters']++;
+      try {
+         while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+            $summary['total_rows']++;
+            $data = self::costCenterLegacyRowToData($row, $map);
+            if (self::isEmptyCostCenterRow($data)) {
+               $summary['total_rows']--;
+               continue;
+            }
+            if (trim((string) ($data['code'] ?? '')) === '') {
+               $summary['total_rows']--;
+               continue;
+            }
+            $error = self::validateCostCenterRow($data);
+            if ($error !== '') {
+               $summary['invalid_rows']++;
+               $summary['errors'][] = sprintf('Linha %d: %s', $summary['total_rows'] + 1, $error);
+               continue;
+            }
+
+            $summary['valid_rows']++;
+            $existing = self::findCostCenterLegacyByCode($data['code']);
+            $summary[$existing ? 'updated_costcenters' : 'new_costcenters']++;
+
+            if (!$dryRun && !self::saveCostCenterLegacyRow($data, $existing)) {
+               throw new \RuntimeException(sprintf(
+                  __('Linha %d: falha ao gravar o registro.', 'maintenancecosts'),
+                  $summary['total_rows'] + 1
+               ));
+            }
+         }
 
          if (!$dryRun) {
-            self::saveCostCenterLegacyRow($data, $existing);
+            $DB->commit();
+            AuditLog::record(CostCenterLegacy::class, 0, 'costcenter_legacy_import', [], $summary);
          }
+      } catch (\Throwable $e) {
+         if (!$dryRun && $DB->inTransaction()) {
+            $DB->rollBack();
+         }
+         fclose($handle);
+         return self::failedSummary($summary, $e->getMessage());
       }
-      fclose($handle);
 
-      if (!$dryRun) {
-         AuditLog::record(CostCenterLegacy::class, 0, 'costcenter_legacy_import', [], $summary);
-      }
+      fclose($handle);
 
       return $summary;
    }
@@ -196,6 +255,8 @@ class Importer
 
    public static function importCsv(string $path, string $filename, string $competence, bool $dryRun = true, string $delimiter = 'auto', string $priceType = 'sinapi'): array
    {
+      global $DB;
+
       $priceType = Config::normalizePriceType($priceType);
       if ($delimiter === 'auto') {
          $delimiter = self::detectDelimiter($path);
@@ -206,6 +267,17 @@ class Importer
       if (!is_readable($path)) {
          $summary['errors'][] = __('Arquivo indisponivel para leitura.', 'maintenancecosts');
          return $summary;
+      }
+
+      // A gravacao so comeca depois que o arquivo inteiro passa na validacao,
+      // para a importacao nunca ficar pela metade por causa de uma linha ruim.
+      if (!$dryRun) {
+         $preview = self::importCsv($path, $filename, $competence, true, $delimiter, $priceType);
+         if (!self::previewIsClean($preview)) {
+            $rejected = self::rejectedSummary($preview);
+            self::recordFailedBatch($filename, $competence, $priceType, $rejected);
+            return $rejected;
+         }
       }
 
       $handle = fopen($path, 'rb');
@@ -233,66 +305,140 @@ class Importer
          }
       }
 
-      $importBatchId = 0;
       if (!$dryRun) {
-         $batch = new ImportBatch();
-         $importBatchId = (int) $batch->add([
-            'filename'      => $filename,
-            'competence'    => $summary['competence'],
-            'price_type'    => $priceType,
-            'total_rows'    => 0,
-            'imported_rows' => 0,
-            'error_rows'    => 0,
-            'users_id'      => (int) ($_SESSION['glpiID'] ?? 0),
-            'status'        => 'processing',
-            'log'           => '',
-         ]);
+         @set_time_limit(0);
+         $DB->beginTransaction();
       }
 
-      while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
-         $summary['total_rows']++;
-         $data = self::rowToData($row, $map, $summary['competence']);
-         if (self::isRepeatedQuoteHeader($data)) {
-            continue;
-         }
-         $error = self::validateRow($data);
-         if ($error !== '') {
-            $summary['invalid_rows']++;
-            $summary['errors'][] = sprintf('Linha %d: %s', $summary['total_rows'] + 1, $error);
-            continue;
+      $importBatchId = 0;
+
+      try {
+         if (!$dryRun) {
+            $batch = new ImportBatch();
+            $importBatchId = (int) $batch->add([
+               'filename'      => $filename,
+               'competence'    => $summary['competence'],
+               'price_type'    => $priceType,
+               'total_rows'    => 0,
+               'imported_rows' => 0,
+               'error_rows'    => 0,
+               'users_id'      => (int) ($_SESSION['glpiID'] ?? 0),
+               'status'        => 'processing',
+               'log'           => '',
+            ]);
+            if ($importBatchId <= 0) {
+               throw new \RuntimeException(__('Falha ao registrar o lote de importacao.', 'maintenancecosts'));
+            }
          }
 
-         $summary['valid_rows']++;
-         $state = self::classifyRow($data, $priceType);
-         $summary[$state['material_status'] === 'new' ? 'new_materials' : 'updated_materials']++;
-         $summary[$state['price_status'] === 'repeated' ? 'repeated_prices' : 'new_prices']++;
+         while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+            $summary['total_rows']++;
+            $data = self::rowToData($row, $map, $summary['competence']);
+            if (self::isRepeatedQuoteHeader($data)) {
+               continue;
+            }
+            $error = self::validateRow($data);
+            if ($error !== '') {
+               $summary['invalid_rows']++;
+               $summary['errors'][] = sprintf('Linha %d: %s', $summary['total_rows'] + 1, $error);
+               continue;
+            }
+
+            $summary['valid_rows']++;
+            $state = self::classifyRow($data, $priceType);
+            $summary[$state['material_status'] === 'new' ? 'new_materials' : 'updated_materials']++;
+            $summary[$state['price_status'] === 'repeated' ? 'repeated_prices' : 'new_prices']++;
+
+            if (!$dryRun && !self::saveRow($data, $importBatchId, $priceType)) {
+               throw new \RuntimeException(sprintf(
+                  __('Linha %d: falha ao gravar o registro.', 'maintenancecosts'),
+                  $summary['total_rows'] + 1
+               ));
+            }
+         }
 
          if (!$dryRun) {
-            self::saveRow($data, $importBatchId, $priceType);
+            $batch = new ImportBatch();
+            $batch->update([
+               'id'            => $importBatchId,
+               'total_rows'    => $summary['total_rows'],
+               'imported_rows' => $summary['valid_rows'],
+               'error_rows'    => $summary['invalid_rows'],
+               'status'        => 'completed',
+               'log'           => implode(PHP_EOL, $summary['errors']),
+            ]);
+            $DB->commit();
+            AuditLog::record(ImportBatch::class, $importBatchId, $priceType === 'sinapi' ? 'sinapi_import' : 'quote_import', [], $summary);
          }
+      } catch (\Throwable $e) {
+         if (!$dryRun && $DB->inTransaction()) {
+            $DB->rollBack();
+         }
+         fclose($handle);
+         $failed = self::failedSummary($summary, $e->getMessage());
+         self::recordFailedBatch($filename, $competence, $priceType, $failed);
+         return $failed;
       }
+
       fclose($handle);
 
-      if (!$dryRun && $importBatchId > 0) {
-         $batch = new ImportBatch();
-         $batch->update([
-            'id'            => $importBatchId,
-            'total_rows'    => $summary['total_rows'],
-            'imported_rows' => $summary['valid_rows'],
-            'error_rows'    => $summary['invalid_rows'],
-            'status'        => $summary['invalid_rows'] > 0 ? 'partial' : 'completed',
-            'log'           => implode(PHP_EOL, $summary['errors']),
-         ]);
-         AuditLog::record(ImportBatch::class, $importBatchId, $priceType === 'sinapi' ? 'sinapi_import' : 'quote_import', [], $summary);
-      }
+      return $summary;
+   }
+
+   private static function previewIsClean(array $preview): bool
+   {
+      return (int) ($preview['invalid_rows'] ?? 0) === 0
+         && count($preview['errors'] ?? []) === 0;
+   }
+
+   private static function rejectedSummary(array $summary): array
+   {
+      $summary['dry_run'] = false;
+      $summary['aborted'] = true;
+      array_unshift(
+         $summary['errors'],
+         __('Importação cancelada: nenhum registro foi gravado. Corrija as linhas indicadas e envie o arquivo novamente.', 'maintenancecosts')
+      );
 
       return $summary;
+   }
+
+   private static function failedSummary(array $summary, string $message): array
+   {
+      $summary['dry_run'] = false;
+      $summary['aborted'] = true;
+      array_unshift(
+         $summary['errors'],
+         sprintf(
+            __('Importação revertida: nenhum registro foi gravado. Tente novamente. Detalhe: %s', 'maintenancecosts'),
+            $message
+         )
+      );
+
+      return $summary;
+   }
+
+   private static function recordFailedBatch(string $filename, string $competence, string $priceType, array $summary): void
+   {
+      $batch = new ImportBatch();
+      $batch->add([
+         'filename'      => $filename,
+         'competence'    => Config::normalizeCompetence($competence),
+         'price_type'    => Config::normalizePriceType($priceType),
+         'total_rows'    => (int) ($summary['total_rows'] ?? 0),
+         'imported_rows' => 0,
+         'error_rows'    => (int) ($summary['invalid_rows'] ?? 0),
+         'users_id'      => (int) ($_SESSION['glpiID'] ?? 0),
+         'status'        => 'failed',
+         'log'           => implode(PHP_EOL, array_slice($summary['errors'] ?? [], 0, 200)),
+      ]);
    }
 
    private static function emptySummary(string $filename, string $competence, bool $dryRun, array $errors = [], string $priceType = 'sinapi'): array
    {
       return [
          'dry_run'           => $dryRun,
+         'aborted'           => false,
          'filename'          => $filename,
          'competence'        => Config::normalizeCompetence($competence),
          'price_type'        => Config::normalizePriceType($priceType),
@@ -311,6 +457,7 @@ class Importer
    {
       return [
          'dry_run'             => $dryRun,
+         'aborted'             => false,
          'filename'            => $filename,
          'total_rows'          => 0,
          'valid_rows'          => 0,
@@ -447,6 +594,9 @@ class Importer
       if ($data['code'] === '') {
          return __('código vazio', 'maintenancecosts');
       }
+      if (mb_strlen((string) $data['code']) > self::MAX_CODE_LENGTH) {
+         return sprintf(__('código excede %d caracteres', 'maintenancecosts'), self::MAX_CODE_LENGTH);
+      }
       return '';
    }
 
@@ -462,7 +612,7 @@ class Importer
       }
       return true;
    }
-   private static function saveCostCenterRow(array $data, ?array $existing): void
+   private static function saveCostCenterRow(array $data, ?array $existing): bool
    {
       $costCenter = new CostCenter();
       $input = $data + [
@@ -472,14 +622,13 @@ class Importer
       ];
 
       if ($existing) {
-         $costCenter->update(['id' => (int) $existing['id']] + $input);
-         return;
+         return (bool) $costCenter->update(['id' => (int) $existing['id']] + $input);
       }
 
-      $costCenter->add($input);
+      return (int) $costCenter->add($input) > 0;
    }
 
-   private static function saveCostCenterLegacyRow(array $data, ?array $existing): void
+   private static function saveCostCenterLegacyRow(array $data, ?array $existing): bool
    {
       $costCenter = new CostCenterLegacy();
       $input = $data + [
@@ -489,11 +638,10 @@ class Importer
       ];
 
       if ($existing) {
-         $costCenter->update(['id' => (int) $existing['id']] + $input);
-         return;
+         return (bool) $costCenter->update(['id' => (int) $existing['id']] + $input);
       }
 
-      $costCenter->add($input);
+      return (int) $costCenter->add($input) > 0;
    }
 
    private static function buildHeaderMap(array $header): array
@@ -576,10 +724,13 @@ class Importer
       $description = self::cleanImportedText($get('name'));
 
       return [
-         'code'        => self::cleanImportedText($get('code'), 64),
+         // Codigo e unidade nao sao truncados aqui: o codigo identifica o
+         // material e cortar silenciosamente juntaria materiais distintos no
+         // mesmo registro. O tamanho e recusado em validateRow().
+         'code'        => self::cleanImportedText($get('code')),
          'name'        => self::cleanImportedText($description, 255),
          'description' => $description,
-         'unit'        => self::cleanImportedText($get('unit'), 32),
+         'unit'        => self::cleanImportedText($get('unit')),
          'unit_price' => self::parseDecimal($get('unit_price')),
          'quote_quantity' => self::parseDecimal($get('quote_quantity')),
          'quote_price_1'  => self::parseDecimal($get('quote_price_1')),
@@ -627,11 +778,20 @@ class Importer
       if ($data['code'] === '') {
          return __('codigo vazio', 'maintenancecosts');
       }
+      // O banco corta valores maiores que a coluna sem avisar. Como o codigo e a
+      // chave de identidade do material, truncar aqui juntaria materiais
+      // diferentes no mesmo registro.
+      if (mb_strlen($data['code']) > self::MAX_CODE_LENGTH) {
+         return sprintf(__('código excede %d caracteres', 'maintenancecosts'), self::MAX_CODE_LENGTH);
+      }
       if ($data['name'] === '') {
          return __('descricao vazia', 'maintenancecosts');
       }
       if ($data['unit'] === '') {
          return __('unidade vazia', 'maintenancecosts');
+      }
+      if (mb_strlen($data['unit']) > self::MAX_UNIT_LENGTH) {
+         return sprintf(__('unidade excede %d caracteres', 'maintenancecosts'), self::MAX_UNIT_LENGTH);
       }
       if ($data['competence'] === '' || !preg_match('/^\d{4}-\d{2}$/', $data['competence'])) {
          return __('competencia invalida', 'maintenancecosts');
@@ -663,7 +823,7 @@ class Importer
       return false;
    }
 
-   private static function saveRow(array $data, int $importBatchId, string $priceType): void
+   private static function saveRow(array $data, int $importBatchId, string $priceType): bool
    {
       $priceType = Config::normalizePriceType($priceType);
       $materialRow = self::findMaterialByCode($data['code']);
@@ -671,14 +831,16 @@ class Importer
 
       if ($materialRow) {
          $materialId = (int) $materialRow['id'];
-         $material->update([
+         if (!$material->update([
             'id'          => $materialId,
             'name'        => $data['name'],
             'description' => $data['description'],
             'unit'        => $data['unit'],
             'category'    => $data['category'],
             'is_active'   => 1,
-         ]);
+         ])) {
+            return false;
+         }
       } else {
          $materialId = (int) $material->add([
             'entities_id'  => (int) ($_SESSION['glpiactive_entity'] ?? 0),
@@ -693,12 +855,12 @@ class Importer
       }
 
       if ($materialId <= 0) {
-         return;
+         return false;
       }
 
       $price = Price::getForMaterialCompetenceAndType($materialId, $data['competence'], $priceType);
       if ($price && !self::priceRowChanged($price, $data)) {
-         return;
+         return true;
       }
 
       $priceObj = new Price();
@@ -720,10 +882,10 @@ class Importer
       ];
 
       if ($price) {
-         $priceObj->update(['id' => (int) $price['id']] + $priceInput);
-      } else {
-         $priceObj->add($priceInput);
+         return (bool) $priceObj->update(['id' => (int) $price['id']] + $priceInput);
       }
+
+      return (int) $priceObj->add($priceInput) > 0;
    }
 
    private static function findMaterialByCode(string $code): ?array

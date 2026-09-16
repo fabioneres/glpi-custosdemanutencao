@@ -78,9 +78,20 @@ if ($isQuote) {
    echo "</div></div>";
 }
 if (is_array($summary)) {
+   if (!empty($summary['aborted'])) {
+      echo "<div class='spaced'>";
+      echo "<div class='alert alert-danger'>";
+      echo "<strong>" . Html::clean(__('Importação não concluída', 'maintenancecosts')) . "</strong><br>";
+      echo Html::clean(__('Nenhum registro foi gravado. A importação só é aplicada quando o arquivo inteiro está correto. Corrija os problemas indicados abaixo e envie o arquivo novamente.', 'maintenancecosts'));
+      echo "</div></div>";
+   }
+
    echo "<div class='spaced'>";
    echo "<table class='tab_cadre_fixe'>";
-   echo "<tr class='tab_bg_2'><th colspan='2'>" . ($summary['dry_run'] ? __('Prévia da importação', 'maintenancecosts') : __('Resultado da importação', 'maintenancecosts')) . "</th></tr>";
+   $resultLabel = !empty($summary['aborted'])
+      ? __('Importação revertida', 'maintenancecosts')
+      : ($summary['dry_run'] ? __('Prévia da importação', 'maintenancecosts') : __('Resultado da importação', 'maintenancecosts'));
+   echo "<tr class='tab_bg_2'><th colspan='2'>" . Html::clean($resultLabel) . "</th></tr>";
    foreach ([
       'filename' => __('Arquivo', 'maintenancecosts'),
       'competence' => __('Competência', 'maintenancecosts'),
