@@ -225,17 +225,35 @@ class Config extends CommonDBTM
       $now = date('Y-m-d H:i:s');
       $userId = (int) Session::getLoginUserID();
 
-      $DB->delete(ConfigEntity::getTable(), ['entities_id' => $entities_id]);
+      $DB->beginTransaction();
+      try {
+         $DB->delete(ConfigEntity::getTable(), ['entities_id' => $entities_id]);
 
-      if ($enabled) {
-         $DB->insert(ConfigEntity::getTable(), [
-            'entities_id'   => $entities_id,
-            'is_recursive'  => $recursive ? 1 : 0,
-            'is_active'     => 1,
-            'users_id'      => $userId,
-            'date_creation' => $now,
-            'date_mod'      => $now,
-         ]);
+         if ($enabled) {
+            $inserted = $DB->insert(ConfigEntity::getTable(), [
+               'entities_id'   => $entities_id,
+               'is_recursive'  => $recursive ? 1 : 0,
+               'is_active'     => 1,
+               'users_id'      => $userId,
+               'date_creation' => $now,
+               'date_mod'      => $now,
+            ]);
+            if (!$inserted) {
+               throw new \RuntimeException('falha ao gravar a regra da entidade ' . $entities_id);
+            }
+         }
+
+         $DB->commit();
+      } catch (\Throwable $e) {
+         if ($DB->inTransaction()) {
+            $DB->rollBack();
+         }
+         Session::addMessageAfterRedirect(
+            __('Não foi possível salvar a regra da entidade. Nenhuma alteração foi aplicada.', 'maintenancecosts'),
+            false,
+            ERROR
+         );
+         return false;
       }
 
       AuditLog::record(
@@ -272,22 +290,42 @@ class Config extends CommonDBTM
          $allowedIds[(int) $entity['id']] = true;
       }
 
-      $DB->delete(ConfigEntity::getTable(), ['id' => ['>', 0]]);
+      // Apagar e reinserir precisa ser atomico: uma falha no meio deixaria a
+      // configuracao de entidades vazia, sem historico para reconstruir.
+      $DB->beginTransaction();
+      try {
+         $DB->delete(ConfigEntity::getTable(), ['id' => ['>', 0]]);
 
-      foreach ($enabled as $entityId => $flag) {
-         $entityId = (int) $entityId;
-         if ($entityId <= 0 || !isset($allowedIds[$entityId]) || (int) $flag !== 1) {
-            continue;
+         foreach ($enabled as $entityId => $flag) {
+            $entityId = (int) $entityId;
+            if ($entityId <= 0 || !isset($allowedIds[$entityId]) || (int) $flag !== 1) {
+               continue;
+            }
+
+            $inserted = $DB->insert(ConfigEntity::getTable(), [
+               'entities_id'    => $entityId,
+               'is_recursive'   => isset($recursive[$entityId]) && (int) $recursive[$entityId] === 1 ? 1 : 0,
+               'is_active'      => 1,
+               'users_id'       => $userId,
+               'date_creation'  => $now,
+               'date_mod'       => $now,
+            ]);
+            if (!$inserted) {
+               throw new \RuntimeException('falha ao gravar a entidade ' . $entityId);
+            }
          }
 
-         $DB->insert(ConfigEntity::getTable(), [
-            'entities_id'    => $entityId,
-            'is_recursive'   => isset($recursive[$entityId]) && (int) $recursive[$entityId] === 1 ? 1 : 0,
-            'is_active'      => 1,
-            'users_id'       => $userId,
-            'date_creation'  => $now,
-            'date_mod'       => $now,
-         ]);
+         $DB->commit();
+      } catch (\Throwable $e) {
+         if ($DB->inTransaction()) {
+            $DB->rollBack();
+         }
+         Session::addMessageAfterRedirect(
+            __('Não foi possível salvar a configuração de entidades. Nenhuma alteração foi aplicada.', 'maintenancecosts'),
+            false,
+            ERROR
+         );
+         return false;
       }
 
       AuditLog::record(self::class, self::CONFIG_ID, 'config_entities_update', $old, self::getEnabledEntityRows(), '', 0);
