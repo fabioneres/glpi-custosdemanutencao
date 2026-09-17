@@ -13,18 +13,21 @@ $item = new Material();
 
 if (isset($_POST['add'])) {
    Config::checkRight(Config::RIGHT_MATERIALS, CREATE);
+   Config::checkCreateAccess($_POST);
    $item->add($_POST);
    Html::back();
 }
 
 if (isset($_POST['update'])) {
    Config::checkRight(Config::RIGHT_MATERIALS, UPDATE);
+   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
    $item->update($_POST);
    Html::back();
 }
 
 if (isset($_POST['delete']) || isset($_POST['purge'])) {
    Config::checkRight(Config::RIGHT_MATERIALS, PURGE);
+   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
    $item->delete($_POST, isset($_POST['purge']));
    Html::redirect(Material::getSearchURL());
 }

@@ -92,8 +92,18 @@ class Importer
                continue;
             }
 
-            $summary['valid_rows']++;
             $existing = self::findCostCenterByCode($data['code']);
+            if (!self::existingIsAccessible($existing)) {
+               $summary['invalid_rows']++;
+               $summary['errors'][] = sprintf(
+                  'Linha %d: %s',
+                  $summary['total_rows'] + 1,
+                  __('código já existe em uma entidade sem acesso', 'maintenancecosts')
+               );
+               continue;
+            }
+
+            $summary['valid_rows']++;
             $summary[$existing ? 'updated_costcenters' : 'new_costcenters']++;
 
             if (!$dryRun && !self::saveCostCenterRow($data, $existing)) {
@@ -206,8 +216,18 @@ class Importer
                continue;
             }
 
-            $summary['valid_rows']++;
             $existing = self::findCostCenterLegacyByCode($data['code']);
+            if (!self::existingIsAccessible($existing)) {
+               $summary['invalid_rows']++;
+               $summary['errors'][] = sprintf(
+                  'Linha %d: %s',
+                  $summary['total_rows'] + 1,
+                  __('código já existe em uma entidade sem acesso', 'maintenancecosts')
+               );
+               continue;
+            }
+
+            $summary['valid_rows']++;
             $summary[$existing ? 'updated_costcenters' : 'new_costcenters']++;
 
             if (!$dryRun && !self::saveCostCenterLegacyRow($data, $existing)) {
@@ -351,8 +371,18 @@ class Importer
                continue;
             }
 
-            $summary['valid_rows']++;
             $state = self::classifyRow($data, $priceType);
+            if (!self::existingIsAccessible($state['material'])) {
+               $summary['invalid_rows']++;
+               $summary['errors'][] = sprintf(
+                  'Linha %d: %s',
+                  $summary['total_rows'] + 1,
+                  __('código já existe em uma entidade sem acesso', 'maintenancecosts')
+               );
+               continue;
+            }
+
+            $summary['valid_rows']++;
             $summary[$state['material_status'] === 'new' ? 'new_materials' : 'updated_materials']++;
             $summary[$state['price_status'] === 'repeated' ? 'repeated_prices' : 'new_prices']++;
 
@@ -629,6 +659,10 @@ class Importer
       ];
 
       if ($existing) {
+         // Atualizacao nao move o registro de entidade nem mexe na
+         // recursividade: o codigo e unico no sistema todo e quem importa pode
+         // estar em outra entidade.
+         unset($input['entities_id'], $input['is_recursive']);
          return (bool) $costCenter->update(['id' => (int) $existing['id']] + $input);
       }
 
@@ -645,6 +679,10 @@ class Importer
       ];
 
       if ($existing) {
+         // Atualizacao nao move o registro de entidade nem mexe na
+         // recursividade: o codigo e unico no sistema todo e quem importa pode
+         // estar em outra entidade.
+         unset($input['entities_id'], $input['is_recursive']);
          return (bool) $costCenter->update(['id' => (int) $existing['id']] + $input);
       }
 
@@ -836,7 +874,28 @@ class Importer
       return [
          'material_status' => $material ? 'existing' : 'new',
          'price_status'    => ($price && !self::priceRowChanged($price, $data)) ? 'repeated' : 'new',
+         'material'        => $material,
       ];
+   }
+
+   /**
+    * O codigo e unico no sistema inteiro, entao um codigo ja existente pode
+    * pertencer a outra entidade. Importar sobre ele significaria alterar dado
+    * fora do escopo de quem importa.
+    */
+   private static function existingIsAccessible(?array $row): bool
+   {
+      if (!$row || !array_key_exists('entities_id', $row)) {
+         return true;
+      }
+
+      // Execucao sem sessao web, como linha de comando, nao tem escopo de
+      // entidade a aplicar.
+      if (empty($_SESSION['glpiactiveentities'])) {
+         return true;
+      }
+
+      return \Session::haveAccessToEntity((int) $row['entities_id']);
    }
 
    private static function priceRowChanged(array $price, array $data): bool

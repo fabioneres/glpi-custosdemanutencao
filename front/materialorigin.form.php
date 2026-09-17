@@ -19,12 +19,14 @@ if (isset($_POST['add'])) {
 
 if (isset($_POST['update'])) {
    Config::checkRight(Config::RIGHT_CONFIG, UPDATE);
+   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
    $item->update($_POST);
    Html::redirect(MaterialOrigin::getSearchURL());
 }
 
 if (isset($_POST['delete']) || isset($_POST['purge'])) {
    Config::checkRight(Config::RIGHT_CONFIG, UPDATE);
+   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
    $item->delete($_POST, isset($_POST['purge']));
    Html::redirect(MaterialOrigin::getSearchURL());
 }

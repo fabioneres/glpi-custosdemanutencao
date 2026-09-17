@@ -14,6 +14,7 @@ $item = new TicketMaterial();
 
 if (isset($_POST['cancel'])) {
    Config::checkRight(Config::RIGHT_CONSUMPTION, UPDATE);
+   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
    TicketMaterial::cancel((int) ($_POST['id'] ?? 0), (string) ($_POST['delete_reason'] ?? ''));
    if (!empty($_POST['tickets_id'])) {
       Html::redirect($CFG_GLPI['root_doc'] . '/front/ticket.form.php?id=' . (int) $_POST['tickets_id']);
@@ -23,6 +24,7 @@ if (isset($_POST['cancel'])) {
 
 if (isset($_POST['add'])) {
    Config::checkRight(Config::RIGHT_CONSUMPTION, CREATE);
+   Config::checkCreateAccess($_POST);
    $item->add($_POST);
    if (!empty($_POST['tickets_id'])) {
       Html::redirect($CFG_GLPI['root_doc'] . '/front/ticket.form.php?id=' . (int) $_POST['tickets_id']);
@@ -32,6 +34,7 @@ if (isset($_POST['add'])) {
 
 if (isset($_POST['update'])) {
    Config::checkRight(Config::RIGHT_CONSUMPTION, UPDATE);
+   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
    $item->update($_POST);
    if (!empty($_POST['tickets_id'])) {
       Html::redirect($CFG_GLPI['root_doc'] . '/front/ticket.form.php?id=' . (int) $_POST['tickets_id']);
@@ -80,6 +83,7 @@ if (isset($_POST['clear_ticket_costcenter'])) {
 
 if (isset($_POST['unlink_contract'])) {
    Config::checkRight(Config::RIGHT_CONSUMPTION, UPDATE);
+   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
    $ok = TicketMaterial::unlinkContract((int) ($_POST['id'] ?? 0));
    Session::addMessageAfterRedirect(
       $ok
@@ -96,6 +100,7 @@ if (isset($_POST['unlink_contract'])) {
 
 if (isset($_POST['delete']) || isset($_POST['purge'])) {
    Config::checkRight(Config::RIGHT_CONSUMPTION, PURGE);
+   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
    $item->delete($_POST, isset($_POST['purge']));
    Html::redirect(TicketMaterial::getSearchURL());
 }

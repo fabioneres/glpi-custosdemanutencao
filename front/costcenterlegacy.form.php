@@ -13,18 +13,21 @@ $item = new CostCenterLegacy();
 
 if (isset($_POST['add'])) {
    Config::checkRight(Config::RIGHT_COSTCENTERS, CREATE);
+   Config::checkCreateAccess($_POST);
    $item->add($_POST);
    Html::back();
 }
 
 if (isset($_POST['update'])) {
    Config::checkRight(Config::RIGHT_COSTCENTERS, UPDATE);
+   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
    $item->update($_POST);
    Html::back();
 }
 
 if (isset($_POST['delete']) || isset($_POST['purge'])) {
    Config::checkRight(Config::RIGHT_COSTCENTERS, PURGE);
+   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
    $item->delete($_POST, isset($_POST['purge']));
    Html::redirect(CostCenterLegacy::getSearchURL());
 }

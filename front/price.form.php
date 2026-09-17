@@ -13,12 +13,14 @@ $item = new Price();
 
 if (isset($_POST['add'])) {
    Config::checkRight(Config::RIGHT_PRICES, CREATE);
+   Config::checkCreateAccess($_POST);
    $item->add($_POST);
    Html::back();
 }
 
 if (isset($_POST['update'])) {
    Config::checkRight(Config::RIGHT_PRICES, UPDATE);
+   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
    $item->update($_POST);
    Html::back();
 }
@@ -29,6 +31,7 @@ if (isset($_POST['delete']) || isset($_POST['purge'])) {
    if (!empty($_POST['id']) && $item->getFromDB((int) $_POST['id'])) {
       $redirectType = Config::normalizePriceType((string) ($item->fields['price_type'] ?? 'sinapi'));
    }
+   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
    $item->delete($_POST, isset($_POST['purge']));
    Html::redirect($redirectType === 'cotacao_mercado'
       ? Config::pluginUrl('/front/quotationprice.php')

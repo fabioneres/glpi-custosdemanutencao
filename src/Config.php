@@ -511,6 +511,48 @@ class Config extends CommonDBTM
       }
    }
 
+   /**
+    * Complementa checkRight() com a dimensao que falta: a entidade do registro.
+    *
+    * checkRight() valida apenas o direito do perfil e se o plugin esta
+    * habilitado na entidade ativa. Sem esta verificacao, quem tem o direito em
+    * uma entidade alcanca registro de outra apenas postando o id.
+    */
+   public static function checkItemAccess(CommonDBTM $item, int $id): void
+   {
+      if ($id <= 0) {
+         return;
+      }
+
+      if (!$item->getFromDB($id)) {
+         Html::displayRightError();
+      }
+
+      if (!$item->isEntityAssign()) {
+         return;
+      }
+
+      // Escrita exige a entidade do proprio registro entre as ativas. Herdar
+      // visibilidade por recursividade nao autoriza alterar o original.
+      if (!Session::haveAccessToEntity((int) ($item->fields['entities_id'] ?? 0))) {
+         Html::displayRightError();
+      }
+   }
+
+   /**
+    * Impede criar registro em entidade a qual o usuario nao tem acesso.
+    */
+   public static function checkCreateAccess(array $input): void
+   {
+      $entity = array_key_exists('entities_id', $input)
+         ? (int) $input['entities_id']
+         : (int) ($_SESSION['glpiactive_entity'] ?? 0);
+
+      if (!Session::haveAccessToEntity($entity)) {
+         Html::displayRightError();
+      }
+   }
+
    public static function pluginUrl(string $path = '', bool $full = true): string
    {
       global $CFG_GLPI;
