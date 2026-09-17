@@ -1,6 +1,6 @@
 # Changelog
 
-## Em desenvolvimento
+## v1.1.19 - Integridade de dados em lote, importacao e configuracao
 
 - Exibe o campo `Recursivo` como coluna e na acao em massa de Materiais SINAPI, Centros de Custo e Centros de Custo Antigo, dispensando abrir registro por registro para alterar em lote.
 - Corrige atualizacoes parciais de materiais, que zeravam `Ativo` e `Recursivo` quando esses campos nao eram enviados na requisicao. Como a importacao atualiza o material sem enviar `Recursivo`, cada reimportacao desfazia o ajuste manual do usuario.
