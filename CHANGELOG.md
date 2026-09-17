@@ -1,5 +1,15 @@
 # Changelog
 
+## Em desenvolvimento
+
+- Exibe o campo `Recursivo` como coluna e na acao em massa de Materiais SINAPI, Centros de Custo e Centros de Custo Antigo, dispensando abrir registro por registro para alterar em lote.
+- Corrige atualizacoes parciais de materiais, que zeravam `Ativo` e `Recursivo` quando esses campos nao eram enviados na requisicao. Como a importacao atualiza o material sem enviar `Recursivo`, cada reimportacao desfazia o ajuste manual do usuario.
+- Torna a importacao atomica: o arquivo inteiro e validado antes de qualquer gravacao e, a partir dai, tudo e gravado em transacao unica. Qualquer falha reverte a importacao completa e nenhum registro permanece pela metade. Vale para SINAPI, Cotacao, Centros de Custo e Centros de Custo Antigo.
+- Recusa linhas cujo codigo ou unidade excedam o tamanho da coluna, em vez de trunca-los silenciosamente. Como o codigo identifica o material, o corte podia unir materiais distintos no mesmo registro.
+- Informa na tela quando a importacao e recusada, deixando explicito que nenhum registro foi gravado e quais linhas precisam ser corrigidas.
+- Torna atomico o salvamento da configuracao por entidade, que apagava os registros e reinseria sem transacao. Uma falha entre as duas etapas deixaria a configuracao vazia, sem historico para reconstruir.
+- Limita no formulario o tamanho dos campos de codigo e unidade ao tamanho real da coluna.
+
 ## v1.1.18 - FormCreator para perfil solicitante
 
 - Corrige a inicializacao dos dropdowns de Centro de Custo Antigo e Novo quando os scripts dos campos do FormCreator sao carregados depois do JavaScript do plugin, permitindo o uso por perfis solicitantes sem direito administrativo do Custos de Manutencao.
