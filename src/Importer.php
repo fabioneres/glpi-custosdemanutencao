@@ -77,8 +77,11 @@ class Importer
          $DB->beginTransaction();
       }
 
+      $lineNumber = 1; // a primeira linha do arquivo e o cabecalho
+
       try {
          while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+            $lineNumber++;
             $summary['total_rows']++;
             $data = self::costCenterRowToData($row, $map);
             if (self::isEmptyCostCenterRow($data)) {
@@ -88,7 +91,7 @@ class Importer
             $error = self::validateCostCenterRow($data);
             if ($error !== '') {
                $summary['invalid_rows']++;
-               $summary['errors'][] = sprintf('Linha %d: %s', $summary['total_rows'] + 1, $error);
+               $summary['errors'][] = sprintf('Linha %d: %s', $lineNumber, $error);
                continue;
             }
 
@@ -97,7 +100,7 @@ class Importer
                $summary['invalid_rows']++;
                $summary['errors'][] = sprintf(
                   'Linha %d: %s',
-                  $summary['total_rows'] + 1,
+                  $lineNumber,
                   __('código já existe em uma entidade sem acesso', 'maintenancecosts')
                );
                continue;
@@ -109,7 +112,7 @@ class Importer
             if (!$dryRun && !self::saveCostCenterRow($data, $existing)) {
                throw new \RuntimeException(sprintf(
                   __('Linha %d: falha ao gravar o registro.', 'maintenancecosts'),
-                  $summary['total_rows'] + 1
+                  $lineNumber
                ));
             }
          }
@@ -197,8 +200,11 @@ class Importer
          $DB->beginTransaction();
       }
 
+      $lineNumber = 1; // a primeira linha do arquivo e o cabecalho
+
       try {
          while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+            $lineNumber++;
             $summary['total_rows']++;
             $data = self::costCenterLegacyRowToData($row, $map);
             if (self::isEmptyCostCenterRow($data)) {
@@ -212,7 +218,7 @@ class Importer
             $error = self::validateCostCenterRow($data);
             if ($error !== '') {
                $summary['invalid_rows']++;
-               $summary['errors'][] = sprintf('Linha %d: %s', $summary['total_rows'] + 1, $error);
+               $summary['errors'][] = sprintf('Linha %d: %s', $lineNumber, $error);
                continue;
             }
 
@@ -221,7 +227,7 @@ class Importer
                $summary['invalid_rows']++;
                $summary['errors'][] = sprintf(
                   'Linha %d: %s',
-                  $summary['total_rows'] + 1,
+                  $lineNumber,
                   __('código já existe em uma entidade sem acesso', 'maintenancecosts')
                );
                continue;
@@ -233,7 +239,7 @@ class Importer
             if (!$dryRun && !self::saveCostCenterLegacyRow($data, $existing)) {
                throw new \RuntimeException(sprintf(
                   __('Linha %d: falha ao gravar o registro.', 'maintenancecosts'),
-                  $summary['total_rows'] + 1
+                  $lineNumber
                ));
             }
          }
@@ -331,6 +337,7 @@ class Importer
       }
 
       $importBatchId = 0;
+      $lineNumber = 1; // a primeira linha do arquivo e o cabecalho
 
       try {
          if (!$dryRun) {
@@ -352,6 +359,7 @@ class Importer
          }
 
          while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
+            $lineNumber++;
             $summary['total_rows']++;
             $data = self::rowToData($row, $map, $summary['competence']);
             // Linha em branco e rodape nao sao erro: sao ignorados, como ja
@@ -367,7 +375,7 @@ class Importer
             $error = self::validateRow($data);
             if ($error !== '') {
                $summary['invalid_rows']++;
-               $summary['errors'][] = sprintf('Linha %d: %s', $summary['total_rows'] + 1, $error);
+               $summary['errors'][] = sprintf('Linha %d: %s', $lineNumber, $error);
                continue;
             }
 
@@ -376,7 +384,7 @@ class Importer
                $summary['invalid_rows']++;
                $summary['errors'][] = sprintf(
                   'Linha %d: %s',
-                  $summary['total_rows'] + 1,
+                  $lineNumber,
                   __('código já existe em uma entidade sem acesso', 'maintenancecosts')
                );
                continue;
@@ -389,7 +397,7 @@ class Importer
             if (!$dryRun && !self::saveRow($data, $importBatchId, $priceType)) {
                throw new \RuntimeException(sprintf(
                   __('Linha %d: falha ao gravar o registro.', 'maintenancecosts'),
-                  $summary['total_rows'] + 1
+                  $lineNumber
                ));
             }
          }
@@ -895,7 +903,12 @@ class Importer
          return true;
       }
 
-      return \Session::haveAccessToEntity((int) $row['entities_id']);
+      // Mesmo criterio de Config::checkItemAccess: registro recursivo de uma
+      // entidade ancestral e catalogo compartilhado, nao registro alheio.
+      return \Session::haveAccessToEntity(
+         (int) $row['entities_id'],
+         (bool) ($row['is_recursive'] ?? false)
+      );
    }
 
    private static function priceRowChanged(array $price, array $data): bool

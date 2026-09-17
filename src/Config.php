@@ -532,9 +532,17 @@ class Config extends CommonDBTM
          return;
       }
 
-      // Escrita exige a entidade do proprio registro entre as ativas. Herdar
-      // visibilidade por recursividade nao autoriza alterar o original.
-      if (!Session::haveAccessToEntity((int) ($item->fields['entities_id'] ?? 0))) {
+      // A recursividade e considerada de proposito: o catalogo deste plugin e
+      // mantido na entidade raiz e compartilhado com as filhas. Exigir a
+      // entidade exata impediria a entidade filha de manter o proprio
+      // catalogo. O que continua bloqueado e o registro de entidade irma, que
+      // o usuario nao enxerga.
+      if (
+         !Session::haveAccessToEntity(
+            (int) ($item->fields['entities_id'] ?? 0),
+            (bool) ($item->fields['is_recursive'] ?? false)
+         )
+      ) {
          Html::displayRightError();
       }
    }
@@ -544,13 +552,34 @@ class Config extends CommonDBTM
     */
    public static function checkCreateAccess(array $input): void
    {
-      $entity = array_key_exists('entities_id', $input)
+      $entity = !empty($input['entities_id']) || (isset($input['entities_id']) && (int) $input['entities_id'] === 0)
          ? (int) $input['entities_id']
          : (int) ($_SESSION['glpiactive_entity'] ?? 0);
 
       if (!Session::haveAccessToEntity($entity)) {
          Html::displayRightError();
       }
+   }
+
+   /**
+    * Garante que o chamado alvo pertence a uma entidade acessivel e devolve a
+    * entidade dele. A entidade nunca deve vir do formulario: um id de chamado
+    * de outra entidade poderia ser combinado com a entidade do proprio
+    * usuario.
+    */
+   public static function checkTicketAccess(int $tickets_id): int
+   {
+      $ticket = new \Ticket();
+      if ($tickets_id <= 0 || !$ticket->getFromDB($tickets_id)) {
+         Html::displayRightError();
+      }
+
+      $entity = (int) $ticket->fields['entities_id'];
+      if (!Session::haveAccessToEntity($entity)) {
+         Html::displayRightError();
+      }
+
+      return $entity;
    }
 
    public static function pluginUrl(string $path = '', bool $full = true): string

@@ -25,6 +25,9 @@ if (isset($_POST['cancel'])) {
 if (isset($_POST['add'])) {
    Config::checkRight(Config::RIGHT_CONSUMPTION, CREATE);
    Config::checkCreateAccess($_POST);
+   if (!empty($_POST['tickets_id'])) {
+      Config::checkTicketAccess((int) $_POST['tickets_id']);
+   }
    $item->add($_POST);
    if (!empty($_POST['tickets_id'])) {
       Html::redirect($CFG_GLPI['root_doc'] . '/front/ticket.form.php?id=' . (int) $_POST['tickets_id']);
@@ -44,13 +47,15 @@ if (isset($_POST['update'])) {
 
 if (isset($_POST['save_ticket_costcenter'])) {
    Config::checkRight(Config::RIGHT_CONSUMPTION, UPDATE);
+   // A entidade vem do chamado, nunca do formulario.
+   $ticketEntity = Config::checkTicketAccess((int) ($_POST['tickets_id'] ?? 0));
    $ok = TicketCostCenter::saveSelectionsForTicket(
       (int) ($_POST['tickets_id'] ?? 0),
       [
          'legacy' => (int) ($_POST['plugin_maintenancecosts_costcenters_legacy_id'] ?? 0),
          'new'    => (int) ($_POST['plugin_maintenancecosts_costcenters_new_id'] ?? 0),
       ],
-      (int) ($_POST['entities_id'] ?? ($_SESSION['glpiactive_entity'] ?? 0))
+      $ticketEntity
    );
    Session::addMessageAfterRedirect(
       $ok
@@ -67,6 +72,7 @@ if (isset($_POST['save_ticket_costcenter'])) {
 
 if (isset($_POST['clear_ticket_costcenter'])) {
    Config::checkRight(Config::RIGHT_CONSUMPTION, UPDATE);
+   Config::checkTicketAccess((int) ($_POST['tickets_id'] ?? 0));
    $ok = TicketCostCenter::clearForTicket((int) ($_POST['tickets_id'] ?? 0));
    Session::addMessageAfterRedirect(
       $ok
