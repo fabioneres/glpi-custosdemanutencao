@@ -27,7 +27,7 @@ if (isset($_POST['update'])) {
 
 if (isset($_POST['delete']) || isset($_POST['purge'])) {
    Config::checkRight(Config::RIGHT_COSTCENTERS, PURGE);
-   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
+   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0), false);
    $item->delete($_POST, isset($_POST['purge']));
    Html::redirect(CostCenterLegacy::getSearchURL());
 }

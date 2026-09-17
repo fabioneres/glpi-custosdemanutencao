@@ -211,7 +211,10 @@ class Config extends CommonDBTM
       global $DB;
 
       $entities_id = (int) $entities_id;
-      if ($entities_id < 0 || !Session::haveAccessToEntity($entities_id, true)) {
+      // Forma estrita: habilitar ou desabilitar o plugin em uma entidade e
+      // decisao dela. Aceitar ancestral deixaria um administrador de entidade
+      // filha gravar a regra da raiz e atingir toda a arvore.
+      if ($entities_id < 0 || !Session::haveAccessToEntity($entities_id)) {
          return false;
       }
 
@@ -518,7 +521,7 @@ class Config extends CommonDBTM
     * habilitado na entidade ativa. Sem esta verificacao, quem tem o direito em
     * uma entidade alcanca registro de outra apenas postando o id.
     */
-   public static function checkItemAccess(CommonDBTM $item, int $id): void
+   public static function checkItemAccess(CommonDBTM $item, int $id, bool $allowInherited = true): void
    {
       if ($id <= 0) {
          return;
@@ -532,17 +535,18 @@ class Config extends CommonDBTM
          return;
       }
 
-      // A recursividade e considerada de proposito: o catalogo deste plugin e
-      // mantido na entidade raiz e compartilhado com as filhas. Exigir a
-      // entidade exata impediria a entidade filha de manter o proprio
-      // catalogo. O que continua bloqueado e o registro de entidade irma, que
-      // o usuario nao enxerga.
-      if (
-         !Session::haveAccessToEntity(
-            (int) ($item->fields['entities_id'] ?? 0),
-            (bool) ($item->fields['is_recursive'] ?? false)
-         )
-      ) {
+      // Em alteracao a recursividade e aceita de proposito: o catalogo deste
+      // plugin e mantido na entidade raiz e compartilhado com as filhas, e
+      // exigir a entidade exata recusaria toda reimportacao feita a partir de
+      // uma filha. Continua bloqueado o registro de entidade irma, que o
+      // usuario nao enxerga.
+      //
+      // Em exclusao a forma e estrita, como no core: apagar um registro
+      // compartilhado afeta todas as entidades que dependem dele, entao isso
+      // cabe a entidade dona.
+      $inherited = $allowInherited && (bool) ($item->fields['is_recursive'] ?? false);
+
+      if (!Session::haveAccessToEntity((int) ($item->fields['entities_id'] ?? 0), $inherited)) {
          Html::displayRightError();
       }
    }

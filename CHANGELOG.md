@@ -4,6 +4,9 @@
 
 - Corrige falha de isolamento entre entidades nas telas de cadastro. As telas validavam apenas o direito do perfil e se o plugin estava habilitado, sem conferir a entidade do registro alvo. Quem tinha o direito em uma entidade conseguia alterar ou excluir registro de outra entidade informando o identificador. Passa a ser exigido que a entidade do proprio registro esteja entre as entidades ativas do usuario, em materiais, centros de custo novos e antigos, precos, origens e lancamentos de chamado.
 - Impede criar registro em entidade a qual o usuario nao tem acesso.
+- Corrige o vinculo de centro de custo no chamado, que aceitava chamado de outra entidade e gravava a entidade vinda do formulario. A entidade passa a ser derivada do proprio chamado.
+- Corrige a habilitacao do plugin por entidade, que aceitava gravar a regra de uma entidade ancestral. Um administrador de entidade filha conseguia ligar ou desligar o plugin para toda a arvore, inclusive entidades irmas.
+- Exclusao passa a exigir a entidade exata do registro. Alterar um registro compartilhado pela entidade raiz continua permitido a quem o enxerga, mas apaga-lo cabe a entidade dona.
 - Corrige a importacao, que podia sobrescrever registro de outra entidade. Como o codigo e unico no sistema inteiro, um codigo existente pode pertencer a outra entidade; essas linhas passam a ser recusadas. A atualizacao de centro de custo tambem deixa de reescrever entidade e recursividade, o que movia o registro para a entidade de quem importava.
 - Exibe o campo `Recursivo` como coluna e na acao em massa de Materiais SINAPI, Centros de Custo e Centros de Custo Antigo, dispensando abrir registro por registro para alterar em lote.
 - Corrige atualizacoes parciais de materiais, que zeravam `Ativo` e `Recursivo` quando esses campos nao eram enviados na requisicao. Como a importacao atualiza o material sem enviar `Recursivo`, cada reimportacao desfazia o ajuste manual do usuario.

@@ -106,7 +106,7 @@ if (isset($_POST['unlink_contract'])) {
 
 if (isset($_POST['delete']) || isset($_POST['purge'])) {
    Config::checkRight(Config::RIGHT_CONSUMPTION, PURGE);
-   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
+   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0), false);
    $item->delete($_POST, isset($_POST['purge']));
    Html::redirect(TicketMaterial::getSearchURL());
 }

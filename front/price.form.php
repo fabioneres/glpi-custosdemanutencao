@@ -31,7 +31,7 @@ if (isset($_POST['delete']) || isset($_POST['purge'])) {
    if (!empty($_POST['id']) && $item->getFromDB((int) $_POST['id'])) {
       $redirectType = Config::normalizePriceType((string) ($item->fields['price_type'] ?? 'sinapi'));
    }
-   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
+   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0), false);
    $item->delete($_POST, isset($_POST['purge']));
    Html::redirect($redirectType === 'cotacao_mercado'
       ? Config::pluginUrl('/front/quotationprice.php')

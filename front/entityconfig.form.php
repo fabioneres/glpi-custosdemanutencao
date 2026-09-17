@@ -11,7 +11,7 @@ Session::checkLoginUser();
 Config::checkRight(Config::RIGHT_CONFIG, UPDATE);
 
 $entities_id = (int) ($_POST['entities_id'] ?? $_GET['entities_id'] ?? -1);
-if ($entities_id < 0 || !Session::haveAccessToEntity($entities_id, true)) {
+if ($entities_id < 0 || !Session::haveAccessToEntity($entities_id)) {
    Html::displayRightError();
 }
 
