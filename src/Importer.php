@@ -334,6 +334,13 @@ class Importer
          while (($row = fgetcsv($handle, 0, $delimiter)) !== false) {
             $summary['total_rows']++;
             $data = self::rowToData($row, $map, $summary['competence']);
+            // Linha em branco e rodape nao sao erro: sao ignorados, como ja
+            // acontece na importacao de centros de custo. Sem isso, uma linha
+            // vazia recusaria o arquivo inteiro.
+            if (self::isEmptyRow($data)) {
+               $summary['total_rows']--;
+               continue;
+            }
             if (self::isRepeatedQuoteHeader($data)) {
                continue;
             }
@@ -741,6 +748,23 @@ class Importer
       ];
    }
 
+   private static function isEmptyRow(array $data): bool
+   {
+      foreach (['code', 'name', 'description', 'unit', 'category'] as $field) {
+         if (trim((string) ($data[$field] ?? '')) !== '') {
+            return false;
+         }
+      }
+
+      foreach (['unit_price', 'quote_quantity', 'quote_price_1', 'quote_price_2', 'quote_price_3'] as $field) {
+         if (abs((float) ($data[$field] ?? 0)) > 0.000001) {
+            return false;
+         }
+      }
+
+      return true;
+   }
+
    private static function isRepeatedQuoteHeader(array $data): bool
    {
       $code = strtoupper(trim((string) ($data['code'] ?? '')));
@@ -755,8 +779,10 @@ class Importer
       $value = trim(str_replace(["\r", "\n", "\t", "'"], ' ', $value));
       $value = (string) preg_replace('/\s+/', ' ', $value);
 
-      if ($maxLength > 0 && strlen($value) > $maxLength) {
-         $value = substr($value, 0, $maxLength);
+      // As colunas contam caracteres, nao bytes. Cortar por byte parte um
+      // caractere acentuado ao meio e gera UTF-8 invalido, recusado pelo MySQL.
+      if ($maxLength > 0 && mb_strlen($value) > $maxLength) {
+         $value = mb_substr($value, 0, $maxLength);
       }
 
       return trim($value);

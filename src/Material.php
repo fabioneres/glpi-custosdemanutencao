@@ -98,8 +98,8 @@ class Material extends CommonDBTM
       $value = trim(str_replace(["\r", "\n", "\t", "'"], ' ', $value));
       $value = (string) preg_replace('/\s+/', ' ', $value);
 
-      if ($maxLength > 0 && strlen($value) > $maxLength) {
-         $value = substr($value, 0, $maxLength);
+      if ($maxLength > 0 && mb_strlen($value) > $maxLength) {
+         $value = mb_substr($value, 0, $maxLength);
       }
 
       return trim($value);
