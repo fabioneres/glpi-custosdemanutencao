@@ -1,7 +1,10 @@
 # Changelog
 
-## v1.1.19 - Integridade de dados em lote, importacao e configuracao
+## v1.1.19 - Isolamento por entidade e integridade da importacao
 
+- Corrige falha de isolamento entre entidades nas telas de cadastro. As telas validavam apenas o direito do perfil e se o plugin estava habilitado, sem conferir a entidade do registro alvo. Quem tinha o direito em uma entidade conseguia alterar ou excluir registro de outra entidade informando o identificador. Passa a ser exigido que a entidade do proprio registro esteja entre as entidades ativas do usuario, em materiais, centros de custo novos e antigos, precos, origens e lancamentos de chamado.
+- Impede criar registro em entidade a qual o usuario nao tem acesso.
+- Corrige a importacao, que podia sobrescrever registro de outra entidade. Como o codigo e unico no sistema inteiro, um codigo existente pode pertencer a outra entidade; essas linhas passam a ser recusadas. A atualizacao de centro de custo tambem deixa de reescrever entidade e recursividade, o que movia o registro para a entidade de quem importava.
 - Exibe o campo `Recursivo` como coluna e na acao em massa de Materiais SINAPI, Centros de Custo e Centros de Custo Antigo, dispensando abrir registro por registro para alterar em lote.
 - Corrige atualizacoes parciais de materiais, que zeravam `Ativo` e `Recursivo` quando esses campos nao eram enviados na requisicao. Como a importacao atualiza o material sem enviar `Recursivo`, cada reimportacao desfazia o ajuste manual do usuario.
 - Torna a importacao atomica: o arquivo inteiro e validado antes de qualquer gravacao e, a partir dai, tudo e gravado em transacao unica. Qualquer falha reverte a importacao completa e nenhum registro permanece pela metade. Vale para SINAPI, Cotacao, Centros de Custo e Centros de Custo Antigo.
