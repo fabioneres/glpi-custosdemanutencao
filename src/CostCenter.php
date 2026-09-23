@@ -113,7 +113,10 @@ class CostCenter extends CommonDBTM
 
    public function prepareInputForUpdate($input)
    {
-      return $this->normalizeInput($input);
+      // O registro atual entra na normalizacao porque o rotulo e recomposto a
+      // partir de codigo e campos organizacionais. Sem ele, uma atualizacao
+      // parcial recomporia o rotulo a partir de um input incompleto.
+      return $this->normalizeInput($input, $this->fields);
    }
 
    public function post_addItem()
@@ -126,7 +129,7 @@ class CostCenter extends CommonDBTM
       AuditLog::record(self::class, (int) $this->getID(), 'costcenter_update', [], $this->fields, '', (int) ($this->fields['entities_id'] ?? 0));
    }
 
-   private function normalizeInput(array $input): array
+   private function normalizeInput(array $input, array $current = []): array
    {
       foreach ([
          'code',
@@ -164,7 +167,17 @@ class CostCenter extends CommonDBTM
          $input['locations_id'] = self::getRootLocationIdByLabel((string) $input['campus']);
       }
 
-      $input['name'] = self::computeStoredName($input);
+      // O rotulo e recomposto sobre o registro completo, nunca so sobre o que
+      // veio no input. Uma atualizacao parcial, como a acao em massa, envia
+      // apenas o campo alterado e antes disso apagava o name.
+      $computedName = self::computeStoredName($input + $current);
+      if ($computedName !== '') {
+         $input['name'] = $computedName;
+      } elseif (array_key_exists('name', $input) && trim((string) $input['name']) === '') {
+         // Nao ha como recompor e o input traz o name vazio: preserva o atual.
+         unset($input['name']);
+      }
+
       if (isset($input['is_active'])) {
          $input['is_active'] = (int) $input['is_active'];
       }
