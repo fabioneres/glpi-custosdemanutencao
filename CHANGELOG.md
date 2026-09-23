@@ -7,6 +7,7 @@
 - Efeito pratico: centros de custo com rotulo vazio nao apareciam na descricao do chamado gerada pelo FormCreator, apesar de aparecerem corretamente na aba do plugin, porque a aba recompoe o rotulo e o dropdown nativo le o campo gravado.
 - Trocar o codigo de um centro de custo sem campos organizacionais nao acumula mais o codigo antigo no rotulo. Antes, cada troca prefixava o novo codigo ao rotulo anterior.
 - Limpar pelo formulario o unico campo organizacional preenchido volta a deixar o rotulo apenas com o codigo, em vez de manter o texto antigo.
+- Preserva o rotulo descritivo de centros de custo sem campos organizacionais, como o centro padrao `GERAL`, ao salvar pelo formulario. O rotulo passa a ser recomposto conforme sua origem: derivado dos campos organizacionais quando o registro os possui, ou mantido como texto livre quando nao possui.
 - Corrige as origens do material, que eram desativadas em qualquer atualizacao parcial. A acao em massa sobre o campo `Comentarios` desativava todas as origens selecionadas.
 - A importacao de centros de custo novos e antigos passa a recusar codigo acima do tamanho da coluna, em vez de trunca-lo em silencio. A recusa ja existia na validacao, mas o codigo era cortado antes de chegar a ela.
 

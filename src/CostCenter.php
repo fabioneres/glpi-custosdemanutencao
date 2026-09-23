@@ -173,17 +173,26 @@ class CostCenter extends CommonDBTM
       $base = $input + $current;
 
       if ($current !== [] && !array_key_exists('name', $input)) {
-         $orgFields = ['section', 'division', 'department', 'academic_unit', 'campus'];
+         // O criterio e a origem do rotulo gravado, nao as chaves do input: o
+         // formulario sempre envia os campos organizacionais, mesmo vazios.
+         $currentHasOrg = false;
+         foreach (['section', 'division', 'department', 'academic_unit', 'campus'] as $field) {
+            if (trim((string) ($current[$field] ?? '')) !== '') {
+               $currentHasOrg = true;
+               break;
+            }
+         }
 
-         if (array_intersect_key($input, array_flip($orgFields)) !== []) {
-            // Formulario ou importacao: os campos organizacionais enviados sao a
-            // fonte do rotulo. O nome gravado nao serve de reserva, senao limpar
-            // o unico campo preenchido manteria o texto antigo.
+         if ($currentHasOrg) {
+            // O rotulo gravado foi derivado dos campos organizacionais, que
+            // continuam sendo a fonte. Usa-lo como reserva manteria texto
+            // antigo quando o usuario limpa esses campos.
             unset($base['name']);
          } else {
-            // Atualizacao parcial pura: o nome gravado e a reserva, mas sem o
-            // prefixo do codigo antigo. Sem isso, trocar o codigo acumula
-            // "NOVO - ANTIGO - texto" a cada alteracao.
+            // Sem campos organizacionais o rotulo gravado e texto livre e e a
+            // unica fonte do nome, como no centro padrao GERAL. Preserva, mas
+            // sem o prefixo do codigo antigo, para que trocar o codigo nao
+            // acumule "NOVO - ANTIGO - texto".
             $oldCode = trim((string) ($current['code'] ?? ''));
             $oldName = trim((string) ($current['name'] ?? ''));
             if ($oldCode !== '' && stripos($oldName, $oldCode . ' - ') === 0) {
