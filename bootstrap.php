@@ -13,7 +13,7 @@ if (!defined('GLPI_ROOT')) {
 }
 
 if (!defined('PLUGIN_MAINTENANCECOSTS_VERSION')) {
-   define('PLUGIN_MAINTENANCECOSTS_VERSION', '1.1.20');
+   define('PLUGIN_MAINTENANCECOSTS_VERSION', '1.1.21');
 }
 
 if (!defined('PLUGIN_MAINTENANCECOSTS_SCHEMA_VERSION')) {
@@ -48,4 +48,3 @@ if (!defined('PLUGIN_MAINTENANCECOSTS_AUTOLOADER')) {
       }
    });
 }
-

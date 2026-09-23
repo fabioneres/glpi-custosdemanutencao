@@ -1,5 +1,11 @@
 # Changelog
 
+## v1.1.21 - Reparo de rotulos para FormCreator
+
+- Repara, uma unica vez durante a atualizacao, os rotulos internos (`name`) dos centros de custo novos e antigos que ficaram vazios ou inconsistentes em dados historicos. O FormCreator usa essa coluna diretamente ao substituir `##answer_...##` na descricao do chamado; por isso a resposta podia aparecer corretamente na tela do formulario, mas ficar vazia no chamado.
+- A reparacao recompõe o rotulo a partir do codigo e dos campos organizacionais, sem atualizar respostas, vinculos, materiais ou a descricao de chamados existentes. Os proximos chamados voltam a receber o texto definido no alvo do FormCreator.
+- A migracao possui controle proprio e e executada uma unica vez, sem elevar a versao de esquema nem disparar a sincronizacao global e onerosa de materiais e chamados.
+
 ## v1.1.20 - Preservacao do rotulo do centro de custo
 
 - Corrige a perda do rotulo do centro de custo em atualizacao parcial. O campo `name` era recomposto usando somente os campos enviados na requisicao, entao uma atualizacao que nao enviava codigo e campos organizacionais gravava o rotulo vazio. A acao em massa do campo `Recursivo`, introduzida na 1.1.19, e uma atualizacao parcial e tornou o problema facil de disparar em lote.
@@ -273,4 +279,3 @@
 - Adiciona unidade e historico por item em Precos SINAPI.
 - Reestrutura relatorios para exibir uma visao por vez, com graficos configuraveis.
 - Adiciona relatorios por origem do material, tipo de preco e contrato.
-

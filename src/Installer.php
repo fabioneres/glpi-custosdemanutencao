@@ -41,6 +41,7 @@ class Installer
          self::ensureDefaultCostCenter();
          self::ensureDefaultSearchDisplayPreferences();
          self::syncStoredCostCenterNamesForFormcreator();
+         self::repairStoredCostCenterNamesForFormcreator121();
          if ($schemaUpgradeRequired) {
             self::syncStoredCostCenterNames();
             self::syncTicketMaterialCostCenterLabels();
@@ -503,6 +504,31 @@ class Installer
       self::syncStoredCostCenterNames();
       \Config::setConfigurationValues('plugin:maintenancecosts', [
          'formcreator_costcenter_label_sync' => '1',
+      ]);
+   }
+
+   /**
+    * Repara uma unica vez rotulos que ficaram vazios depois da sincronizacao
+    * original do FormCreator. O FormCreator le diretamente a coluna `name`
+    * para substituir ##answer_X##; a interface do plugin recompõe o rotulo e
+    * pode ocultar essa inconsistência no cadastro.
+    *
+    * Esta migracao de dados nao altera Ticket.content nem executa os
+    * sincronismos completos de materiais e chamados.
+    */
+   private static function repairStoredCostCenterNamesForFormcreator121(): void
+   {
+      $configuration = \Config::getConfigurationValues(
+         'plugin:maintenancecosts',
+         ['formcreator_costcenter_label_repair_1_1_21']
+      );
+      if (($configuration['formcreator_costcenter_label_repair_1_1_21'] ?? '') === '1') {
+         return;
+      }
+
+      self::syncStoredCostCenterNames();
+      \Config::setConfigurationValues('plugin:maintenancecosts', [
+         'formcreator_costcenter_label_repair_1_1_21' => '1',
       ]);
    }
 
