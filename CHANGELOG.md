@@ -1,6 +1,6 @@
 # Changelog
 
-## Em desenvolvimento
+## v1.1.20 - Preservacao do rotulo do centro de custo
 
 - Corrige a perda do rotulo do centro de custo em atualizacao parcial. O campo `name` era recomposto usando somente os campos enviados na requisicao, entao uma atualizacao que nao enviava codigo e campos organizacionais gravava o rotulo vazio. A acao em massa do campo `Recursivo`, introduzida na 1.1.19, e uma atualizacao parcial e tornou o problema facil de disparar em lote.
 - O rotulo passa a ser recomposto sobre o registro completo e nunca e gravado vazio. Alterar somente o codigo ou somente o departamento continua recompondo o rotulo corretamente, sem perder a outra parte.
