@@ -40,7 +40,9 @@ class MaterialOrigin extends CommonDBTM
 
    public function prepareInputForAdd($input)
    {
-      return $this->normalizeInput($input);
+      $input = $this->normalizeInput($input);
+      $input['is_active'] = isset($input['is_active']) ? (int) $input['is_active'] : 0;
+      return $input;
    }
 
    public function prepareInputForUpdate($input)
@@ -56,7 +58,11 @@ class MaterialOrigin extends CommonDBTM
       if (isset($input['comment'])) {
          $input['comment'] = trim((string) $input['comment']);
       }
-      $input['is_active'] = isset($input['is_active']) ? (int) $input['is_active'] : 0;
+      // Atualizacao parcial, como a acao em massa no Comentario, nao envia o
+      // flag e antes disso desativava a origem.
+      if (isset($input['is_active'])) {
+         $input['is_active'] = (int) $input['is_active'];
+      }
 
       return $input;
    }

@@ -578,7 +578,7 @@ class Importer
       };
 
       $data = [
-         'code'          => self::cleanImportedText($get('code'), 64),
+         'code'          => self::cleanImportedText($get('code')),
          'name'          => self::cleanImportedText($get('name'), 255),
          'campus'        => self::cleanImportedText($get('campus'), 255),
          'academic_unit' => self::cleanImportedText($get('academic_unit'), 255),
@@ -615,7 +615,7 @@ class Importer
       }
 
       $data = [
-         'code'          => self::cleanImportedText($get('code'), 64),
+         'code'          => self::cleanImportedText($get('code')),
          'name'          => '',
          'campus'        => self::cleanImportedText($get('campus'), 255),
          'academic_unit' => '',

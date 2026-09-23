@@ -170,7 +170,31 @@ class CostCenter extends CommonDBTM
       // O rotulo e recomposto sobre o registro completo, nunca so sobre o que
       // veio no input. Uma atualizacao parcial, como a acao em massa, envia
       // apenas o campo alterado e antes disso apagava o name.
-      $computedName = self::computeStoredName($input + $current);
+      $base = $input + $current;
+
+      if ($current !== [] && !array_key_exists('name', $input)) {
+         $orgFields = ['section', 'division', 'department', 'academic_unit', 'campus'];
+
+         if (array_intersect_key($input, array_flip($orgFields)) !== []) {
+            // Formulario ou importacao: os campos organizacionais enviados sao a
+            // fonte do rotulo. O nome gravado nao serve de reserva, senao limpar
+            // o unico campo preenchido manteria o texto antigo.
+            unset($base['name']);
+         } else {
+            // Atualizacao parcial pura: o nome gravado e a reserva, mas sem o
+            // prefixo do codigo antigo. Sem isso, trocar o codigo acumula
+            // "NOVO - ANTIGO - texto" a cada alteracao.
+            $oldCode = trim((string) ($current['code'] ?? ''));
+            $oldName = trim((string) ($current['name'] ?? ''));
+            if ($oldCode !== '' && stripos($oldName, $oldCode . ' - ') === 0) {
+               $base['name'] = trim(substr($oldName, strlen($oldCode . ' - ')));
+            } elseif ($oldCode !== '' && strcasecmp($oldName, $oldCode) === 0) {
+               $base['name'] = '';
+            }
+         }
+      }
+
+      $computedName = self::computeStoredName($base);
       if ($computedName !== '') {
          $input['name'] = $computedName;
       } elseif (array_key_exists('name', $input) && trim((string) $input['name']) === '') {
