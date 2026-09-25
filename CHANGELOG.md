@@ -16,6 +16,9 @@
 - Substitui o metodo removido `Html::clean()` pelo escape HTML suportado pelo
   GLPI 11 nas telas administrativas, evitando erro ao abrir Configurar e as
   demais paginas que compartilham o mesmo layout.
+- Move CSS, JavaScript e imagens para `public/`, unico diretorio de recursos
+  expostos pelo roteador do GLPI 11. Isso restaura o layout e os scripts que
+  antes eram carregados sem regras ou nao eram encontrados.
 - Remove a integracao e o caminho de autorizacao exclusivos do FormCreator,
   que pertencem somente a linha GLPI 10.
 - Mantem a criacao e atualizacao de tabelas no ciclo de instalacao/upgrade,

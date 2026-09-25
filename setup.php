@@ -70,16 +70,18 @@ function plugin_init_maintenancecosts(): void {
    $CFG_GLPI['glpiitemtypetables'][CostCenterLegacy::getTable()] = CostCenterLegacy::class;
 
    $jsRelativePath = 'js/ticketmaterial-v3.js';
-   $jsFile = __DIR__ . '/' . $jsRelativePath;
+   // No GLPI 11, recursos publicos do plugin sao servidos exclusivamente a
+   // partir de public/. A URL continua sem esse prefixo por convencao do core.
+   $jsFile = __DIR__ . '/public/' . $jsRelativePath;
    if (!is_file($jsFile)) {
       $fallbackJsRelativePath = 'js/ticketmaterial-v2.js';
-      $fallbackJsFile = __DIR__ . '/' . $fallbackJsRelativePath;
+      $fallbackJsFile = __DIR__ . '/public/' . $fallbackJsRelativePath;
       if (is_file($fallbackJsFile)) {
          $jsRelativePath = $fallbackJsRelativePath;
          $jsFile = $fallbackJsFile;
       } else {
          $jsRelativePath = 'js/ticketmaterial.js';
-         $jsFile = __DIR__ . '/' . $jsRelativePath;
+         $jsFile = __DIR__ . '/public/' . $jsRelativePath;
       }
    }
    // O GLPI aplica o versionamento dos assets do plugin ao renderizar a tag final.
