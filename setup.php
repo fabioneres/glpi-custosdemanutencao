@@ -14,7 +14,6 @@ use GlpiPlugin\Maintenancecosts\Config;
 use GlpiPlugin\Maintenancecosts\CostCenter;
 use GlpiPlugin\Maintenancecosts\CostCenterLegacy;
 use GlpiPlugin\Maintenancecosts\Exporter;
-use GlpiPlugin\Maintenancecosts\FormcreatorCostCenterSync;
 use GlpiPlugin\Maintenancecosts\ImportBatch;
 use GlpiPlugin\Maintenancecosts\Material;
 use GlpiPlugin\Maintenancecosts\MaterialOrigin;
@@ -52,7 +51,6 @@ function plugin_init_maintenancecosts(): void {
    Plugin::registerClass(PriceHistory::class);
    Plugin::registerClass(CostCenter::class);
    Plugin::registerClass(CostCenterLegacy::class);
-   Plugin::registerClass(FormcreatorCostCenterSync::class);
    Plugin::registerClass(TicketCostCenter::class, ['addtabon' => [\Ticket::class]]);
    Plugin::registerClass(TicketMaterial::class);
    Plugin::registerClass(ImportBatch::class);
@@ -66,7 +64,7 @@ function plugin_init_maintenancecosts(): void {
 
    // O itemtype legado tem nome irregular para as heuristicas do GLPI
    // (CostCenterLegacy -> costcenterlegacies). Registramos o mapeamento
-   // explicito para garantir dropdowns, Search e integrações como FormCreator.
+   // explicito para garantir dropdowns, Search e formularios nativos do GLPI.
    $CFG_GLPI['glpitablesitemtype'][CostCenterLegacy::class] = CostCenterLegacy::getTable();
    $CFG_GLPI['glpiitemtypetables'][CostCenterLegacy::getTable()] = CostCenterLegacy::class;
 
@@ -90,11 +88,6 @@ function plugin_init_maintenancecosts(): void {
    $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT_ANONYMOUS_PAGE]['maintenancecosts'][] = $jsRelativePath;
    $PLUGIN_HOOKS[Hooks::ADD_CSS]['maintenancecosts'][] = 'css/maintenancecosts.css';
    $PLUGIN_HOOKS[Hooks::ADD_CSS_ANONYMOUS_PAGE]['maintenancecosts'][] = 'css/maintenancecosts.css';
-   $PLUGIN_HOOKS['formcreator_get_glpi_object_types']['maintenancecosts'] = 'plugin_maintenancecosts_formcreator_get_glpi_object_types';
-   $PLUGIN_HOOKS['item_add']['maintenancecosts']['Item_Ticket'] = [
-      FormcreatorCostCenterSync::class,
-      'itemAdded',
-   ];
 
    if (Session::getLoginUserID()) {
       Profile::initProfile();
@@ -137,6 +130,9 @@ function plugin_version_maintenancecosts(): array {
          'glpi' => [
             'min' => PLUGIN_MAINTENANCECOSTS_MIN_GLPI_VERSION,
             'max' => PLUGIN_MAINTENANCECOSTS_MAX_GLPI_VERSION,
+         ],
+         'php' => [
+            'min' => '8.2',
          ],
       ],
    ];

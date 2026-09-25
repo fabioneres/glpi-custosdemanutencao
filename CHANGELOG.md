@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.1.21-glpi11.0] - Em validacao
+
+- Cria a variante da base funcional 1.1.21 para GLPI 11.0.7 a 11.0.99, com
+  requisito explicito de PHP 8.2 ou superior.
+- Mantem os centros de custo como dropdowns nativos para uso nas perguntas de
+  lista dos Formularios do GLPI 11.
+- Remove a integracao e o caminho de autorizacao exclusivos do FormCreator,
+  que pertencem somente a linha GLPI 10.
+- Mantem a criacao e atualizacao de tabelas no ciclo de instalacao/upgrade,
+  sem DDL em hooks de requisicao.
+
 ## v1.1.21 - Reparo de rotulos para FormCreator
 
 - Repara, uma unica vez durante a atualizacao, os rotulos internos (`name`) dos centros de custo novos e antigos que ficaram vazios ou inconsistentes em dados historicos. O FormCreator usa essa coluna diretamente ao substituir `##answer_...##` na descricao do chamado; por isso a resposta podia aparecer corretamente na tela do formulario, mas ficar vazia no chamado.
