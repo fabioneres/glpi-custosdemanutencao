@@ -15,7 +15,7 @@ Html::header(MaterialOrigin::getTypeName(Session::getPluralNumber()), $_SERVER['
 Config::renderPluginLayoutStart('origins');
 
 echo "<div class='center mb-3'>";
-echo "<a class='btn btn-primary' href='" . Html::clean(MaterialOrigin::getFormURL()) . "'>" . __('Adicionar', 'maintenancecosts') . "</a>";
+echo "<a class='btn btn-primary' href='" . \htmlescape(MaterialOrigin::getFormURL()) . "'>" . __('Adicionar', 'maintenancecosts') . "</a>";
 echo "</div>";
 
 Search::show(MaterialOrigin::class);

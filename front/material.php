@@ -16,10 +16,10 @@ Config::renderPluginLayoutStart('materials');
 
 echo "<div class='center mb-3'>";
 if (Config::canManageMaterials()) {
-   echo "<a class='btn btn-primary' href='" . Html::clean(Material::getFormURL()) . "'>" . __('Adicionar', 'maintenancecosts') . "</a> ";
+   echo "<a class='btn btn-primary' href='" . \htmlescape(Material::getFormURL()) . "'>" . __('Adicionar', 'maintenancecosts') . "</a> ";
 }
-echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/export.php?type=materials')) . "'>" . __('Exportar CSV', 'maintenancecosts') . "</a> ";
-echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/export.php?type=materials&format=pdf')) . "'>" . __('Exportar PDF', 'maintenancecosts') . "</a>";
+echo "<a class='btn btn-secondary' href='" . \htmlescape(Config::pluginUrl('/front/export.php?type=materials')) . "'>" . __('Exportar CSV', 'maintenancecosts') . "</a> ";
+echo "<a class='btn btn-secondary' href='" . \htmlescape(Config::pluginUrl('/front/export.php?type=materials&format=pdf')) . "'>" . __('Exportar PDF', 'maintenancecosts') . "</a>";
 echo "</div>";
 
 // Keep the SINAPI restriction internal to this dedicated view. The user can

@@ -61,7 +61,7 @@ class ConfigEntity extends CommonDBTM
       }
 
       echo "<div class='spaced'>";
-      echo "<form method='post' action='" . Html::clean(Config::pluginUrl('/front/entityconfig.form.php')) . "' data-track-changes='true'>";
+      echo "<form method='post' action='" . \htmlescape(Config::pluginUrl('/front/entityconfig.form.php')) . "' data-track-changes='true'>";
       echo Html::hidden('_glpi_csrf_token', ['value' => Session::getNewCSRFToken()]);
       echo Html::hidden('entities_id', ['value' => $entities_id]);
 
@@ -89,7 +89,7 @@ class ConfigEntity extends CommonDBTM
 
       if (!empty($rule['inherited']) && $inherited_name !== '') {
          echo "<div class='plugin-maintenancecosts-help mt-3'><strong>" . __('Herança ativa:', 'maintenancecosts') . "</strong> "
-            . Html::clean(sprintf(__('esta entidade já está coberta por uma regra recursiva definida em %s.', 'maintenancecosts'), $inherited_name))
+            . \htmlescape(sprintf(__('esta entidade já está coberta por uma regra recursiva definida em %s.', 'maintenancecosts'), $inherited_name))
             . "</div>";
       }
 

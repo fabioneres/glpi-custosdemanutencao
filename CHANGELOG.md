@@ -13,6 +13,9 @@
   invalidas, ambiguas ou fora da entidade nao alteram o ticket.
 - Mantem a descricao do chamado sob controle exclusivo do destino do
   formulario: a integracao grava apenas o vinculo estruturado do plugin.
+- Substitui o metodo removido `Html::clean()` pelo escape HTML suportado pelo
+  GLPI 11 nas telas administrativas, evitando erro ao abrir Configurar e as
+  demais paginas que compartilham o mesmo layout.
 - Remove a integracao e o caminho de autorizacao exclusivos do FormCreator,
   que pertencem somente a linha GLPI 10.
 - Mantem a criacao e atualizacao de tabelas no ciclo de instalacao/upgrade,

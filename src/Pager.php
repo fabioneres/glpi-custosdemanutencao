@@ -38,7 +38,7 @@ class Pager
       $to = min($total, $page * $perPage);
 
       echo "<div class='plugin-maintenancecosts-pager d-flex justify-content-between align-items-center flex-wrap gap-2 mt-2 mb-2'>";
-      echo "<div>" . Html::clean(sprintf(__('Exibindo %1$s a %2$s de %3$s registros', 'maintenancecosts'), (int) $from, (int) $to, (int) $total)) . "</div>";
+      echo "<div>" . \htmlescape(sprintf(__('Exibindo %1$s a %2$s de %3$s registros', 'maintenancecosts'), (int) $from, (int) $to, (int) $total)) . "</div>";
       echo "<div class='d-flex align-items-center gap-2 flex-wrap'>";
       echo "<form method='get' class='d-flex align-items-center gap-2'>";
       foreach ($params as $key => $value) {
@@ -53,7 +53,7 @@ class Pager
          echo "<option value='" . (int) $option . "' " . ($option === $perPage ? 'selected' : '') . ">" . (int) $option . "</option>";
       }
       echo "</select>";
-      echo "<span>" . Html::clean(__('linhas / página', 'maintenancecosts')) . "</span>";
+      echo "<span>" . \htmlescape(__('linhas / página', 'maintenancecosts')) . "</span>";
       echo "</form>";
 
       echo "<div class='btn-group'>";
@@ -67,12 +67,12 @@ class Pager
    private static function link(bool $enabled, string $label, int $page, int $perPage, array $params): void
    {
       if (!$enabled) {
-         echo "<span class='btn btn-outline-secondary disabled'>" . Html::clean($label) . "</span>";
+         echo "<span class='btn btn-outline-secondary disabled'>" . \htmlescape($label) . "</span>";
          return;
       }
 
       $params['page'] = $page;
       $params['per_page'] = $perPage;
-      echo "<a class='btn btn-outline-secondary' href='?" . Html::clean(http_build_query($params)) . "'>" . Html::clean($label) . "</a>";
+      echo "<a class='btn btn-outline-secondary' href='?" . \htmlescape(http_build_query($params)) . "'>" . \htmlescape($label) . "</a>";
    }
 }

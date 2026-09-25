@@ -17,7 +17,7 @@ Html::header(ImportBatch::getTypeName(Session::getPluralNumber()), $_SERVER['PHP
 Config::renderPluginLayoutStart('prices');
 
 echo "<div class='center mb-3'>";
-echo "<a class='btn btn-primary' href='" . Html::clean(ImportBatch::getFormURL()) . "'>" . __('Importar CSV SINAPI', 'maintenancecosts') . "</a>";
+echo "<a class='btn btn-primary' href='" . \htmlescape(ImportBatch::getFormURL()) . "'>" . __('Importar CSV SINAPI', 'maintenancecosts') . "</a>";
 echo "</div>";
 
 $iterator = $DB->request([
@@ -31,15 +31,15 @@ echo "<thead><tr class='tab_bg_2'><th data-sort='text'>" . __('Arquivo', 'mainte
 
 foreach ($iterator as $row) {
    echo "<tr class='tab_bg_1'>";
-   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['filename']) . "</td>";
-   echo "<td class='center'>" . Html::clean($row['competence']) . "</td>";
-   echo "<td class='center'>" . Html::clean($row['status']) . "</td>";
+   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . \htmlescape($row['filename']) . "</td>";
+   echo "<td class='center'>" . \htmlescape($row['competence']) . "</td>";
+   echo "<td class='center'>" . \htmlescape($row['status']) . "</td>";
    echo "<td data-value='" . (int) $row['total_rows'] . "'>" . (int) $row['total_rows'] . "</td>";
    echo "<td data-value='" . (int) $row['imported_rows'] . "'>" . (int) $row['imported_rows'] . "</td>";
    echo "<td data-value='" . (int) $row['error_rows'] . "'>" . (int) $row['error_rows'] . "</td>";
    echo "<td>" . getUserName((int) $row['users_id']) . "</td>";
-   echo "<td class='center'>" . Html::clean($row['date_creation'] ?? '') . "</td>";
-   echo "<td><a class='btn btn-sm btn-secondary' href='" . Html::clean(ImportBatch::getFormURL() . '?id=' . (int) $row['id']) . "'>" . __('Visualizar', 'maintenancecosts') . "</a></td>";
+   echo "<td class='center'>" . \htmlescape($row['date_creation'] ?? '') . "</td>";
+   echo "<td><a class='btn btn-sm btn-secondary' href='" . \htmlescape(ImportBatch::getFormURL() . '?id=' . (int) $row['id']) . "'>" . __('Visualizar', 'maintenancecosts') . "</a></td>";
    echo "</tr>";
 }
 

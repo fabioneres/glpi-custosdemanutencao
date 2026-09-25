@@ -22,7 +22,7 @@ $settings = Config::getSettings();
 Html::header(Config::getTypeName(), $_SERVER['PHP_SELF'], 'plugins', Menu::class);
 Config::renderPluginLayoutStart('config');
 
-echo "<form method='post' action='" . Html::clean($_SERVER['PHP_SELF']) . "'>";
+echo "<form method='post' action='" . \htmlescape($_SERVER['PHP_SELF']) . "'>";
 echo Html::hidden('_glpi_csrf_token', ['value' => Session::getNewCSRFToken()]);
 
 echo "<div class='plugin-maintenancecosts-panel'>";
@@ -53,7 +53,7 @@ foreach ([
    'ticket_date'      => __('Conforme data do chamado', 'maintenancecosts'),
    'consumption_date' => __('Conforme data do consumo', 'maintenancecosts'),
 ] as $value => $label) {
-   echo "<option value='" . Html::clean($value) . "' " . ($settings['default_competence_mode'] === $value ? 'selected' : '') . ">" . Html::clean($label) . "</option>";
+   echo "<option value='" . \htmlescape($value) . "' " . ($settings['default_competence_mode'] === $value ? 'selected' : '') . ">" . \htmlescape($label) . "</option>";
 }
 echo "</select>";
 echo "<div class='plugin-maintenancecosts-help'>" . __('Define qual competência será sugerida ao selecionar um material.', 'maintenancecosts') . "</div>";
@@ -62,7 +62,7 @@ echo "</div>";
 echo "</div>";
 
 echo "<div class='plugin-maintenancecosts-section-title'>" . __('Categorias ITIL permitidas', 'maintenancecosts') . "</div>";
-echo "<input type='text' name='allowed_itilcategories' value='" . Html::cleanInputText($settings['allowed_itilcategories']) . "' class='form-control' placeholder='" . Html::clean(__('IDs separados por vírgula; vazio permite todas', 'maintenancecosts')) . "'>";
+echo "<input type='text' name='allowed_itilcategories' value='" . Html::cleanInputText($settings['allowed_itilcategories']) . "' class='form-control' placeholder='" . \htmlescape(__('IDs separados por vírgula; vazio permite todas', 'maintenancecosts')) . "'>";
 echo "<div class='plugin-maintenancecosts-help'>" . __('Use este campo somente quando o consumo de materiais deve ficar restrito a categorias específicas de chamados.', 'maintenancecosts') . "</div>";
 
 echo "<div class='mt-3'>";
@@ -81,8 +81,8 @@ foreach ([
    ['ti ti-report-analytics', __('Acompanhar relatórios', 'maintenancecosts'), __('Escolha uma visão de relatório por vez para analisar custo por contrato, origem, material ou centro de custo.', 'maintenancecosts')],
 ] as $item) {
    echo "<div class='plugin-maintenancecosts-option'>";
-   echo "<div class='plugin-maintenancecosts-option-title'><i class='" . Html::clean($item[0]) . "'></i> " . Html::clean($item[1]) . "</div>";
-   echo "<div class='plugin-maintenancecosts-help'>" . Html::clean($item[2]) . "</div>";
+   echo "<div class='plugin-maintenancecosts-option-title'><i class='" . \htmlescape($item[0]) . "'></i> " . \htmlescape($item[1]) . "</div>";
+   echo "<div class='plugin-maintenancecosts-help'>" . \htmlescape($item[2]) . "</div>";
    echo "</div>";
 }
 echo "</div></div></div>";

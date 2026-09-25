@@ -22,7 +22,7 @@ Html::header(__('Histórico de preços', 'maintenancecosts'), $_SERVER['PHP_SELF
 Config::renderPluginLayoutStart($isQuote ? 'quotes' : 'prices');
 
 echo "<div class='spaced'>";
-echo "<form method='get' action='" . Html::clean($_SERVER['PHP_SELF']) . "'>";
+echo "<form method='get' action='" . \htmlescape($_SERVER['PHP_SELF']) . "'>";
 echo Html::hidden('price_type', ['value' => $priceType]);
 echo "<table class='tab_cadre_fixe'>";
 echo "<tr class='tab_bg_2'><th colspan='2'>" . __('Histórico de preços', 'maintenancecosts') . "</th></tr>";
@@ -36,7 +36,7 @@ foreach ($DB->request(['SELECT' => ['id', 'code', 'name', 'unit'], 'FROM' => Mat
    if (trim((string) ($materialRow['unit'] ?? '')) !== '') {
       $label .= ' (' . $materialRow['unit'] . ')';
    }
-   echo "<option value='" . (int) $materialRow['id'] . "' " . ((int) $materialRow['id'] === $materials_id ? 'selected' : '') . ">" . Html::clean($label) . "</option>";
+   echo "<option value='" . (int) $materialRow['id'] . "' " . ((int) $materialRow['id'] === $materials_id ? 'selected' : '') . ">" . \htmlescape($label) . "</option>";
 }
 echo "</select> ";
 echo Html::submit(__('Filtrar', 'maintenancecosts'), ['class' => 'btn btn-primary']);
@@ -50,8 +50,8 @@ if ($materials_id > 0) {
 }
 
 echo "<div class='center mb-3'>";
-echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/export.php?type=prices&materials_id=' . $materials_id)) . "'>" . __('Exportar CSV', 'maintenancecosts') . "</a> ";
-echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/export.php?type=prices&format=pdf&materials_id=' . $materials_id)) . "'>" . __('Exportar PDF', 'maintenancecosts') . "</a>";
+echo "<a class='btn btn-secondary' href='" . \htmlescape(Config::pluginUrl('/front/export.php?type=prices&materials_id=' . $materials_id)) . "'>" . __('Exportar CSV', 'maintenancecosts') . "</a> ";
+echo "<a class='btn btn-secondary' href='" . \htmlescape(Config::pluginUrl('/front/export.php?type=prices&format=pdf&materials_id=' . $materials_id)) . "'>" . __('Exportar PDF', 'maintenancecosts') . "</a>";
 echo "</div>";
 
 echo "<div class='spaced'><table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
@@ -80,15 +80,15 @@ foreach ($DB->request($criteria) as $row) {
    $material = new Material();
    $materialName = $material->getFromDB((int) $row['plugin_maintenancecosts_materials_id']) ? $material->getName() : '';
    echo "<tr class='tab_bg_1'>";
-   echo "<td class='text-start'>" . Html::clean($materialName) . "</td>";
-   echo "<td class='center'>" . Html::clean($row['competence']) . "</td>";
-   echo "<td class='center'>" . Html::clean(Config::getPriceTypeLabel((string) $row['price_type'])) . "</td>";
-   echo "<td class='center' data-value='" . Html::clean((string) (float) $row['old_unit_price']) . "'>" . Config::formatCurrency((float) $row['old_unit_price']) . "</td>";
-   echo "<td class='center' data-value='" . Html::clean((string) (float) $row['new_unit_price']) . "'>" . Config::formatCurrency((float) $row['new_unit_price']) . "</td>";
-   echo "<td class='center'>" . Html::clean($row['source']) . "</td>";
+   echo "<td class='text-start'>" . \htmlescape($materialName) . "</td>";
+   echo "<td class='center'>" . \htmlescape($row['competence']) . "</td>";
+   echo "<td class='center'>" . \htmlescape(Config::getPriceTypeLabel((string) $row['price_type'])) . "</td>";
+   echo "<td class='center' data-value='" . \htmlescape((string) (float) $row['old_unit_price']) . "'>" . Config::formatCurrency((float) $row['old_unit_price']) . "</td>";
+   echo "<td class='center' data-value='" . \htmlescape((string) (float) $row['new_unit_price']) . "'>" . Config::formatCurrency((float) $row['new_unit_price']) . "</td>";
+   echo "<td class='center'>" . \htmlescape($row['source']) . "</td>";
    echo "<td class='center'>" . getUserName((int) $row['users_id']) . "</td>";
-   echo "<td class='text-start'>" . Html::clean($row['justification'] ?? '') . "</td>";
-   echo "<td class='center'>" . Html::clean($row['date_creation'] ?? '') . "</td>";
+   echo "<td class='text-start'>" . \htmlescape($row['justification'] ?? '') . "</td>";
+   echo "<td class='center'>" . \htmlescape($row['date_creation'] ?? '') . "</td>";
    echo "</tr>";
 }
 

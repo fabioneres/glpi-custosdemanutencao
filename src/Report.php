@@ -83,7 +83,7 @@ class Report extends CommonDBTM
    private static function showFilters(array $filters): void
    {
       echo "<div class='spaced'>";
-      echo "<form method='get' action='" . Html::clean($_SERVER['PHP_SELF']) . "'>";
+      echo "<form method='get' action='" . \htmlescape($_SERVER['PHP_SELF']) . "'>";
       echo "<table class='tab_cadre_fixe'>";
       echo "<tr class='tab_bg_2'><th colspan='4'>" . __('Filtros', 'maintenancecosts') . "</th></tr>";
       echo "<tr class='tab_bg_1'><td>" . __('Data inicial', 'maintenancecosts') . "</td><td><input type='date' name='date_start' value='" . Html::cleanInputText($filters['date_start'] ?? '') . "' class='form-control'></td>";
@@ -213,7 +213,7 @@ class Report extends CommonDBTM
    {
       echo "<select name='" . Html::cleanInputText($name) . "' class='form-select plugin-maintenancecosts-dropdown' style='max-width:100%; min-width:260px;'>";
       foreach ($options as $key => $label) {
-         echo "<option value='" . Html::cleanInputText((string) $key) . "' " . ((string) $key === $value ? 'selected' : '') . ">" . Html::clean($label) . "</option>";
+         echo "<option value='" . Html::cleanInputText((string) $key) . "' " . ((string) $key === $value ? 'selected' : '') . ">" . \htmlescape($label) . "</option>";
       }
       echo "</select>";
    }
@@ -221,9 +221,9 @@ class Report extends CommonDBTM
    private static function showLocalSelect(string $name, array $options, int $value, string $emptyLabel = '-----'): void
    {
       echo "<select name='" . Html::cleanInputText($name) . "' class='form-select plugin-maintenancecosts-dropdown' style='max-width:100%; min-width:260px;'>";
-      echo "<option value='0'>" . Html::clean($emptyLabel) . "</option>";
+      echo "<option value='0'>" . \htmlescape($emptyLabel) . "</option>";
       foreach ($options as $id => $label) {
-         echo "<option value='" . (int) $id . "' " . ((int) $id === $value ? 'selected' : '') . ">" . Html::clean($label) . "</option>";
+         echo "<option value='" . (int) $id . "' " . ((int) $id === $value ? 'selected' : '') . ">" . \htmlescape($label) . "</option>";
       }
       echo "</select>";
    }
@@ -231,11 +231,11 @@ class Report extends CommonDBTM
    private static function showAsyncSelect(string $name, string $type, int $value, string $emptyLabel = '-----'): void
    {
       echo "<select name='" . Html::cleanInputText($name) . "' class='form-select plugin-maintenancecosts-dropdown' data-dropdown-type='" . Html::cleanInputText($type) . "' style='max-width:100%; min-width:260px;'>";
-      echo "<option value='0'>" . Html::clean($emptyLabel) . "</option>";
+      echo "<option value='0'>" . \htmlescape($emptyLabel) . "</option>";
       if ($value > 0) {
          $label = self::getAsyncSelectLabel($type, $value);
          if ($label !== '') {
-            echo "<option value='" . (int) $value . "' selected>" . Html::clean($label) . "</option>";
+            echo "<option value='" . (int) $value . "' selected>" . \htmlescape($label) . "</option>";
          }
       }
       echo "</select>";
@@ -516,7 +516,7 @@ class Report extends CommonDBTM
          \Ticket::getTypeName(2) => (string) count($tickets),
          \Contract::getTypeName(2) => (string) count($contracts),
       ] as $label => $value) {
-         echo "<div class='plugin-maintenancecosts-summary-card'><span>" . Html::clean($label) . "</span><strong>" . Html::clean($value) . "</strong></div>";
+         echo "<div class='plugin-maintenancecosts-summary-card'><span>" . \htmlescape($label) . "</span><strong>" . \htmlescape($value) . "</strong></div>";
       }
       echo "</div>";
    }
@@ -525,10 +525,10 @@ class Report extends CommonDBTM
    {
       $grouped = self::limitRows(self::groupRows($rows, $field), $limit);
       echo "<div class='spaced'><table class='tab_cadre_fixe plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
-      echo "<thead><tr class='tab_bg_2'><th colspan='4'>" . Html::clean($title) . "</th></tr>";
+      echo "<thead><tr class='tab_bg_2'><th colspan='4'>" . \htmlescape($title) . "</th></tr>";
       echo "<tr class='tab_bg_2'><th data-sort='text'>" . __('Nome', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Itens', 'maintenancecosts') . "</th><th data-sort='number'>" . \Ticket::getTypeName(2) . "</th><th data-sort='currency'>" . __('Total') . "</th></tr></thead><tbody>";
       foreach ($grouped as $row) {
-         echo "<tr class='tab_bg_1'><td class='text-start'>" . Html::clean($row['name']) . "</td><td data-value='" . (int) $row['items'] . "'>" . (int) $row['items'] . "</td><td data-value='" . (int) $row['tickets_count'] . "'>" . (int) $row['tickets_count'] . "</td><td data-value='" . Html::clean((string) (float) $row['total']) . "'>" . Config::formatCurrency((float) $row['total']) . "</td></tr>";
+         echo "<tr class='tab_bg_1'><td class='text-start'>" . \htmlescape($row['name']) . "</td><td data-value='" . (int) $row['items'] . "'>" . (int) $row['items'] . "</td><td data-value='" . (int) $row['tickets_count'] . "'>" . (int) $row['tickets_count'] . "</td><td data-value='" . \htmlescape((string) (float) $row['total']) . "'>" . Config::formatCurrency((float) $row['total']) . "</td></tr>";
       }
       echo "</tbody></table></div>";
    }
@@ -550,7 +550,7 @@ class Report extends CommonDBTM
       echo "<thead><tr class='tab_bg_2'><th colspan='4'>" . __('Custo por chamado', 'maintenancecosts') . "</th></tr>";
       echo "<tr class='tab_bg_2'><th data-sort='number'>" . \Ticket::getTypeName(1) . "</th><th data-sort='text'>" . __('Título', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Itens', 'maintenancecosts') . "</th><th data-sort='currency'>" . __('Total') . "</th></tr></thead><tbody>";
       foreach ($grouped as $row) {
-         echo "<tr class='tab_bg_1'><td data-value='" . (int) $row['ticket'] . "'>" . (int) $row['ticket'] . "</td><td class='text-start'>" . Html::clean($row['name']) . "</td><td data-value='" . (int) $row['items'] . "'>" . (int) $row['items'] . "</td><td data-value='" . Html::clean((string) (float) $row['total']) . "'>" . Config::formatCurrency((float) $row['total']) . "</td></tr>";
+         echo "<tr class='tab_bg_1'><td data-value='" . (int) $row['ticket'] . "'>" . (int) $row['ticket'] . "</td><td class='text-start'>" . \htmlescape($row['name']) . "</td><td data-value='" . (int) $row['items'] . "'>" . (int) $row['items'] . "</td><td data-value='" . \htmlescape((string) (float) $row['total']) . "'>" . Config::formatCurrency((float) $row['total']) . "</td></tr>";
       }
       echo "</tbody></table></div>";
    }
@@ -563,7 +563,7 @@ class Report extends CommonDBTM
       echo "<tr class='tab_bg_2'><th data-sort='text'>" . __('Código', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Material', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Quantidade', 'maintenancecosts') . "</th><th data-sort='number'>" . \Ticket::getTypeName(2) . "</th><th data-sort='currency'>" . __('Total') . "</th></tr></thead><tbody>";
       foreach ($grouped as $row) {
          $sortCode = preg_match('/^\d+$/', (string) $row['code']) ? str_pad((string) $row['code'], 8, '0', STR_PAD_LEFT) : (string) $row['code'];
-         echo "<tr class='tab_bg_1'><td data-value='" . Html::clean($sortCode) . "'>" . Html::clean($row['code']) . "</td><td class='text-start'>" . Html::clean($row['name']) . "</td><td data-value='" . Html::clean((string) (float) $row['quantity']) . "'>" . TicketMaterial::formatQuantity((float) $row['quantity']) . "</td><td data-value='" . count($row['tickets']) . "'>" . count($row['tickets']) . "</td><td data-value='" . Html::clean((string) (float) $row['total']) . "'>" . Config::formatCurrency((float) $row['total']) . "</td></tr>";
+         echo "<tr class='tab_bg_1'><td data-value='" . \htmlescape($sortCode) . "'>" . \htmlescape($row['code']) . "</td><td class='text-start'>" . \htmlescape($row['name']) . "</td><td data-value='" . \htmlescape((string) (float) $row['quantity']) . "'>" . TicketMaterial::formatQuantity((float) $row['quantity']) . "</td><td data-value='" . count($row['tickets']) . "'>" . count($row['tickets']) . "</td><td data-value='" . \htmlescape((string) (float) $row['total']) . "'>" . Config::formatCurrency((float) $row['total']) . "</td></tr>";
       }
       echo "</tbody></table></div>";
    }
@@ -614,7 +614,7 @@ class Report extends CommonDBTM
       echo "<thead><tr class='tab_bg_2'><th colspan='4'>" . __('Evolução mensal de custos', 'maintenancecosts') . "</th></tr>";
       echo "<tr class='tab_bg_2'><th data-sort='text'>" . __('Mês', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Itens', 'maintenancecosts') . "</th><th data-sort='number'>" . \Ticket::getTypeName(2) . "</th><th data-sort='currency'>" . __('Total') . "</th></tr></thead><tbody>";
       foreach ($grouped as $row) {
-         echo "<tr class='tab_bg_1'><td>" . Html::clean($row['month']) . "</td><td data-value='" . (int) $row['items'] . "'>" . (int) $row['items'] . "</td><td data-value='" . count($row['tickets']) . "'>" . count($row['tickets']) . "</td><td data-value='" . Html::clean((string) (float) $row['total']) . "'>" . Config::formatCurrency((float) $row['total']) . "</td></tr>";
+         echo "<tr class='tab_bg_1'><td>" . \htmlescape($row['month']) . "</td><td data-value='" . (int) $row['items'] . "'>" . (int) $row['items'] . "</td><td data-value='" . count($row['tickets']) . "'>" . count($row['tickets']) . "</td><td data-value='" . \htmlescape((string) (float) $row['total']) . "'>" . Config::formatCurrency((float) $row['total']) . "</td></tr>";
       }
       echo "</tbody></table></div>";
    }
@@ -661,7 +661,7 @@ class Report extends CommonDBTM
       }
 
       echo "<div class='spaced'><div class='card' style='padding:14px;'>";
-      echo "<h3 style='margin:0 0 12px 0; text-align:center;'>" . Html::clean($title) . "</h3>";
+      echo "<h3 style='margin:0 0 12px 0; text-align:center;'>" . \htmlescape($title) . "</h3>";
       if (!count($rows)) {
          echo "<div class='text-muted center'>" . __('No item found') . "</div>";
       } elseif ($chartType === 'vertical') {
@@ -678,7 +678,7 @@ class Report extends CommonDBTM
    {
       foreach ($rows as $row) {
          $percent = $max > 0 ? max(2, (int) round(((float) $row['total'] / $max) * 100)) : 0;
-         echo "<div class='plugin-maintenancecosts-bar-row'><div>" . Html::clean($row['name']) . "</div><div><span style='width:" . $percent . "%'></span></div><strong>" . Config::formatCurrency((float) $row['total']) . "</strong></div>";
+         echo "<div class='plugin-maintenancecosts-bar-row'><div>" . \htmlescape($row['name']) . "</div><div><span style='width:" . $percent . "%'></span></div><strong>" . Config::formatCurrency((float) $row['total']) . "</strong></div>";
       }
    }
 
@@ -687,7 +687,7 @@ class Report extends CommonDBTM
       echo "<div class='plugin-maintenancecosts-vertical-chart'>";
       foreach ($rows as $row) {
          $height = $max > 0 ? max(12, (int) round(((float) $row['total'] / $max) * 180)) : 12;
-         echo "<div><strong>" . Config::formatCurrency((float) $row['total']) . "</strong><span style='height:" . $height . "px'></span><small>" . Html::clean($row['name']) . "</small></div>";
+         echo "<div><strong>" . Config::formatCurrency((float) $row['total']) . "</strong><span style='height:" . $height . "px'></span><small>" . \htmlescape($row['name']) . "</small></div>";
       }
       echo "</div>";
    }
@@ -704,11 +704,11 @@ class Report extends CommonDBTM
          $segments[] = $colors[$index % count($colors)] . ' ' . round($start, 4) . '% ' . round($position, 4) . '%';
       }
 
-      echo "<div class='plugin-maintenancecosts-pie-wrap'><div class='plugin-maintenancecosts-pie' style='background:conic-gradient(" . Html::clean(implode(', ', $segments)) . ");'></div><div>";
+      echo "<div class='plugin-maintenancecosts-pie-wrap'><div class='plugin-maintenancecosts-pie' style='background:conic-gradient(" . \htmlescape(implode(', ', $segments)) . ");'></div><div>";
       foreach (array_values($rows) as $index => $row) {
          $color = $colors[$index % count($colors)];
          $share = $total > 0 ? ((float) $row['total'] / $total) * 100 : 0;
-         echo "<div class='plugin-maintenancecosts-pie-item'><span style='background:" . Html::clean($color) . "'></span><div>" . Html::clean($row['name']) . "</div><strong>" . Config::formatCurrency((float) $row['total']) . "</strong><em>" . Html::formatNumber($share, true, 1) . "%</em></div>";
+         echo "<div class='plugin-maintenancecosts-pie-item'><span style='background:" . \htmlescape($color) . "'></span><div>" . \htmlescape($row['name']) . "</div><strong>" . Config::formatCurrency((float) $row['total']) . "</strong><em>" . Html::formatNumber($share, true, 1) . "%</em></div>";
       }
       echo "</div></div>";
    }

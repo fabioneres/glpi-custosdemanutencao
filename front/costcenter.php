@@ -36,17 +36,17 @@ Config::renderPluginLayoutStart('costcenters');
 
 echo "<div class='center mb-3'>";
 if (Config::canManageCostCenters()) {
-   echo "<a class='btn btn-primary' href='" . Html::clean(CostCenter::getFormURL()) . "'>" . __('Adicionar', 'maintenancecosts') . "</a> ";
+   echo "<a class='btn btn-primary' href='" . \htmlescape(CostCenter::getFormURL()) . "'>" . __('Adicionar', 'maintenancecosts') . "</a> ";
 }
-echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/export.php?type=costcenters')) . "'>" . __('Exportar CSV', 'maintenancecosts') . "</a> ";
-echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/export.php?type=costcenters&format=pdf')) . "'>" . __('Exportar PDF', 'maintenancecosts') . "</a>";
+echo "<a class='btn btn-secondary' href='" . \htmlescape(Config::pluginUrl('/front/export.php?type=costcenters')) . "'>" . __('Exportar CSV', 'maintenancecosts') . "</a> ";
+echo "<a class='btn btn-secondary' href='" . \htmlescape(Config::pluginUrl('/front/export.php?type=costcenters&format=pdf')) . "'>" . __('Exportar PDF', 'maintenancecosts') . "</a>";
 echo "</div>";
 
 if (Config::canManageCostCenters()) {
    echo "<div class='plugin-maintenancecosts-panel mb-3'>";
    echo "<div class='plugin-maintenancecosts-panel-header'><i class='ti ti-file-import'></i> " . __('Importar centros de custo', 'maintenancecosts') . "</div>";
    echo "<div class='plugin-maintenancecosts-panel-body'>";
-   echo "<form method='post' enctype='multipart/form-data' action='" . Html::clean($_SERVER['PHP_SELF']) . "'>";
+   echo "<form method='post' enctype='multipart/form-data' action='" . \htmlescape($_SERVER['PHP_SELF']) . "'>";
    echo Html::hidden('_glpi_csrf_token', ['value' => Session::getNewCSRFToken()]);
    echo "<div class='d-flex gap-2 align-items-center flex-wrap'>";
    echo "<input type='file' name='costcenter_file' accept='.csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' required>";
@@ -62,8 +62,8 @@ if (Config::canManageCostCenters()) {
 if (is_array($summary)) {
    if (!empty($summary['aborted'])) {
       echo "<div class='alert alert-danger'>";
-      echo "<strong>" . Html::clean(__('Importação não concluída', 'maintenancecosts')) . "</strong><br>";
-      echo Html::clean(__('Nenhum registro foi gravado. A importação só é aplicada quando o arquivo inteiro está correto. Corrija os problemas indicados abaixo e envie o arquivo novamente.', 'maintenancecosts'));
+      echo "<strong>" . \htmlescape(__('Importação não concluída', 'maintenancecosts')) . "</strong><br>";
+      echo \htmlescape(__('Nenhum registro foi gravado. A importação só é aplicada quando o arquivo inteiro está correto. Corrija os problemas indicados abaixo e envie o arquivo novamente.', 'maintenancecosts'));
       echo "</div>";
    }
 
@@ -71,7 +71,7 @@ if (is_array($summary)) {
       ? __('Importação revertida', 'maintenancecosts')
       : ($summary['dry_run'] ? __('Prévia da importação', 'maintenancecosts') : __('Resultado da importação', 'maintenancecosts'));
    echo "<div class='plugin-maintenancecosts-panel mb-3'>";
-   echo "<div class='plugin-maintenancecosts-panel-header'>" . Html::clean($resultLabel) . "</div>";
+   echo "<div class='plugin-maintenancecosts-panel-header'>" . \htmlescape($resultLabel) . "</div>";
    echo "<div class='plugin-maintenancecosts-panel-body'>";
    echo "<table class='tab_cadre_fixe'>";
    foreach ([
@@ -82,10 +82,10 @@ if (is_array($summary)) {
       'new_costcenters' => __('Novos centros de custo', 'maintenancecosts'),
       'updated_costcenters' => __('Centros de custo atualizados', 'maintenancecosts'),
    ] as $key => $label) {
-      echo "<tr class='tab_bg_1'><td>" . Html::clean($label) . "</td><td>" . Html::clean((string) ($summary[$key] ?? '')) . "</td></tr>";
+      echo "<tr class='tab_bg_1'><td>" . \htmlescape($label) . "</td><td>" . \htmlescape((string) ($summary[$key] ?? '')) . "</td></tr>";
    }
    if (count($summary['errors'] ?? [])) {
-      echo "<tr class='tab_bg_1'><td>" . __('Errors') . "</td><td><pre>" . Html::clean(implode(PHP_EOL, array_slice($summary['errors'], 0, 50))) . "</pre></td></tr>";
+      echo "<tr class='tab_bg_1'><td>" . __('Errors') . "</td><td><pre>" . \htmlescape(implode(PHP_EOL, array_slice($summary['errors'], 0, 50))) . "</pre></td></tr>";
    }
    echo "</table></div></div>";
 }

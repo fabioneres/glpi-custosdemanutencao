@@ -39,15 +39,15 @@ Html::header(ImportBatch::getTypeName(1), $_SERVER['PHP_SELF'], 'plugins', Menu:
 Config::renderPluginLayoutStart($isQuote ? 'quotes' : 'prices');
 
 echo "<div class='center mb-3'>";
-echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl($isQuote ? '/front/quotationprice.php' : '/front/price.php')) . "'>"
-   . Html::clean($isQuote ? __('Voltar para Cotação/Mercado', 'maintenancecosts') : __('Voltar para Preços SINAPI', 'maintenancecosts')) . "</a>";
+echo "<a class='btn btn-secondary' href='" . \htmlescape(Config::pluginUrl($isQuote ? '/front/quotationprice.php' : '/front/price.php')) . "'>"
+   . \htmlescape($isQuote ? __('Voltar para Cotação/Mercado', 'maintenancecosts') : __('Voltar para Preços SINAPI', 'maintenancecosts')) . "</a>";
 echo "</div>";
 
 echo "<div class='spaced'>";
-echo "<form method='post' enctype='multipart/form-data' action='" . Html::clean($_SERVER['PHP_SELF']) . "'>";
+echo "<form method='post' enctype='multipart/form-data' action='" . \htmlescape($_SERVER['PHP_SELF']) . "'>";
 echo Html::hidden('price_type', ['value' => $priceType]);
 echo "<table class='tab_cadre_fixe'>";
-echo "<tr class='tab_bg_2'><th colspan='4'>" . Html::clean($isQuote ? __('Importar Cotação', 'maintenancecosts') : __('Importar tabela SINAPI', 'maintenancecosts')) . "</th></tr>";
+echo "<tr class='tab_bg_2'><th colspan='4'>" . \htmlescape($isQuote ? __('Importar Cotação', 'maintenancecosts') : __('Importar tabela SINAPI', 'maintenancecosts')) . "</th></tr>";
 echo "<tr class='tab_bg_1'><td>" . __('Arquivo CSV/XLSX', 'maintenancecosts') . "</td><td><input type='file' name='csv_file' accept='.csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' required></td>";
 echo "<td>" . __('Competência', 'maintenancecosts') . "</td><td><input type='text' name='competence' placeholder='AAAA-MM' value='" . Html::cleanInputText($_POST['competence'] ?? date('Y-m')) . "' class='form-control plugin-maintenancecosts-competence' required></td></tr>";
 echo "<tr class='tab_bg_1'><td>" . __('Separador CSV', 'maintenancecosts') . "</td><td><select name='delimiter' class='form-select'><option value='auto'>Auto</option><option value=';'>;</option><option value=','>,</option></select></td>";
@@ -63,16 +63,16 @@ echo "</div>";
 
 if ($isQuote) {
    echo "<div class='plugin-maintenancecosts-panel mb-3'>";
-   echo "<div class='plugin-maintenancecosts-panel-header'><i class='ti ti-table-import'></i> " . Html::clean(__('Layout esperado da cotação', 'maintenancecosts')) . "</div>";
+   echo "<div class='plugin-maintenancecosts-panel-header'><i class='ti ti-table-import'></i> " . \htmlescape(__('Layout esperado da cotação', 'maintenancecosts')) . "</div>";
    echo "<div class='plugin-maintenancecosts-panel-body'>";
-   echo "<p>" . Html::clean(__('Use esta importação somente para a tabela de Cotação/Mercado. Os registros serão gravados como preços de cotação, separados dos preços SINAPI.', 'maintenancecosts')) . "</p>";
+   echo "<p>" . \htmlescape(__('Use esta importação somente para a tabela de Cotação/Mercado. Os registros serão gravados como preços de cotação, separados dos preços SINAPI.', 'maintenancecosts')) . "</p>";
    echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table'><thead><tr class='tab_bg_2'>";
    foreach (['Código', 'Descrição Produto', 'UNID.', 'QDT', 'Valor', 'COT1', 'COT. 2', 'COT. 3'] as $column) {
-      echo "<th>" . Html::clean(__($column, 'maintenancecosts')) . "</th>";
+      echo "<th>" . \htmlescape(__($column, 'maintenancecosts')) . "</th>";
    }
    echo "</tr></thead><tbody><tr>";
    foreach (['COT.001', 'Material cotado', 'UN', '10', '120,00', '118,00', '120,00', '125,00'] as $sample) {
-      echo "<td class='center'>" . Html::clean($sample) . "</td>";
+      echo "<td class='center'>" . \htmlescape($sample) . "</td>";
    }
    echo "</tr></tbody></table>";
    echo "</div></div>";
@@ -81,8 +81,8 @@ if (is_array($summary)) {
    if (!empty($summary['aborted'])) {
       echo "<div class='spaced'>";
       echo "<div class='alert alert-danger'>";
-      echo "<strong>" . Html::clean(__('Importação não concluída', 'maintenancecosts')) . "</strong><br>";
-      echo Html::clean(__('Nenhum registro foi gravado. A importação só é aplicada quando o arquivo inteiro está correto. Corrija os problemas indicados abaixo e envie o arquivo novamente.', 'maintenancecosts'));
+      echo "<strong>" . \htmlescape(__('Importação não concluída', 'maintenancecosts')) . "</strong><br>";
+      echo \htmlescape(__('Nenhum registro foi gravado. A importação só é aplicada quando o arquivo inteiro está correto. Corrija os problemas indicados abaixo e envie o arquivo novamente.', 'maintenancecosts'));
       echo "</div></div>";
    }
 
@@ -91,7 +91,7 @@ if (is_array($summary)) {
    $resultLabel = !empty($summary['aborted'])
       ? __('Importação revertida', 'maintenancecosts')
       : ($summary['dry_run'] ? __('Prévia da importação', 'maintenancecosts') : __('Resultado da importação', 'maintenancecosts'));
-   echo "<tr class='tab_bg_2'><th colspan='2'>" . Html::clean($resultLabel) . "</th></tr>";
+   echo "<tr class='tab_bg_2'><th colspan='2'>" . \htmlescape($resultLabel) . "</th></tr>";
    foreach ([
       'filename' => __('Arquivo', 'maintenancecosts'),
       'competence' => __('Competência', 'maintenancecosts'),
@@ -108,10 +108,10 @@ if (is_array($summary)) {
       if ($key === 'price_type') {
          $value = Config::getPriceTypeLabel($value);
       }
-      echo "<tr class='tab_bg_1'><td>" . Html::clean($label) . "</td><td>" . Html::clean($value) . "</td></tr>";
+      echo "<tr class='tab_bg_1'><td>" . \htmlescape($label) . "</td><td>" . \htmlescape($value) . "</td></tr>";
    }
    if (count($summary['errors'] ?? [])) {
-      echo "<tr class='tab_bg_1'><td>" . __('Errors') . "</td><td><pre>" . Html::clean(implode(PHP_EOL, array_slice($summary['errors'], 0, 50))) . "</pre></td></tr>";
+      echo "<tr class='tab_bg_1'><td>" . __('Errors') . "</td><td><pre>" . \htmlescape(implode(PHP_EOL, array_slice($summary['errors'], 0, 50))) . "</pre></td></tr>";
    }
    echo "</table></div>";
 }
@@ -126,19 +126,19 @@ $history = $DB->request([
 
 echo "<div class='spaced'>";
 echo "<table class='tab_cadre_fixehov plugin-maintenancecosts-table plugin-maintenancecosts-sortable'>";
-echo "<thead><tr class='tab_bg_2'><th colspan='9'>" . Html::clean($isQuote ? __('Histórico de importações de cotação', 'maintenancecosts') : __('Histórico de importações SINAPI', 'maintenancecosts')) . "</th></tr>";
+echo "<thead><tr class='tab_bg_2'><th colspan='9'>" . \htmlescape($isQuote ? __('Histórico de importações de cotação', 'maintenancecosts') : __('Histórico de importações SINAPI', 'maintenancecosts')) . "</th></tr>";
 echo "<tr class='tab_bg_2'><th data-sort='text'>" . __('Arquivo', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Competência', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Tipo de preço', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Status') . "</th><th data-sort='number'>" . __('Linhas', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Linhas importadas', 'maintenancecosts') . "</th><th data-sort='number'>" . __('Linhas com erro', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Usuário', 'maintenancecosts') . "</th><th data-sort='text'>" . __('Data') . "</th></tr></thead><tbody>";
 foreach ($history as $row) {
    echo "<tr class='tab_bg_1'>";
-   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . Html::clean($row['filename']) . "</td>";
-   echo "<td class='center'>" . Html::clean($row['competence']) . "</td>";
-   echo "<td class='center'>" . Html::clean(Config::getPriceTypeLabel((string) ($row['price_type'] ?? 'sinapi'))) . "</td>";
-   echo "<td class='center'>" . Html::clean($row['status']) . "</td>";
+   echo "<td class='text-start' style='white-space:normal; overflow-wrap:anywhere;'>" . \htmlescape($row['filename']) . "</td>";
+   echo "<td class='center'>" . \htmlescape($row['competence']) . "</td>";
+   echo "<td class='center'>" . \htmlescape(Config::getPriceTypeLabel((string) ($row['price_type'] ?? 'sinapi'))) . "</td>";
+   echo "<td class='center'>" . \htmlescape($row['status']) . "</td>";
    echo "<td data-value='" . (int) $row['total_rows'] . "'>" . (int) $row['total_rows'] . "</td>";
    echo "<td data-value='" . (int) $row['imported_rows'] . "'>" . (int) $row['imported_rows'] . "</td>";
    echo "<td data-value='" . (int) $row['error_rows'] . "'>" . (int) $row['error_rows'] . "</td>";
    echo "<td>" . getUserName((int) $row['users_id']) . "</td>";
-   echo "<td class='center'>" . Html::clean($row['date_creation'] ?? '') . "</td>";
+   echo "<td class='center'>" . \htmlescape($row['date_creation'] ?? '') . "</td>";
    echo "</tr>";
 }
 if ($history->count() === 0) {

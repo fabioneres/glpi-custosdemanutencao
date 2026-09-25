@@ -15,8 +15,8 @@ Html::header(Report::getTypeName(Session::getPluralNumber()), $_SERVER['PHP_SELF
 Config::renderPluginLayoutStart('reports');
 $query = http_build_query($_GET);
 echo "<div class='center mb-3'>";
-echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/export.php?type=report&' . $query)) . "'>" . __('Exportar CSV', 'maintenancecosts') . "</a> ";
-echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/export.php?type=report&format=pdf&' . $query)) . "'>" . __('Exportar PDF', 'maintenancecosts') . "</a>";
+echo "<a class='btn btn-secondary' href='" . \htmlescape(Config::pluginUrl('/front/export.php?type=report&' . $query)) . "'>" . __('Exportar CSV', 'maintenancecosts') . "</a> ";
+echo "<a class='btn btn-secondary' href='" . \htmlescape(Config::pluginUrl('/front/export.php?type=report&format=pdf&' . $query)) . "'>" . __('Exportar PDF', 'maintenancecosts') . "</a>";
 echo "</div>";
 Report::showDashboard($_GET);
 Config::renderPluginLayoutEnd();

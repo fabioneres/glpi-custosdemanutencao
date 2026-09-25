@@ -330,7 +330,7 @@ class CostCenter extends CommonDBTM
             __('Deseja mesmo excluir este centro de custo?', 'maintenancecosts'),
             JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE
          );
-         echo "<button type='submit' name='delete' value='1' class='btn btn-outline-danger ms-2' onclick='return window.confirm(" . Html::clean($confirmation) . ");'><i class='ti ti-trash me-1'></i>" . Html::clean(__('Excluir permanentemente', 'maintenancecosts')) . "</button>";
+         echo "<button type='submit' name='delete' value='1' class='btn btn-outline-danger ms-2' onclick='return window.confirm(" . \htmlescape($confirmation) . ");'><i class='ti ti-trash me-1'></i>" . \htmlescape(__('Excluir permanentemente', 'maintenancecosts')) . "</button>";
       }
 
       echo "</td>";
@@ -435,7 +435,7 @@ class CostCenter extends CommonDBTM
       echo "<select name='" . Html::cleanInputText($name) . "' class='form-select plugin-maintenancecosts-dropdown'>";
       echo "<option value='0'>-----</option>";
       foreach (self::rootLocationOptions($value) as $id => $label) {
-         echo "<option value='" . (int) $id . "' " . ((int) $id === $value ? 'selected' : '') . ">" . Html::clean($label) . "</option>";
+         echo "<option value='" . (int) $id . "' " . ((int) $id === $value ? 'selected' : '') . ">" . \htmlescape($label) . "</option>";
       }
       echo "</select>";
    }

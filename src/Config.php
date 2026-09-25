@@ -755,7 +755,7 @@ class Config extends CommonDBTM
             continue;
          }
          $class = $key === $active ? " class='active'" : '';
-         echo "<a{$class} href='" . Html::clean((string) $tab['url']) . "'><i class='" . Html::clean((string) $tab['icon']) . "'></i> " . Html::clean((string) $tab['label']) . "</a>";
+         echo "<a{$class} href='" . \htmlescape((string) $tab['url']) . "'><i class='" . \htmlescape((string) $tab['icon']) . "'></i> " . \htmlescape((string) $tab['label']) . "</a>";
       }
       echo "</nav><main class='plugin-maintenancecosts-main'>";
    }

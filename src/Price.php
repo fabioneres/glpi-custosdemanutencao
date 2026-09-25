@@ -356,15 +356,15 @@ class Price extends CommonDBTM
 
       echo "<tr class='tab_bg_1'><td>" . ($isQuote ? __('Valor aplicado', 'maintenancecosts') : __('Valor unitário', 'maintenancecosts')) . "</td>";
       echo "<td><input type='text' inputmode='decimal' name='unit_price' value='" . Html::cleanInputText(Config::formatDecimalInput((float) ($this->fields['unit_price'] ?? 0))) . "' class='form-control plugin-maintenancecosts-money'></td>";
-      echo "<td>" . __('Tipo de preço', 'maintenancecosts') . "</td><td><strong>" . Html::clean(Config::getPriceTypeLabel($priceType)) . "</strong></td></tr>";
+      echo "<td>" . __('Tipo de preço', 'maintenancecosts') . "</td><td><strong>" . \htmlescape(Config::getPriceTypeLabel($priceType)) . "</strong></td></tr>";
 
       if ($isQuote) {
          echo "<tr class='tab_bg_1'><td>" . __('Quantidade cotada', 'maintenancecosts') . "</td>";
          echo "<td><input type='text' inputmode='decimal' name='quote_quantity' value='" . Html::cleanInputText(Config::formatDecimalInput((float) ($this->fields['quote_quantity'] ?? 0))) . "' class='form-control'></td>";
          echo "<td>" . __('Cotações de mercado', 'maintenancecosts') . "</td><td><div class='d-flex gap-2'>";
-         echo "<input type='text' inputmode='decimal' name='quote_price_1' value='" . Html::cleanInputText(Config::formatDecimalInput((float) ($this->fields['quote_price_1'] ?? 0))) . "' class='form-control plugin-maintenancecosts-money' placeholder='" . Html::clean(__('Cotação 1', 'maintenancecosts')) . "'>";
-         echo "<input type='text' inputmode='decimal' name='quote_price_2' value='" . Html::cleanInputText(Config::formatDecimalInput((float) ($this->fields['quote_price_2'] ?? 0))) . "' class='form-control plugin-maintenancecosts-money' placeholder='" . Html::clean(__('Cotação 2', 'maintenancecosts')) . "'>";
-         echo "<input type='text' inputmode='decimal' name='quote_price_3' value='" . Html::cleanInputText(Config::formatDecimalInput((float) ($this->fields['quote_price_3'] ?? 0))) . "' class='form-control plugin-maintenancecosts-money' placeholder='" . Html::clean(__('Cotação 3', 'maintenancecosts')) . "'>";
+         echo "<input type='text' inputmode='decimal' name='quote_price_1' value='" . Html::cleanInputText(Config::formatDecimalInput((float) ($this->fields['quote_price_1'] ?? 0))) . "' class='form-control plugin-maintenancecosts-money' placeholder='" . \htmlescape(__('Cotação 1', 'maintenancecosts')) . "'>";
+         echo "<input type='text' inputmode='decimal' name='quote_price_2' value='" . Html::cleanInputText(Config::formatDecimalInput((float) ($this->fields['quote_price_2'] ?? 0))) . "' class='form-control plugin-maintenancecosts-money' placeholder='" . \htmlescape(__('Cotação 2', 'maintenancecosts')) . "'>";
+         echo "<input type='text' inputmode='decimal' name='quote_price_3' value='" . Html::cleanInputText(Config::formatDecimalInput((float) ($this->fields['quote_price_3'] ?? 0))) . "' class='form-control plugin-maintenancecosts-money' placeholder='" . \htmlescape(__('Cotação 3', 'maintenancecosts')) . "'>";
          echo "</div></td></tr>";
       }
 
@@ -397,7 +397,7 @@ class Price extends CommonDBTM
          if (trim((string) ($row['unit'] ?? '')) !== '') {
             $label .= ' (' . $row['unit'] . ')';
          }
-         echo "<option value='" . (int) $row['id'] . "' " . ((int) $row['id'] === $value ? 'selected' : '') . ">" . Html::clean($label) . "</option>";
+         echo "<option value='" . (int) $row['id'] . "' " . ((int) $row['id'] === $value ? 'selected' : '') . ">" . \htmlescape($label) . "</option>";
       }
 
       echo "</select>";

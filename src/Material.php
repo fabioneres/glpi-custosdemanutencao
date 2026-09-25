@@ -238,12 +238,12 @@ class Material extends CommonDBTM
       if ((int) $ID > 0) {
          echo "<tr class='tab_bg_1'><td colspan='4' class='center'>";
          $historyType = $isQuote ? '&price_type=cotacao_mercado' : '';
-         echo "<a class='btn btn-secondary' href='" . Html::clean(Config::pluginUrl('/front/pricehistory.php?materials_id=' . (int) $ID . $historyType)) . "'>" . __('Histórico de preços', 'maintenancecosts') . "</a>";
+         echo "<a class='btn btn-secondary' href='" . \htmlescape(Config::pluginUrl('/front/pricehistory.php?materials_id=' . (int) $ID . $historyType)) . "'>" . __('Histórico de preços', 'maintenancecosts') . "</a>";
          echo "</td></tr>";
       }
 
       echo "<tr class='tab_bg_1'>";
-      echo "<td>" . Html::clean($isQuote ? __('Código cotação', 'maintenancecosts') : __('Código SINAPI', 'maintenancecosts')) . "</td>";
+      echo "<td>" . \htmlescape($isQuote ? __('Código cotação', 'maintenancecosts') : __('Código SINAPI', 'maintenancecosts')) . "</td>";
       echo "<td><input type='text' name='code' maxlength='64' value='" . Html::cleanInputText($this->fields['code'] ?? '') . "' class='form-control'></td>";
       echo "<td>" . __('Name') . "</td>";
       echo "<td><input type='text' name='name' value='" . Html::cleanInputText($this->fields['name'] ?? '') . "' class='form-control'></td>";

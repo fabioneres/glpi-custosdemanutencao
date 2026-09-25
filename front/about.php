@@ -49,7 +49,7 @@ foreach ([
    [5, __('Auditoria', 'maintenancecosts'), __('O preço aplicado, competência, usuário e total ficam gravados no item consumido.', 'maintenancecosts')],
    [6, __('Relatórios', 'maintenancecosts'), __('Acompanhe custos por contrato, origem do preço, material, centro de custo, categoria e mês.', 'maintenancecosts')],
 ] as $row) {
-   echo "<tr class='tab_bg_1'><td class='center'><span class='badge bg-blue'>" . (int) $row[0] . "</span></td><td>" . Html::clean($row[1]) . "</td><td class='text-start'>" . Html::clean($row[2]) . "</td></tr>";
+   echo "<tr class='tab_bg_1'><td class='center'><span class='badge bg-blue'>" . (int) $row[0] . "</span></td><td>" . \htmlescape($row[1]) . "</td><td class='text-start'>" . \htmlescape($row[2]) . "</td></tr>";
 }
 echo "</table>";
 echo "</div></div>";
@@ -64,8 +64,8 @@ foreach ([
    ['ti ti-chart-bar', __('Relatórios', 'maintenancecosts'), __('Os relatórios permitem analisar valores por origem de preço, contrato, centro de custo, categoria, localização, material e evolução mensal.', 'maintenancecosts')],
 ] as $card) {
    echo "<div class='plugin-maintenancecosts-panel'>";
-   echo "<div class='plugin-maintenancecosts-panel-header'><i class='" . Html::clean($card[0]) . "'></i> " . Html::clean($card[1]) . "</div>";
-   echo "<div class='plugin-maintenancecosts-panel-body'>" . Html::clean($card[2]) . "</div>";
+   echo "<div class='plugin-maintenancecosts-panel-header'><i class='" . \htmlescape($card[0]) . "'></i> " . \htmlescape($card[1]) . "</div>";
+   echo "<div class='plugin-maintenancecosts-panel-body'>" . \htmlescape($card[2]) . "</div>";
    echo "</div>";
 }
 echo "</div>";
@@ -84,8 +84,8 @@ echo "<div class='plugin-maintenancecosts-panel-header'><i class='ti ti-id'></i>
 echo "<div class='plugin-maintenancecosts-panel-body'>";
 echo "<table class='tab_cadre_fixe plugin-maintenancecosts-table'>";
 echo "<tr><th>" . __('Status', 'maintenancecosts') . "</th><td><span class='badge bg-green'>" . __('Ativo', 'maintenancecosts') . "</span></td></tr>";
-echo "<tr><th>" . __('Nome', 'maintenancecosts') . "</th><td>" . Html::clean(Config::getTypeName()) . "</td></tr>";
-echo "<tr><th>" . __('Versão', 'maintenancecosts') . "</th><td>" . Html::clean(PLUGIN_MAINTENANCECOSTS_VERSION) . "</td></tr>";
+echo "<tr><th>" . __('Nome', 'maintenancecosts') . "</th><td>" . \htmlescape(Config::getTypeName()) . "</td></tr>";
+echo "<tr><th>" . __('Versão', 'maintenancecosts') . "</th><td>" . \htmlescape(PLUGIN_MAINTENANCECOSTS_VERSION) . "</td></tr>";
 echo "<tr><th>" . __('Autor', 'maintenancecosts') . "</th><td>Fabio Neres</td></tr>";
 echo "<tr><th>" . __('Escopo', 'maintenancecosts') . "</th><td>" . __('Custos de materiais em chamados de manutenção no GLPI.', 'maintenancecosts') . "</td></tr>";
 echo "<tr><th>" . __('Fora do escopo atual', 'maintenancecosts') . "</th><td>" . __('Estoque, compras, nota fiscal, empenho, aprovação de consumo e integrações financeiras.', 'maintenancecosts') . "</td></tr>";
