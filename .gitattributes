@@ -1,3 +1,4 @@
+/dist export-ignore
 /deploy-prod.ps1 export-ignore
 /deploy-vm.ps1 export-ignore
 /docs/checklist-validacao-1.0.0.md export-ignore
