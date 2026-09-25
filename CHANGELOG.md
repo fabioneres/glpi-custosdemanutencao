@@ -6,6 +6,13 @@
   requisito explicito de PHP 8.2 ou superior.
 - Mantem os centros de custo como dropdowns nativos para uso nas perguntas de
   lista dos Formularios do GLPI 11.
+- Vincula automaticamente ao ticket os centros de custo Antigo e Novo
+  respondidos no formulario nativo, inclusive quando ambos forem informados.
+- Valida a configuracao persistida da pergunta, tipo do objeto, identificador,
+  status ativo e escopo de entidade antes de criar qualquer vinculo. Respostas
+  invalidas, ambiguas ou fora da entidade nao alteram o ticket.
+- Mantem a descricao do chamado sob controle exclusivo do destino do
+  formulario: a integracao grava apenas o vinculo estruturado do plugin.
 - Remove a integracao e o caminho de autorizacao exclusivos do FormCreator,
   que pertencem somente a linha GLPI 10.
 - Mantem a criacao e atualizacao de tabelas no ciclo de instalacao/upgrade,

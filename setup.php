@@ -18,6 +18,7 @@ use GlpiPlugin\Maintenancecosts\ImportBatch;
 use GlpiPlugin\Maintenancecosts\Material;
 use GlpiPlugin\Maintenancecosts\MaterialOrigin;
 use GlpiPlugin\Maintenancecosts\Menu;
+use GlpiPlugin\Maintenancecosts\NativeFormCostCenterSync;
 use GlpiPlugin\Maintenancecosts\Price;
 use GlpiPlugin\Maintenancecosts\PriceHistory;
 use GlpiPlugin\Maintenancecosts\Profile;
@@ -88,6 +89,14 @@ function plugin_init_maintenancecosts(): void {
    $PLUGIN_HOOKS[Hooks::ADD_JAVASCRIPT_ANONYMOUS_PAGE]['maintenancecosts'][] = $jsRelativePath;
    $PLUGIN_HOOKS[Hooks::ADD_CSS]['maintenancecosts'][] = 'css/maintenancecosts.css';
    $PLUGIN_HOOKS[Hooks::ADD_CSS_ANONYMOUS_PAGE]['maintenancecosts'][] = 'css/maintenancecosts.css';
+
+   // O GLPI 11 registra o ticket criado pelo formulario nativo nesta relacao.
+   // A sincronizacao parte da configuracao persistida da questao, nunca de
+   // valores de itemtype enviados pelo navegador.
+   $PLUGIN_HOOKS[Hooks::ITEM_ADD]['maintenancecosts'][\Glpi\Form\Destination\AnswersSet_FormDestinationItem::class] = [
+      NativeFormCostCenterSync::class,
+      'itemAdded',
+   ];
 
    if (Session::getLoginUserID()) {
       Profile::initProfile();
