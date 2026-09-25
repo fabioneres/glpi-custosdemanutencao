@@ -24,7 +24,8 @@ preco aplicado em cada lancamento e relaciona custos aos centros de custo.
   historico de preco vigente.
 - Centros de Custo Antigo e Novo como dropdowns nativos do GLPI, respeitando
   entidades e direitos, inclusive nas perguntas de lista dos Formularios
-  nativos do GLPI 11.
+  nativos do GLPI 11. As respostas validas sao vinculadas automaticamente ao
+  ticket criado, sem alterar a descricao configurada no destino do formulario.
 - Lancamento de materiais consumidos na aba do chamado, com quantidade,
   unidade, preco aplicado, origem, competencia, data e comentario.
 - Edicao, cancelamento logico, auditoria, relatorios e exportacoes CSV/PDF.
@@ -37,7 +38,8 @@ preco aplicado em cada lancamento e relaciona custos aos centros de custo.
 - PHP: **8.2 ou superior**.
 - Banco de dados: MySQL/MariaDB suportado pelo GLPI 11.
 - Formularios: usa os objetos de lista nativos do GLPI 11. O FormCreator e
-  exclusivo da linha GLPI 10 e nao e carregado neste pacote.
+  exclusivo da linha GLPI 10 e nao e carregado neste pacote. Um formulario
+  pode informar somente o centro Antigo, somente o Novo ou ambos.
 
 ## Instalacao
 
@@ -58,6 +60,9 @@ sobrescreva uma instalacao GLPI 10 com este pacote.
   sessao, direito e entidade no servidor.
 - A integracao e a excecao de autorizacao exclusivas do FormCreator foram
   removidas desta variante.
+- O vinculo pelo formulario nativo aceita apenas centros de custo ativos da
+  entidade do ticket ou de entidade ancestral marcada como recursiva. Respostas
+  inconsistentes nao alteram o ticket nem sua descricao.
 - As tabelas e migracoes sao executadas somente na instalacao ou atualizacao;
   hooks de requisicao nao executam DDL.
 
