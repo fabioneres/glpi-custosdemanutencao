@@ -73,9 +73,6 @@ sobrescreva uma instalacao GLPI 10 com este pacote.
 - [Historico de alteracoes](CHANGELOG.md)
 - [Manual de uso](docs/manual-de-uso.md)
 
-Os documentos de PRD, checklist e sessoes historicas presentes na arvore de
-desenvolvimento referem-se a linha GLPI 10 e nao fazem parte do pacote GLPI 11.
-
 ## Suporte
 
 - Autor: Fabio Neres

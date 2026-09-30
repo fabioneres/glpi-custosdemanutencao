@@ -1,1 +1,6 @@
+# Automacao de deploy local pode conter credenciais da maquina.
+deploy-vm.ps1
+deploy-prod.ps1
+
+# Artefatos de release gerados localmente.
 /dist/
