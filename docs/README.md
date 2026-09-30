@@ -17,11 +17,8 @@ A rotina de instalacao tambem executa reparos idempotentes de schema e direitos.
 
 ## Documentacao de uso
 
-- [PRD do plugin](C:\Projetos\glpi\plugins\meusplugins\maintenancecosts\docs\prd-plugin-custos-de-manutencao.md)
-- [PRD do plugin em DOCX](C:\Projetos\glpi\plugins\meusplugins\maintenancecosts\docs\prd-plugin-custos-de-manutencao.docx)
-- [Manual de uso do plugin](C:\Projetos\glpi\plugins\meusplugins\maintenancecosts\docs\manual-de-uso.md)
-- [Checklist de validacao para o Claude - 1.0.8](C:\Projetos\glpi\plugins\meusplugins\maintenancecosts\docs\session\maintenancecosts-1.0.8-validacao-claude.md)
-- [Modelo de resultado da validacao - 1.0.8](C:\Projetos\glpi\plugins\meusplugins\maintenancecosts\docs\session\maintenancecosts-1.0.8-validacao-resultado.md)
+- [Manual de uso do plugin](manual-de-uso.md)
+- [Historico de alteracoes](../CHANGELOG.md)
 
 ## Estrutura do Banco
 
@@ -50,9 +47,7 @@ O plugin cria direitos especificos para materiais, precos, centros de custo, con
 
 Esta primeira entrega operacional nao implementa dashboards graficos, aprovacao de consumo, estoque ou integracoes externas. A importacao grava lotes e historico de precos. A pre-visualizacao e confirmacao ocorrem como dois processamentos manuais: marcar `Validar sem gravar` para previa e desmarcar para gravar.
 
-## Roadmap Futuro
+## Linha GLPI 10
 
-- Servicos reutilizaveis para Dashboard Plus e ferramentas externas.
-- Validacao futura para GLPI 11.
-- Melhorias de usabilidade no modal de lancamento.
-- Exportacao PDF dos relatorios.
+Esta branch mantem a serie 1.1.x, para GLPI 10. A linha para GLPI 11 comeca na
+versao 2.0.0 e fica na branch `main`.
