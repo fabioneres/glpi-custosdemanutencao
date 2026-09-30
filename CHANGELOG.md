@@ -1,9 +1,11 @@
 # Changelog
 
-## [1.1.21-glpi11.0] - Em validacao
+## [2.0.0-alpha.1] - Em validacao
 
-- Cria a variante da base funcional 1.1.21 para GLPI 11.0.7 a 11.0.99, com
-  requisito explicito de PHP 8.2 ou superior.
+- Primeira versao da linha GLPI 11, a partir da base funcional 1.1.21, para
+  GLPI 11.0.7 a 11.0.99, com requisito explicito de PHP 8.2 ou superior.
+- Versao MAJOR porque deixa de suportar o GLPI 10. A linha GLPI 10 continua na
+  serie 1.1.x, na branch `glpi10`.
 - Mantem os centros de custo como dropdowns nativos para uso nas perguntas de
   lista dos Formularios do GLPI 11.
 - Vincula automaticamente ao ticket os centros de custo Antigo e Novo

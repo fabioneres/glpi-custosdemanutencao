@@ -1,22 +1,24 @@
 # Custos de Manutencao para GLPI 11
 
 <p align="center">
-  <img src="pics/logo.png" alt="Logo do plugin Custos de Manutencao" width="180">
+  <img src="public/pics/logo.png" alt="Logo do plugin Custos de Manutencao" width="180">
 </p>
 
 [![Licenca](https://img.shields.io/badge/Licenca-GPLv3%2B-orange)](https://www.gnu.org/licenses/gpl-3.0.html)
-[![Base funcional](https://img.shields.io/badge/Base-1.1.21-blue)](CHANGELOG.md)
+[![Versao](https://img.shields.io/badge/Versao-2.0.0--alpha.1-blue)](CHANGELOG.md)
 [![GLPI](https://img.shields.io/badge/GLPI-11.0.x-green)](#compatibilidade)
 [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777bb4)](#compatibilidade)
 
-Variante para GLPI 11 da linha funcional 1.1.21. Registra materiais
-consumidos em chamados, mantem catalogos SINAPI e Cotacao/Mercado, preserva o
-preco aplicado em cada lancamento e relaciona custos aos centros de custo.
+Linha GLPI 11 do plugin, a partir da versao 2.0.0, com a base funcional da
+1.1.21. Registra materiais consumidos em chamados, mantem catalogos SINAPI e
+Cotacao/Mercado, preserva o preco aplicado em cada lancamento e relaciona custos
+aos centros de custo.
 
 > **Pacote exclusivo para GLPI 11**
 >
-> Esta variante exige **GLPI 11.0.7 a 11.0.99** e **PHP 8.2 ou superior**.
-> Nao a instale no GLPI 10. Para GLPI 10, use a release 1.1.21 original.
+> Esta linha exige **GLPI 11.0.7 a 11.0.99** e **PHP 8.2 ou superior**.
+> Nao a instale no GLPI 10. Para GLPI 10, use a serie **1.1.x**, mantida na
+> branch [`glpi10`](../../tree/glpi10) e publicada nas releases 1.1.x.
 
 ## Funcionalidades
 
@@ -43,7 +45,7 @@ preco aplicado em cada lancamento e relaciona custos aos centros de custo.
 
 ## Instalacao
 
-1. Baixe o pacote GLPI 11 correspondente a esta variante.
+1. Baixe o pacote da serie 2.x, exclusiva para GLPI 11.
 2. Extraia a pasta `maintenancecosts` em `GLPI_ROOT/plugins/`.
 3. Em **Configurar > Plugins**, instale ou atualize e ative **Custos de
    Manutencao**.
