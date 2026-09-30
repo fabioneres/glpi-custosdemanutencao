@@ -1,6 +1,10 @@
 # Changelog
 
-## [2.0.0-alpha.1] - Em validacao
+## [2.0.0-alpha.1] - 2026-09-30
+
+Prerelease alpha para teste tecnico em ambiente de teste. Nao instale em
+producao: os fluxos navegados e o upgrade sobre uma base existente da 1.1.21
+ainda estao em validacao.
 
 - Primeira versao da linha GLPI 11, a partir da base funcional 1.1.21, para
   GLPI 11.0.7 a 11.0.99, com requisito explicito de PHP 8.2 ou superior.
@@ -25,6 +29,8 @@
   que pertencem somente a linha GLPI 10.
 - Mantem a criacao e atualizacao de tabelas no ciclo de instalacao/upgrade,
   sem DDL em hooks de requisicao.
+- Compativel com o GLPI 11.0.10, release de seguranca de 2026-09-30, sem
+  alteracao de codigo. A atualizacao do GLPI para essa versao e recomendada.
 
 ## v1.1.21 - Reparo de rotulos para FormCreator
 
