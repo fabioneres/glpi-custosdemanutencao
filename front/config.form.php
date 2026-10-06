@@ -12,6 +12,11 @@ require_once dirname(__DIR__) . '/bootstrap.php';
 Config::checkRight(Config::RIGHT_CONFIG, UPDATE);
 
 if (isset($_POST['save'])) {
+   if (!Config::canManageAllEntities()) {
+      // A configuracao e unica e vale para todas as entidades (F12).
+      Session::addMessageAfterRedirect(__('A configuração geral vale para todas as entidades e só pode ser alterada por quem tem acesso a todas elas.', 'maintenancecosts'), false, ERROR);
+      Html::redirect($_SERVER['PHP_SELF']);
+   }
    Config::saveSettings($_POST);
    Session::addMessageAfterRedirect(__('Configurações salvas.', 'maintenancecosts'), false, INFO);
    Html::redirect($_SERVER['PHP_SELF']);

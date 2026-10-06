@@ -27,7 +27,14 @@ $competence = Config::normalizeCompetence((string) ($_GET['competence'] ?? ''));
 $price_type = Config::normalizePriceType((string) ($_GET['price_type'] ?? 'sinapi'));
 
 $material = new Material();
-if ($materials_id <= 0 || !$material->getFromDB($materials_id)) {
+// Material inexistente e material de entidade sem acesso recebem a mesma
+// resposta, para nao revelar a existencia de registros de outra entidade (A8).
+if ($materials_id <= 0
+   || !$material->getFromDB($materials_id)
+   || !Session::haveAccessToEntity(
+      (int) ($material->fields['entities_id'] ?? 0),
+      (int) ($material->fields['is_recursive'] ?? 0) === 1
+   )) {
    http_response_code(404);
    echo json_encode(['error' => 'material_not_found']);
    exit;

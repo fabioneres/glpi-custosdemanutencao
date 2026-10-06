@@ -79,10 +79,12 @@ function show_materials(string $search, int $limit, int $offset, string $priceTy
    $materialTable = Material::getTable();
    $priceTable = Price::getTable();
    $priceType = Config::normalizePriceType($priceType);
+   // Mesma regra de entidade dos centros de custo; a validacao final contra a
+   // entidade do chamado acontece no servidor ao gravar (A8/A10).
    $where = [
       $materialTable . '.is_active' => 1,
       $priceTable . '.price_type'   => $priceType,
-   ];
+   ] + getEntitiesRestrictCriteria($materialTable, '', '', true);
    if ($oneId > 0) {
       $where[$materialTable . '.id'] = $oneId;
    }
@@ -295,7 +297,8 @@ function show_contracts(string $search, int $limit, int $offset): void
       exit;
    }
 
-   $where = ['is_deleted' => 0];
+   // Contratos de entidades que o usuario nao enxerga nao aparecem na lista.
+   $where = ['is_deleted' => 0] + getEntitiesRestrictCriteria('glpi_contracts', '', '', true);
    if ($search !== '') {
       $like = '%' . $search . '%';
       $where[] = [

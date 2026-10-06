@@ -10,6 +10,9 @@ if (!defined('GLPI_ROOT')) {
 }
 require_once dirname(__DIR__) . '/bootstrap.php';
 
+// GLPI 11 executa o front dentro de uma funcao do roteador: sem global, $CFG_GLPI fica indefinido.
+global $CFG_GLPI;
+
 $item = new TicketMaterial();
 
 if (isset($_POST['cancel'])) {
@@ -25,8 +28,9 @@ if (isset($_POST['cancel'])) {
 if (isset($_POST['add'])) {
    Config::checkRight(Config::RIGHT_CONSUMPTION, CREATE);
    Config::checkCreateAccess($_POST);
-   if (!empty($_POST['tickets_id'])) {
-      Config::checkTicketAccess((int) $_POST['tickets_id']);
+   $ticketRef = (int) ($_POST['tickets_id'] ?? 0) ?: (int) ($_POST['items_id'] ?? 0);
+   if ($ticketRef > 0) {
+      Config::checkTicketAccess($ticketRef);
    }
    $item->add($_POST);
    if (!empty($_POST['tickets_id'])) {
@@ -49,6 +53,7 @@ if (isset($_POST['save_ticket_costcenter'])) {
    Config::checkRight(Config::RIGHT_CONSUMPTION, UPDATE);
    // A entidade vem do chamado, nunca do formulario.
    $ticketEntity = Config::checkTicketAccess((int) ($_POST['tickets_id'] ?? 0));
+   Config::checkEnabledForEntity($ticketEntity);
    $ok = TicketCostCenter::saveSelectionsForTicket(
       (int) ($_POST['tickets_id'] ?? 0),
       [
@@ -72,7 +77,7 @@ if (isset($_POST['save_ticket_costcenter'])) {
 
 if (isset($_POST['clear_ticket_costcenter'])) {
    Config::checkRight(Config::RIGHT_CONSUMPTION, UPDATE);
-   Config::checkTicketAccess((int) ($_POST['tickets_id'] ?? 0));
+   Config::checkEnabledForEntity(Config::checkTicketAccess((int) ($_POST['tickets_id'] ?? 0)));
    $ok = TicketCostCenter::clearForTicket((int) ($_POST['tickets_id'] ?? 0));
    Session::addMessageAfterRedirect(
       $ok
@@ -90,6 +95,7 @@ if (isset($_POST['clear_ticket_costcenter'])) {
 if (isset($_POST['unlink_contract'])) {
    Config::checkRight(Config::RIGHT_CONSUMPTION, UPDATE);
    Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
+   Config::checkEnabledForEntity((int) ($item->fields['entities_id'] ?? 0));
    $ok = TicketMaterial::unlinkContract((int) ($_POST['id'] ?? 0));
    Session::addMessageAfterRedirect(
       $ok
@@ -112,6 +118,10 @@ if (isset($_POST['delete']) || isset($_POST['purge'])) {
 }
 
 Config::checkRight(Config::RIGHT_CONSUMPTION, READ);
+
+if ((int) ($_GET['id'] ?? 0) <= 0 && !empty($_GET['tickets_id'])) {
+   Config::checkTicketAccess((int) $_GET['tickets_id']);
+}
 
 Html::header(TicketMaterial::getTypeName(1), $_SERVER['PHP_SELF'], 'plugins', Menu::class);
 $item->showForm((int) ($_GET['id'] ?? 0), [

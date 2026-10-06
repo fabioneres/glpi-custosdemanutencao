@@ -17,6 +17,37 @@ class PriceHistory extends CommonDBTM
       return 'glpi_plugin_maintenancecosts_pricehistories';
    }
 
+   /**
+    * Registro gerado pelo proprio plugin: nao se cria, altera nem apaga por
+    * formulario generico, acao em massa ou API (F01). As gravacoes internas
+    * usam add()/update() do modelo, que nao passam por can().
+    */
+   public function canCreateItem(): bool
+   {
+      return false;
+   }
+
+   public function canUpdateItem(): bool
+   {
+      return false;
+   }
+
+   public function canDeleteItem(): bool
+   {
+      return false;
+   }
+
+   public function canPurgeItem(): bool
+   {
+      return false;
+   }
+
+   public function canViewItem(): bool
+   {
+      return parent::canViewItem()
+         && Config::canAccessMaterial((int) ($this->fields['plugin_maintenancecosts_materials_id'] ?? 0), true);
+   }
+
    public static function getTypeName($nb = 0)
    {
       return _n('Histórico de preço', 'Históricos de preços', $nb, 'maintenancecosts');

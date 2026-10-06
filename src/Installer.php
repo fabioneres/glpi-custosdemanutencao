@@ -42,6 +42,7 @@ class Installer
          self::ensureDefaultSearchDisplayPreferences();
          self::syncStoredCostCenterNamesForFormcreator();
          self::repairStoredCostCenterNamesForFormcreator121();
+         self::alignEntitiesWithTicket1122();
          if ($schemaUpgradeRequired) {
             self::syncStoredCostCenterNames();
             self::syncTicketMaterialCostCenterLabels();
@@ -530,6 +531,83 @@ class Installer
       \Config::setConfigurationValues('plugin:maintenancecosts', [
          'formcreator_costcenter_label_repair_1_1_21' => '1',
       ]);
+   }
+
+   /**
+    * Uma unica vez: realinha a entidade dos lancamentos e dos vinculos de
+    * centro de custo a entidade do chamado (A12). Versoes ate a 1.1.21
+    * gravavam a entidade ativa de quem lancou. Os valores anteriores ficam em
+    * tabela auxiliar (removida no uninstall) e o resumo vai para a auditoria.
+    */
+   private static function alignEntitiesWithTicket1122(): void
+   {
+      global $DB;
+
+      $flag = 'ticket_entity_alignment_1_1_22';
+      $configuration = \Config::getConfigurationValues('plugin:maintenancecosts', [$flag]);
+      if (($configuration[$flag] ?? '') === '1') {
+         return;
+      }
+
+      $tables = [TicketMaterial::getTable(), TicketCostCenter::getTable()];
+      $changes = [];
+      foreach ($tables as $table) {
+         if (!$DB->tableExists($table)) {
+            continue;
+         }
+         $iterator = $DB->request([
+            'SELECT'     => [$table . '.id', $table . '.entities_id AS old_entity', 'glpi_tickets.entities_id AS new_entity'],
+            'FROM'       => $table,
+            'INNER JOIN' => [
+               'glpi_tickets' => ['FKEY' => [$table => 'tickets_id', 'glpi_tickets' => 'id']],
+            ],
+            'WHERE'      => [new \QueryExpression(
+               $DB->quoteName($table . '.entities_id') . ' <> ' . $DB->quoteName('glpi_tickets.entities_id')
+            )],
+         ]);
+         foreach ($iterator as $row) {
+            $changes[] = [$table, (int) $row['id'], (int) $row['old_entity'], (int) $row['new_entity']];
+         }
+      }
+
+      if ($changes !== []) {
+         $backup = 'glpi_plugin_maintenancecosts_bk_entity_1_1_22';
+         $DB->doQuery(
+            "CREATE TABLE IF NOT EXISTS `$backup` (
+               `id` int unsigned NOT NULL AUTO_INCREMENT,
+               `source_table` varchar(100) NOT NULL DEFAULT '',
+               `items_id` int unsigned NOT NULL DEFAULT 0,
+               `old_entities_id` int unsigned NOT NULL DEFAULT 0,
+               `new_entities_id` int unsigned NOT NULL DEFAULT 0,
+               `date_creation` timestamp NULL DEFAULT NULL,
+               PRIMARY KEY (`id`),
+               KEY `idx_item` (`source_table`, `items_id`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC"
+         );
+
+         $now = date('Y-m-d H:i:s');
+         foreach ($changes as [$table, $id, $old, $new]) {
+            $DB->insert($backup, [
+               'source_table'    => $table,
+               'items_id'        => $id,
+               'old_entities_id' => $old,
+               'new_entities_id' => $new,
+               'date_creation'   => $now,
+            ]);
+            $DB->update($table, ['entities_id' => $new], ['id' => $id]);
+         }
+
+         AuditLog::record(
+            self::class,
+            0,
+            'entity_alignment_1_1_22',
+            [],
+            ['registros' => count($changes), 'backup' => $backup],
+            'Entidade de lancamentos e vinculos realinhada a do chamado.'
+         );
+      }
+
+      \Config::setConfigurationValues('plugin:maintenancecosts', [$flag => '1']);
    }
 
    private static function ensureMaterialOriginTable(): void

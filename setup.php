@@ -95,6 +95,9 @@ function plugin_init_maintenancecosts(): void {
       FormcreatorCostCenterSync::class,
       'itemAdded',
    ];
+   $PLUGIN_HOOKS[Hooks::ITEM_PURGE]['maintenancecosts']['Ticket'] = 'plugin_maintenancecosts_item_purge';
+   $PLUGIN_HOOKS[Hooks::ITEM_TRANSFER]['maintenancecosts'] = 'plugin_maintenancecosts_item_transfer';
+   $PLUGIN_HOOKS[Hooks::ITEM_UPDATE]['maintenancecosts']['Ticket'] = 'plugin_maintenancecosts_item_update';
 
    if (Session::getLoginUserID()) {
       Profile::initProfile();

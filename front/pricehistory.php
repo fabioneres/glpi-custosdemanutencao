@@ -29,7 +29,8 @@ echo "<tr class='tab_bg_2'><th colspan='2'>" . __('Histórico de preços', 'main
 echo "<tr class='tab_bg_1'><td>" . Material::getTypeName(1) . "</td><td>";
 echo "<select name='materials_id' class='form-control plugin-maintenancecosts-dropdown'>";
 echo "<option value='0'>-----</option>";
-foreach ($DB->request(['SELECT' => ['id', 'code', 'name', 'unit'], 'FROM' => Material::getTable(), 'WHERE' => ['is_active' => 1], 'ORDER' => ['code ASC', 'name ASC']]) as $materialRow) {
+// So materiais das entidades do usuario (A7).
+foreach ($DB->request(['SELECT' => ['id', 'code', 'name', 'unit'], 'FROM' => Material::getTable(), 'WHERE' => ['is_active' => 1] + getEntitiesRestrictCriteria(Material::getTable(), 'entities_id', '', true), 'ORDER' => ['code ASC', 'name ASC']]) as $materialRow) {
    $label = trim((string) $materialRow['code']) !== ''
       ? $materialRow['code'] . ' - ' . $materialRow['name']
       : $materialRow['name'];
@@ -44,9 +45,14 @@ echo "</td></tr></table>";
 Html::closeForm();
 echo "</div>";
 
-$where = ['price_type' => $priceType];
+$where = [PriceHistory::getTable() . '.price_type' => $priceType];
 if ($materials_id > 0) {
-   $where['plugin_maintenancecosts_materials_id'] = $materials_id;
+   $where[PriceHistory::getTable() . '.plugin_maintenancecosts_materials_id'] = $materials_id;
+}
+// O historico nao tem entidade propria: restringe pela entidade do material (A7).
+$entityCriteria = getEntitiesRestrictCriteria(Material::getTable(), 'entities_id', '', true);
+if (count($entityCriteria)) {
+   $where[] = $entityCriteria;
 }
 
 echo "<div class='center mb-3'>";
@@ -68,8 +74,14 @@ echo "<th data-sort='text'>" . __('Data', 'maintenancecosts') . "</th>";
 echo "</tr></thead><tbody>";
 
 $criteria = [
-   'FROM'  => PriceHistory::getTable(),
-   'ORDER' => ['date_creation DESC', 'id DESC'],
+   'SELECT'    => [PriceHistory::getTable() . '.*'],
+   'FROM'      => PriceHistory::getTable(),
+   'INNER JOIN' => [
+      Material::getTable() => [
+         'FKEY' => [PriceHistory::getTable() => 'plugin_maintenancecosts_materials_id', Material::getTable() => 'id'],
+      ],
+   ],
+   'ORDER' => [PriceHistory::getTable() . '.date_creation DESC', PriceHistory::getTable() . '.id DESC'],
    'LIMIT' => 300,
 ];
 if (count($where)) {

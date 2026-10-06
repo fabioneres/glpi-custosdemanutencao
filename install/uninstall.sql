@@ -10,3 +10,4 @@ DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_importbatches`;
 DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_auditlogs`;
 DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_configentities`;
 DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_configs`;
+DROP TABLE IF EXISTS `glpi_plugin_maintenancecosts_bk_entity_1_1_22`;

@@ -658,6 +658,11 @@
                return items;
             })
             .then(function(items) {
+               // Sem itens (ex.: usuario sem direito no plugin) o seletor nativo do GLPI
+               // permanece como esta; esvazia-lo tiraria o recurso do core desse usuario.
+               if (!items || !items.length) {
+                  return;
+               }
                select.innerHTML = '<option value="0">-----</option>';
                items.forEach(function(item) {
                   var option = document.createElement('option');

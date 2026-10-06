@@ -50,7 +50,15 @@ class Material extends CommonDBTM
 
    public function prepareInputForAdd($input)
    {
+      if (isset($input['entities_id']) && !Config::canAccessEntity((int) $input['entities_id'])) {
+         Session::addMessageAfterRedirect(__('Você não tem acesso à entidade de destino.', 'maintenancecosts'), false, ERROR);
+         return false;
+      }
       $input = $this->normalizeInput($input);
+      if (isset($input['code']) && Config::isCodeTaken(static::getTable(), (string) $input['code'])) {
+         Session::addMessageAfterRedirect(__('Já existe um material com este código.', 'maintenancecosts'), false, ERROR);
+         return false;
+      }
       $input['is_active'] = isset($input['is_active']) ? (int) $input['is_active'] : 0;
       $input['is_recursive'] = isset($input['is_recursive']) ? (int) $input['is_recursive'] : 0;
       if (empty($input['entities_id']) && isset($_SESSION['glpiactive_entity'])) {
@@ -61,7 +69,16 @@ class Material extends CommonDBTM
 
    public function prepareInputForUpdate($input)
    {
-      return $this->normalizeInput($input);
+      if (isset($input['entities_id']) && !Config::canAccessEntity((int) $input['entities_id'])) {
+         Session::addMessageAfterRedirect(__('Você não tem acesso à entidade de destino.', 'maintenancecosts'), false, ERROR);
+         return false;
+      }
+      $input = $this->normalizeInput($input);
+      if (isset($input['code']) && Config::isCodeTaken(static::getTable(), (string) $input['code'], (int) ($this->fields['id'] ?? 0))) {
+         Session::addMessageAfterRedirect(__('Já existe um material com este código.', 'maintenancecosts'), false, ERROR);
+         return false;
+      }
+      return $input;
    }
 
    public function post_addItem()
@@ -258,7 +275,9 @@ class Material extends CommonDBTM
 
       echo "<tr class='tab_bg_1'>";
       echo "<td>" . __('Active') . "</td><td>";
-      \Dropdown::showYesNo('is_active', (int) ($this->fields['is_active'] ?? 1));
+      // getEmpty() preenche '' e (int) '' seria 0: registro novo nasce ativo (A5).
+      $isActive = ($this->fields['is_active'] ?? '') === '' ? 1 : (int) $this->fields['is_active'];
+      \Dropdown::showYesNo('is_active', $isActive);
       echo "</td><td>" . __('Recursive') . "</td><td>";
       \Dropdown::showYesNo('is_recursive', (int) ($this->fields['is_recursive'] ?? 0));
       echo "</td></tr>";

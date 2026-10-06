@@ -8,6 +8,7 @@ if (!defined('GLPI_ROOT')) {
 
 use CommonDBTM;
 use Html;
+use Session;
 
 class Price extends CommonDBTM
 {
@@ -42,14 +43,124 @@ class Price extends CommonDBTM
       return Config::pluginUrl('/front/price.form.php', $full);
    }
 
+   /**
+    * Preco nao tem entidade propria: herda a do material. O core so conhece a
+    * entidade de quem declara `entities_id`, entao as acoes que passam por
+    * can() (acao em massa, API) precisam consultar o material (A1).
+    */
+   private function canAccessMaterialEntity(bool $allowInherited): bool
+   {
+      $material = new Material();
+      if (!$material->getFromDB((int) ($this->fields['plugin_maintenancecosts_materials_id'] ?? 0))) {
+         return false;
+      }
+
+      $inherited = $allowInherited && (int) ($material->fields['is_recursive'] ?? 0) === 1;
+
+      return Session::haveAccessToEntity((int) ($material->fields['entities_id'] ?? 0), $inherited);
+   }
+
+   public function canViewItem(): bool
+   {
+      return parent::canViewItem() && $this->canAccessMaterialEntity(true);
+   }
+
+   public function canUpdateItem(): bool
+   {
+      return parent::canUpdateItem() && $this->canAccessMaterialEntity(true);
+   }
+
+   public function canDeleteItem(): bool
+   {
+      return parent::canDeleteItem() && $this->canAccessMaterialEntity(false);
+   }
+
+   public function canPurgeItem(): bool
+   {
+      return parent::canPurgeItem() && $this->canAccessMaterialEntity(false);
+   }
+
+   /**
+    * O material de origem e o de destino precisam estar ao alcance do usuario.
+    * Roda no funil add()/update(), entao vale tambem para acao em massa e API.
+    * Sem sessao de usuario (CLI, cron) nao ha o que autorizar.
+    */
+   private function authorizeMaterials(array $input, bool $isNew): bool
+   {
+      if ($isNew && (int) ($input['plugin_maintenancecosts_materials_id'] ?? 0) <= 0) {
+         Session::addMessageAfterRedirect(__('Selecione o material do preço.', 'maintenancecosts'), false, ERROR);
+         return false;
+      }
+
+      if (!Config::hasUserSession()) {
+         return true;
+      }
+
+      $ids = [(int) ($input['plugin_maintenancecosts_materials_id'] ?? 0)];
+      if (!$isNew) {
+         $ids[] = (int) ($this->fields['plugin_maintenancecosts_materials_id'] ?? 0);
+      }
+      foreach (array_unique(array_filter($ids)) as $materials_id) {
+         if (!Config::canAccessMaterial($materials_id, true)) {
+            Session::addMessageAfterRedirect(__('Material fora das entidades acessíveis.', 'maintenancecosts'), false, ERROR);
+            return false;
+         }
+      }
+
+      return true;
+   }
+
    public function prepareInputForAdd($input)
    {
+      if (!self::validatePriceValues($input, true) || !$this->authorizeMaterials($input, true)) {
+         return false;
+      }
       return $this->normalizeInput($input);
    }
 
    public function prepareInputForUpdate($input)
    {
+      if (!self::validatePriceValues($input, false) || !$this->authorizeMaterials($input, false)) {
+         return false;
+      }
       return $this->normalizeInput($input);
+   }
+
+   /**
+    * Recusa preco negativo, texto ou vazio; zero e aceito (A6, decisao do
+    * usuario em 2026-10-03). Campos de cotacao podem vir vazios.
+    */
+   public static function validatePriceValues(array $input, bool $isNew): bool
+   {
+      foreach (['unit_price', 'quote_quantity', 'quote_price_1', 'quote_price_2', 'quote_price_3'] as $field) {
+         $required = $field === 'unit_price' && $isNew;
+         if (!array_key_exists($field, $input)) {
+            if ($required) {
+               Session::addMessageAfterRedirect(__('Informe o valor unitário.', 'maintenancecosts'), false, ERROR);
+               return false;
+            }
+            continue;
+         }
+
+         $raw = trim(str_replace(['R$', ' ', "Â "], '', (string) $input[$field]));
+         if ($raw === '') {
+            if ($field === 'unit_price') {
+               Session::addMessageAfterRedirect(__('Informe o valor unitário.', 'maintenancecosts'), false, ERROR);
+               return false;
+            }
+            continue;
+         }
+         if (!preg_match('/^-?[0-9][0-9.,]*$/', $raw)) {
+            Session::addMessageAfterRedirect(__('Valor inválido: use apenas números.', 'maintenancecosts'), false, ERROR);
+            return false;
+         }
+         if (Config::parseDecimal($raw) < 0) {
+            Session::addMessageAfterRedirect(__('O valor não pode ser negativo.', 'maintenancecosts'), false, ERROR);
+            return false;
+         }
+      }
+
+      return true;
    }
 
    public function post_addItem()
@@ -272,7 +383,8 @@ class Price extends CommonDBTM
       if (isset($input['source'])) {
          $input['source'] = trim((string) $input['source']);
       }
-      if (empty($input['users_id']) && isset($_SESSION['glpiID'])) {
+      // A autoria vem da sessao, nunca do formulario.
+      if (isset($_SESSION['glpiID']) && (int) $_SESSION['glpiID'] > 0) {
          $input['users_id'] = (int) $_SESSION['glpiID'];
       }
 
@@ -388,7 +500,7 @@ class Price extends CommonDBTM
       foreach ($DB->request([
          'SELECT' => ['id', 'code', 'name', 'unit'],
          'FROM'   => Material::getTable(),
-         'WHERE'  => ['is_active' => 1],
+         'WHERE'  => ['is_active' => 1] + getEntitiesRestrictCriteria(Material::getTable(), '', '', true),
          'ORDER'  => ['code ASC', 'name ASC'],
       ]) as $row) {
          $label = trim((string) ($row['code'] ?? '')) !== ''

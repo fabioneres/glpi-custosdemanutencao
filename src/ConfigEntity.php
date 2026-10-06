@@ -15,6 +15,31 @@ use Session;
 
 class ConfigEntity extends CommonDBTM
 {
+   /**
+    * Registro gerado pelo proprio plugin: nao se cria, altera nem apaga por
+    * formulario generico, acao em massa ou API (F01). As gravacoes internas
+    * usam add()/update() do modelo, que nao passam por can().
+    */
+   public function canCreateItem(): bool
+   {
+      return false;
+   }
+
+   public function canUpdateItem(): bool
+   {
+      return false;
+   }
+
+   public function canDeleteItem(): bool
+   {
+      return false;
+   }
+
+   public function canPurgeItem(): bool
+   {
+      return false;
+   }
+
    public static function getTypeName($nb = 0)
    {
       return __('Entidade habilitada', 'maintenancecosts');
