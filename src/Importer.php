@@ -8,12 +8,18 @@ if (!defined('GLPI_ROOT')) {
 
 class Importer
 {
+   private const ALLOWED_EXTENSIONS = ['csv', 'xlsx'];
+
    private const MAX_CODE_LENGTH = 64;
    private const MAX_UNIT_LENGTH = 32;
 
    public static function importCostCentersFile(string $path, string $filename, bool $dryRun = true, string $delimiter = 'auto'): array
    {
       $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+      // Tipo conferido no servidor; o accept do HTML nao e controle (A3).
+      if (!in_array($extension, self::ALLOWED_EXTENSIONS, true)) {
+         return self::emptyCostCenterSummary($filename, $dryRun, [__('Tipo de arquivo não permitido: envie um arquivo CSV ou XLSX.', 'maintenancecosts')]);
+      }
       if ($extension === 'xlsx') {
          $csv = self::xlsxToTemporaryCsv($path);
          if ($csv === null) {
@@ -122,8 +128,8 @@ class Importer
             AuditLog::record(CostCenter::class, 0, 'costcenter_import', [], $summary);
          }
       } catch (\Throwable $e) {
-         if (!$dryRun && $DB->inTransaction()) {
-            $DB->rollBack();
+         if (!$dryRun) {
+            Config::rollbackTransaction();
          }
          fclose($handle);
          return self::failedSummary($summary, $e->getMessage());
@@ -137,6 +143,10 @@ class Importer
    public static function importCostCentersLegacyFile(string $path, string $filename, bool $dryRun = true, string $delimiter = 'auto'): array
    {
       $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+      // Tipo conferido no servidor; o accept do HTML nao e controle (A3).
+      if (!in_array($extension, self::ALLOWED_EXTENSIONS, true)) {
+         return self::emptyCostCenterSummary($filename, $dryRun, [__('Tipo de arquivo não permitido: envie um arquivo CSV ou XLSX.', 'maintenancecosts')]);
+      }
       if ($extension === 'xlsx') {
          $csv = self::xlsxToTemporaryCsv($path);
          if ($csv === null) {
@@ -249,8 +259,8 @@ class Importer
             AuditLog::record(CostCenterLegacy::class, 0, 'costcenter_legacy_import', [], $summary);
          }
       } catch (\Throwable $e) {
-         if (!$dryRun && $DB->inTransaction()) {
-            $DB->rollBack();
+         if (!$dryRun) {
+            Config::rollbackTransaction();
          }
          fclose($handle);
          return self::failedSummary($summary, $e->getMessage());
@@ -265,6 +275,10 @@ class Importer
    {
       $priceType = Config::normalizePriceType($priceType);
       $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
+      // Tipo conferido no servidor; o accept do HTML nao e controle (A3).
+      if (!in_array($extension, self::ALLOWED_EXTENSIONS, true)) {
+         return self::emptySummary($filename, $competence, $dryRun, [__('Tipo de arquivo não permitido: envie um arquivo CSV ou XLSX.', 'maintenancecosts')], $priceType);
+      }
       if ($extension === 'xlsx') {
          $csv = self::xlsxToTemporaryCsv($path);
          if ($csv === null) {
@@ -416,8 +430,8 @@ class Importer
             AuditLog::record(ImportBatch::class, $importBatchId, $priceType === 'sinapi' ? 'sinapi_import' : 'quote_import', [], $summary);
          }
       } catch (\Throwable $e) {
-         if (!$dryRun && $DB->inTransaction()) {
-            $DB->rollBack();
+         if (!$dryRun) {
+            Config::rollbackTransaction();
          }
          fclose($handle);
          $failed = self::failedSummary($summary, $e->getMessage());
@@ -1134,11 +1148,13 @@ class Importer
 
    private static function columnIndexFromReference(string $reference): int
    {
-      $letters = preg_replace('/[^A-Z]/', '', strtoupper($reference));
+      // Planilha valida vai ate XFD (3 letras); mais que isso e arquivo malformado
+      // que estouraria a memoria ao montar a linha.
+      $letters = substr((string) preg_replace('/[^A-Z]/', '', strtoupper($reference)), 0, 3);
       $index = 0;
       for ($i = 0; $i < strlen($letters); $i++) {
          $index = ($index * 26) + (ord($letters[$i]) - 64);
       }
-      return max(0, $index - 1);
+      return min(max(0, $index - 1), 255);
    }
 }

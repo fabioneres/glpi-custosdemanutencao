@@ -43,23 +43,20 @@ class TicketMaterial extends CommonDBTM
 
    public function prepareInputForAdd($input)
    {
-      $input = $this->normalizeInput($input);
+      $input = $this->normalizeInput($input, true);
       if (!count($input)) {
          return false;
       }
-      if (empty($input['itemtype'])) {
-         $input['itemtype'] = Ticket::class;
-      }
-      if (empty($input['items_id']) && !empty($input['tickets_id'])) {
-         $input['items_id'] = (int) $input['tickets_id'];
-      }
-      if (empty($input['tickets_id']) && $input['itemtype'] === Ticket::class) {
-         $input['tickets_id'] = (int) ($input['items_id'] ?? 0);
-      }
+      // O lancamento pertence sempre a um chamado: itemtype, tickets_id e items_id
+      // ficam coerentes (um itemtype diferente deixaria o lancamento sem chamado).
+      $ticketRef = (int) ($input['tickets_id'] ?? 0) ?: (int) ($input['items_id'] ?? 0);
+      $input['itemtype'] = Ticket::class;
+      $input['tickets_id'] = $ticketRef;
+      $input['items_id'] = $ticketRef;
       if (empty($input['entities_id']) && isset($_SESSION['glpiactive_entity'])) {
          $input['entities_id'] = (int) $_SESSION['glpiactive_entity'];
       }
-      if (empty($input['users_id']) && isset($_SESSION['glpiID'])) {
+      if (isset($_SESSION['glpiID']) && (int) $_SESSION['glpiID'] > 0) {
          $input['users_id'] = (int) $_SESSION['glpiID'];
       }
       return $input;
@@ -67,7 +64,7 @@ class TicketMaterial extends CommonDBTM
 
    public function prepareInputForUpdate($input)
    {
-      $input = $this->normalizeInput($input);
+      $input = $this->normalizeInput($input, false);
       return count($input) ? $input : false;
    }
 
@@ -89,6 +86,104 @@ class TicketMaterial extends CommonDBTM
       $this->ensureTicketContractLink();
       $this->syncContractCost();
       $this->syncTicketCost();
+   }
+
+   /**
+    * Exclusao logica por qualquer caminho (inclusive acao em massa): o custo
+    * nativo e zerado, como no cancelamento pela tela.
+    */
+   public function post_deleteItem()
+   {
+      $this->fields['is_deleted'] = 1;
+      AuditLog::record(self::class, (int) $this->getID(), 'consumption_delete', [], $this->fields, '', (int) ($this->fields['entities_id'] ?? 0));
+      $this->syncContractCost();
+      $this->syncTicketCost();
+   }
+
+   public function post_restoreItem()
+   {
+      $this->fields['is_deleted'] = 0;
+      AuditLog::record(self::class, (int) $this->getID(), 'consumption_restore', [], $this->fields, '', (int) ($this->fields['entities_id'] ?? 0));
+      $this->syncContractCost();
+      $this->syncTicketCost();
+   }
+
+   /**
+    * Exclusao definitiva: nao pode sobrar custo nativo orfao no chamado nem no
+    * contrato.
+    */
+   public function post_purgeItem()
+   {
+      AuditLog::record(self::class, (int) $this->getID(), 'consumption_purge', [], $this->fields, '', (int) ($this->fields['entities_id'] ?? 0));
+      $this->removeLinkedContractCost();
+      $this->removeLinkedTicketCost();
+      TicketCostCenter::syncFromTicketMaterials((int) ($this->fields['tickets_id'] ?? 0));
+   }
+
+   private function removeLinkedTicketCost(): void
+   {
+      if (!class_exists('TicketCost')) {
+         return;
+      }
+
+      $ticketcosts_id = (int) ($this->fields['ticketcosts_id'] ?? 0);
+      if ($ticketcosts_id > 0) {
+         $ticketCost = new \TicketCost();
+         if ($ticketCost->getFromDB($ticketcosts_id)) {
+            $ticketCost->delete(['id' => $ticketcosts_id], true);
+         }
+      }
+      $this->fields['ticketcosts_id'] = 0;
+   }
+
+   /**
+    * Chamado excluido definitivamente: remove os lancamentos e os vinculos do
+    * plugin, com os custos nativos que eles criaram (F11).
+    */
+   public static function purgeForTicket(int $tickets_id): void
+   {
+      global $DB;
+
+      if ($tickets_id <= 0) {
+         return;
+      }
+
+      foreach ($DB->request(['SELECT' => ['id'], 'FROM' => self::getTable(), 'WHERE' => ['tickets_id' => $tickets_id]]) as $row) {
+         $item = new self();
+         if ($item->getFromDB((int) $row['id'])) {
+            $item->removeLinkedContractCost();
+            $item->removeLinkedTicketCost();
+            AuditLog::record(self::class, (int) $row['id'], 'consumption_ticket_purge', $item->fields, [], '', (int) ($item->fields['entities_id'] ?? 0));
+         }
+      }
+
+      $DB->delete(self::getTable(), ['tickets_id' => $tickets_id]);
+      $DB->delete(TicketCostCenter::getTable(), ['tickets_id' => $tickets_id]);
+   }
+
+   /**
+    * Chamado transferido para outra entidade: lancamentos e vinculos acompanham
+    * a entidade do chamado, que e a regra do plugin (A12) (F11).
+    */
+   public static function transferForTicket(int $tickets_id, int $entities_id): void
+   {
+      global $DB;
+
+      if ($tickets_id <= 0) {
+         return;
+      }
+
+      // A entidade e a do chamado, nao a informada pelo chamador (hook de
+      // transferencia ou de atualizacao).
+      $ticket = new Ticket();
+      if (!$ticket->getFromDB($tickets_id)) {
+         return;
+      }
+      $entities_id = (int) $ticket->fields['entities_id'];
+
+      $DB->update(self::getTable(), ['entities_id' => $entities_id], ['tickets_id' => $tickets_id]);
+      $DB->update(TicketCostCenter::getTable(), ['entities_id' => $entities_id], ['tickets_id' => $tickets_id]);
+      AuditLog::record(self::class, $tickets_id, 'ticket_transfer', [], ['entities_id' => $entities_id], '', $entities_id);
    }
 
    private function ensureTicketCostCenterLink(): void
@@ -115,12 +210,26 @@ class TicketMaterial extends CommonDBTM
       );
    }
 
-   private function normalizeInput(array $input): array
+   private function normalizeInput(array $input, bool $isNew): array
    {
       $settings = Config::getSettings();
       if (!(int) $settings['is_enabled']) {
          Session::addMessageAfterRedirect(__('O plugin Custos de Manutenção está desabilitado.', 'maintenancecosts'), false, ERROR);
          return [];
+      }
+
+      // Os vinculos com o custo nativo do chamado e do contrato sao do plugin:
+      // aceitar o id vindo do formulario permitiria sobrescrever ou apagar o
+      // custo de outra entidade (F03).
+      unset($input['contractcosts_id'], $input['ticketcosts_id']);
+
+      // O total e calculado de quantidade x valor unitario: postar so o total
+      // gravaria um valor financeiro sem lastro (F09).
+      unset($input['total_price']);
+
+      // Autoria, cancelamento e vinculo com o objeto de origem nao mudam por formulario.
+      if (!$isNew) {
+         unset($input['users_id'], $input['deleted_by'], $input['deleted_at'], $input['itemtype'], $input['items_id'], $input['entities_id']);
       }
 
       foreach (['tickets_id', 'items_id', 'plugin_maintenancecosts_materials_id', 'plugin_maintenancecosts_costcenters_id', 'plugin_maintenancecosts_materialorigins_id', 'contracts_id'] as $field) {
@@ -129,7 +238,75 @@ class TicketMaterial extends CommonDBTM
          }
       }
 
-      $ticketId = (int) ($input['tickets_id'] ?? ($this->fields['tickets_id'] ?? 0));
+      $storedTicketId = $isNew ? 0 : (int) ($this->fields['tickets_id'] ?? 0);
+
+      // Um lancamento pertence ao chamado em que foi criado: mover para outro
+      // chamado por POST permitiria gravar em chamado sem acesso (A1).
+      if (!$isNew && !empty($input['tickets_id']) && (int) $input['tickets_id'] !== $storedTicketId) {
+         Session::addMessageAfterRedirect(__('O lançamento não pode ser movido para outro chamado.', 'maintenancecosts'), false, ERROR);
+         return [];
+      }
+
+      $ticketId = $isNew
+         ? ((int) ($input['tickets_id'] ?? 0) ?: (int) ($input['items_id'] ?? 0))
+         : $storedTicketId;
+
+      // Lancamento novo sempre pertence a um chamado (F02).
+      if ($isNew && $ticketId <= 0) {
+         Session::addMessageAfterRedirect(__('Informe o chamado do lançamento.', 'maintenancecosts'), false, ERROR);
+         return [];
+      }
+
+      $ticketEntity = null;
+      if ($ticketId > 0) {
+         $ticket = new Ticket();
+         if (!$ticket->getFromDB($ticketId)) {
+            Session::addMessageAfterRedirect(__('Chamado não encontrado.', 'maintenancecosts'), false, ERROR);
+            return [];
+         }
+         $ticketEntity = (int) $ticket->fields['entities_id'];
+
+         // O acesso ao chamado e verificado aqui, no modelo, e nao so nas telas:
+         // o formulario pode chegar sem tickets_id (so items_id), pela rota
+         // generica ou por acao em massa (F02).
+         if (!Config::canAccessEntity($ticketEntity)) {
+            Session::addMessageAfterRedirect(__('Você não tem acesso à entidade do chamado.', 'maintenancecosts'), false, ERROR);
+            return [];
+         }
+
+         // A habilitacao vale na entidade do chamado, nao na entidade ativa (A19).
+         if (!Config::isEnabledForEntity($ticketEntity)) {
+            Session::addMessageAfterRedirect(__('O plugin não está habilitado para a entidade do chamado.', 'maintenancecosts'), false, ERROR);
+            return [];
+         }
+
+         // A entidade do lancamento e sempre a do chamado, nunca a do
+         // formulario nem a entidade ativa da sessao (A12).
+         $input['entities_id'] = $ticketEntity;
+      }
+
+      // Material novo ou trocado precisa estar ativo e disponivel na entidade
+      // do chamado; o dropdown filtra, mas o servidor e quem decide (A10).
+      if ($ticketEntity !== null && !empty($input['plugin_maintenancecosts_materials_id'])) {
+         $materialId = (int) $input['plugin_maintenancecosts_materials_id'];
+         $materialChanged = $isNew || $materialId !== (int) ($this->fields['plugin_maintenancecosts_materials_id'] ?? 0);
+         if ($materialChanged && !Config::isMaterialSelectable($materialId, $ticketEntity)) {
+            Session::addMessageAfterRedirect(__('Material inativo ou indisponível para a entidade do chamado.', 'maintenancecosts'), false, ERROR);
+            return [];
+         }
+      }
+
+      // Contrato novo ou trocado precisa pertencer a entidade do chamado (ou ser
+      // recursivo de uma entidade ancestral): sem isso o lancamento criaria custo
+      // em contrato de outra entidade.
+      if ($ticketEntity !== null && !empty($input['contracts_id'])) {
+         $contractId = (int) $input['contracts_id'];
+         $contractChanged = $isNew || $contractId !== (int) ($this->fields['contracts_id'] ?? 0);
+         if ($contractChanged && !Config::isContractSelectable($contractId, $ticketEntity)) {
+            Session::addMessageAfterRedirect(__('Contrato indisponível para a entidade do chamado.', 'maintenancecosts'), false, ERROR);
+            return [];
+         }
+      }
 
       if (isset($input['costcenter_source'])) {
          $input['costcenter_source'] = self::normalizeCostCenterSource((string) $input['costcenter_source']);
@@ -152,7 +329,13 @@ class TicketMaterial extends CommonDBTM
       }
 
       if (isset($input['quantity'])) {
-         $input['quantity'] = max(0, round((float) $input['quantity']));
+         $input['quantity'] = round((float) $input['quantity']);
+      }
+
+      // Quantidade zero, negativa ou nao numerica nao gera lancamento (A9).
+      if (($isNew && !isset($input['quantity'])) || (isset($input['quantity']) && (float) $input['quantity'] <= 0)) {
+         Session::addMessageAfterRedirect(__('A quantidade deve ser maior que zero.', 'maintenancecosts'), false, ERROR);
+         return [];
       }
 
       if (isset($input['quantity']) || isset($input['unit_price_applied'])) {
@@ -169,7 +352,7 @@ class TicketMaterial extends CommonDBTM
          $input['consumption_date'] = date('Y-m-d');
       }
 
-      if (!empty($input['tickets_id']) && !$this->ticketCategoryAllowed((int) $input['tickets_id'], (string) ($settings['allowed_itilcategories'] ?? ''))) {
+      if ($ticketId > 0 && !$this->ticketCategoryAllowed($ticketId, (string) ($settings['allowed_itilcategories'] ?? ''))) {
          Session::addMessageAfterRedirect(__('Categoria do chamado não permitida para lançamento de materiais.', 'maintenancecosts'), false, ERROR);
          return [];
       }
@@ -204,12 +387,25 @@ class TicketMaterial extends CommonDBTM
          $input['plugin_maintenancecosts_costcenters_id'] = (int) $ticketCostCenter['plugin_maintenancecosts_costcenters_id'];
          $input['costcenter_source'] = (string) $ticketCostCenter['costcenter_source'];
       } elseif (
+         $ticketEntity !== null
+         && !empty($input['plugin_maintenancecosts_costcenters_id'])
+         && ($isNew
+            || (int) $input['plugin_maintenancecosts_costcenters_id'] !== (int) ($this->fields['plugin_maintenancecosts_costcenters_id'] ?? 0))
+         && !Config::isCostCenterSelectable(
+            (int) $input['plugin_maintenancecosts_costcenters_id'],
+            self::normalizeCostCenterSource((string) ($input['costcenter_source'] ?? 'legacy')),
+            $ticketEntity
+         )
+      ) {
+         Session::addMessageAfterRedirect(__('Centro de custo inativo ou indisponível para a entidade do chamado.', 'maintenancecosts'), false, ERROR);
+         return [];
+      } elseif (
          $ticketId > 0
          && !TicketCostCenter::validateMaterialSelection(
             $ticketId,
             (int) ($input['plugin_maintenancecosts_costcenters_id'] ?? 0),
             (string) ($input['costcenter_source'] ?? 'legacy'),
-            (int) ($this->fields['id'] ?? 0)
+            $isNew ? 0 : (int) ($this->fields['id'] ?? 0)
          )
       ) {
          return [];
@@ -222,6 +418,17 @@ class TicketMaterial extends CommonDBTM
 
       if (empty($input['competence'])) {
          $input['competence'] = $this->resolveDefaultCompetence($input, (string) ($settings['default_competence_mode'] ?? 'latest'));
+      }
+
+      // Com preco manual desabilitado o valor unitario do preco SINAPI vem sempre do
+      // catalogo (F09). O valor de cotacao de mercado e digitado por desenho da tela.
+      $manualPriceBlocked = !(int) $settings['allow_manual_unit_price'] && ($input['price_type'] ?? 'sinapi') === 'sinapi';
+      if ($manualPriceBlocked && $isNew && empty($input['plugin_maintenancecosts_materials_id'])) {
+         Session::addMessageAfterRedirect(__('Selecione um material: o valor unitário vem do catálogo.', 'maintenancecosts'), false, ERROR);
+         return [];
+      }
+      if ($manualPriceBlocked && !$isNew && empty($input['plugin_maintenancecosts_materials_id'])) {
+         unset($input['unit_price_applied']);
       }
 
       if (!empty($input['plugin_maintenancecosts_materials_id'])) {
@@ -237,16 +444,21 @@ class TicketMaterial extends CommonDBTM
             : Price::getLatestForMaterialAndType((int) $input['plugin_maintenancecosts_materials_id'], (string) $input['price_type']);
 
          if ($price) {
-            if ($input['price_type'] === 'sinapi' && !(int) $settings['allow_manual_unit_price']) {
+            if ($manualPriceBlocked) {
                $input['unit_price_applied'] = (float) $price['unit_price'];
             }
             if (empty($input['competence'])) {
                $input['competence'] = (string) $price['competence'];
             }
-         } elseif ($input['price_type'] === 'sinapi' && !(int) $settings['allow_manual_unit_price']) {
+         } elseif ($manualPriceBlocked) {
             Session::addMessageAfterRedirect(__('Não há preço cadastrado para o material/competência selecionado.', 'maintenancecosts'), false, ERROR);
             return [];
          }
+      }
+
+      if (isset($input['unit_price_applied']) && (float) $input['unit_price_applied'] < 0) {
+         Session::addMessageAfterRedirect(__('O valor unitário não pode ser negativo.', 'maintenancecosts'), false, ERROR);
+         return [];
       }
 
       if (isset($input['is_deleted'])) {

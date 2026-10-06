@@ -46,7 +46,7 @@ if (Config::canManageCostCenters()) {
    echo "<div class='plugin-maintenancecosts-panel mb-3'>";
    echo "<div class='plugin-maintenancecosts-panel-header'><i class='ti ti-file-import'></i> " . __('Importar centros de custo', 'maintenancecosts') . "</div>";
    echo "<div class='plugin-maintenancecosts-panel-body'>";
-   echo "<form method='post' enctype='multipart/form-data' action='" . \htmlescape($_SERVER['PHP_SELF']) . "'>";
+   echo "<form method='post' enctype='multipart/form-data' action='" . \htmlescape(Config::pluginUrl('/front/costcenter.php')) . "'>";
    echo Html::hidden('_glpi_csrf_token', ['value' => Session::getNewCSRFToken()]);
    echo "<div class='d-flex gap-2 align-items-center flex-wrap'>";
    echo "<input type='file' name='costcenter_file' accept='.csv,.xlsx,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' required>";

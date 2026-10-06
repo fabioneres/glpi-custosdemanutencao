@@ -44,7 +44,7 @@ echo "<a class='btn btn-secondary' href='" . \htmlescape(Config::pluginUrl($isQu
 echo "</div>";
 
 echo "<div class='spaced'>";
-echo "<form method='post' enctype='multipart/form-data' action='" . \htmlescape($_SERVER['PHP_SELF']) . "'>";
+echo "<form method='post' enctype='multipart/form-data' action='" . \htmlescape(Config::pluginUrl('/front/import.form.php')) . "'>";
 echo Html::hidden('price_type', ['value' => $priceType]);
 echo "<table class='tab_cadre_fixe'>";
 echo "<tr class='tab_bg_2'><th colspan='4'>" . \htmlescape($isQuote ? __('Importar Cotação', 'maintenancecosts') : __('Importar tabela SINAPI', 'maintenancecosts')) . "</th></tr>";
@@ -137,7 +137,7 @@ foreach ($history as $row) {
    echo "<td data-value='" . (int) $row['total_rows'] . "'>" . (int) $row['total_rows'] . "</td>";
    echo "<td data-value='" . (int) $row['imported_rows'] . "'>" . (int) $row['imported_rows'] . "</td>";
    echo "<td data-value='" . (int) $row['error_rows'] . "'>" . (int) $row['error_rows'] . "</td>";
-   echo "<td>" . getUserName((int) $row['users_id']) . "</td>";
+   echo "<td>" . \htmlescape(getUserName((int) $row['users_id'])) . "</td>";
    echo "<td class='center'>" . \htmlescape($row['date_creation'] ?? '') . "</td>";
    echo "</tr>";
 }

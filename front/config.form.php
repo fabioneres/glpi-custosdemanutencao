@@ -12,9 +12,14 @@ require_once dirname(__DIR__) . '/bootstrap.php';
 Config::checkRight(Config::RIGHT_CONFIG, UPDATE);
 
 if (isset($_POST['save'])) {
+   if (!Config::canManageAllEntities()) {
+      // A configuracao e unica e vale para todas as entidades (F12).
+      Session::addMessageAfterRedirect(__('A configuração geral vale para todas as entidades e só pode ser alterada por quem tem acesso a todas elas.', 'maintenancecosts'), false, ERROR);
+      Html::redirect(Config::pluginUrl('/front/config.form.php'));
+   }
    Config::saveSettings($_POST);
    Session::addMessageAfterRedirect(__('Configurações salvas.', 'maintenancecosts'), false, INFO);
-   Html::redirect($_SERVER['PHP_SELF']);
+   Html::redirect(Config::pluginUrl('/front/config.form.php'));
 }
 
 $settings = Config::getSettings();
@@ -22,7 +27,7 @@ $settings = Config::getSettings();
 Html::header(Config::getTypeName(), $_SERVER['PHP_SELF'], 'plugins', Menu::class);
 Config::renderPluginLayoutStart('config');
 
-echo "<form method='post' action='" . \htmlescape($_SERVER['PHP_SELF']) . "'>";
+echo "<form method='post' action='" . \htmlescape(Config::pluginUrl('/front/config.form.php')) . "'>";
 echo Html::hidden('_glpi_csrf_token', ['value' => Session::getNewCSRFToken()]);
 
 echo "<div class='plugin-maintenancecosts-panel'>";

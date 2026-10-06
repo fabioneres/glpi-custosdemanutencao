@@ -38,15 +38,38 @@ class MaterialOrigin extends CommonDBTM
       return Config::pluginUrl('/front/materialorigin.form.php', $full);
    }
 
+   /**
+    * A origem de material e um catalogo global (vale para todas as entidades):
+    * so altera quem alcanca todas elas.
+    */
+   private function canChangeCatalog(): bool
+   {
+      if (Config::hasUserSession() && !Config::canManageAllEntities()) {
+         \Session::addMessageAfterRedirect(__('A origem de material vale para todas as entidades e só pode ser alterada por quem tem acesso a todas elas.', 'maintenancecosts'), false, ERROR);
+         return false;
+      }
+
+      return true;
+   }
+
    public function prepareInputForAdd($input)
    {
+      if (!$this->canChangeCatalog()) {
+         return false;
+      }
+
       $input = $this->normalizeInput($input);
-      $input['is_active'] = isset($input['is_active']) ? (int) $input['is_active'] : 0;
+      // Origem nova nasce ativa quando o campo nao vem (A5).
+      $input['is_active'] = isset($input['is_active']) ? (int) $input['is_active'] : 1;
       return $input;
    }
 
    public function prepareInputForUpdate($input)
    {
+      if (!$this->canChangeCatalog()) {
+         return false;
+      }
+
       return $this->normalizeInput($input);
    }
 
@@ -105,7 +128,9 @@ class MaterialOrigin extends CommonDBTM
       echo "<tr class='tab_bg_1'><td>" . __('Name') . "</td>";
       echo "<td><input type='text' name='name' value='" . Html::cleanInputText($this->fields['name'] ?? '') . "' class='form-control' required></td>";
       echo "<td>" . __('Active') . "</td><td>";
-      \Dropdown::showYesNo('is_active', (int) ($this->fields['is_active'] ?? 1));
+      // getEmpty() preenche '' e (int) '' seria 0: registro novo nasce ativo (A5).
+      $isActive = ($this->fields['is_active'] ?? '') === '' ? 1 : (int) $this->fields['is_active'];
+      \Dropdown::showYesNo('is_active', $isActive);
       echo "</td></tr>";
 
       echo "<tr class='tab_bg_1'><td>" . __('Comments') . "</td>";

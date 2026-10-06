@@ -20,7 +20,7 @@ if (isset($_POST['add'])) {
 
 if (isset($_POST['update'])) {
    Config::checkRight(Config::RIGHT_PRICES, UPDATE);
-   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0));
+   Config::checkItemAccess($item, (int) ($_POST['id'] ?? 0), true, $_POST);
    $item->update($_POST);
    Html::back();
 }

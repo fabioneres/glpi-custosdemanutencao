@@ -37,7 +37,7 @@ foreach ($iterator as $row) {
    echo "<td data-value='" . (int) $row['total_rows'] . "'>" . (int) $row['total_rows'] . "</td>";
    echo "<td data-value='" . (int) $row['imported_rows'] . "'>" . (int) $row['imported_rows'] . "</td>";
    echo "<td data-value='" . (int) $row['error_rows'] . "'>" . (int) $row['error_rows'] . "</td>";
-   echo "<td>" . getUserName((int) $row['users_id']) . "</td>";
+   echo "<td>" . \htmlescape(getUserName((int) $row['users_id'])) . "</td>";
    echo "<td class='center'>" . \htmlescape($row['date_creation'] ?? '') . "</td>";
    echo "<td><a class='btn btn-sm btn-secondary' href='" . \htmlescape(ImportBatch::getFormURL() . '?id=' . (int) $row['id']) . "'>" . __('Visualizar', 'maintenancecosts') . "</a></td>";
    echo "</tr>";

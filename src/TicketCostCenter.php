@@ -19,6 +19,31 @@ class TicketCostCenter extends CommonDBTM
       return 'glpi_plugin_maintenancecosts_ticketcostcenters';
    }
 
+   /**
+    * Registro gerado pelo proprio plugin: nao se cria, altera nem apaga por
+    * formulario generico, acao em massa ou API (F01). As gravacoes internas
+    * usam add()/update() do modelo, que nao passam por can().
+    */
+   public function canCreateItem(): bool
+   {
+      return false;
+   }
+
+   public function canUpdateItem(): bool
+   {
+      return false;
+   }
+
+   public function canDeleteItem(): bool
+   {
+      return false;
+   }
+
+   public function canPurgeItem(): bool
+   {
+      return false;
+   }
+
    public static function getTypeName($nb = 0)
    {
       return _n('Centro de custo do chamado', 'Centros de custo do chamado', $nb, 'maintenancecosts');
@@ -116,13 +141,29 @@ class TicketCostCenter extends CommonDBTM
          return false;
       }
 
-      $entities_id = $entities_id > 0 ? $entities_id : (int) ($ticket->fields['entities_id'] ?? 0);
+      // A entidade do vinculo e sempre a do chamado, nunca a informada pelo
+      // chamador nem a entidade ativa da sessao.
+      $entities_id = (int) ($ticket->fields['entities_id'] ?? 0);
       $selections = self::getSelections($tickets_id);
 
       foreach (['legacy', 'new'] as $source) {
          $costcenter_id = isset($valuesBySource[$source])
             ? (int) $valuesBySource[$source]
             : (int) ($selections[$source]['plugin_maintenancecosts_costcenters_id'] ?? 0);
+
+         // Centro novo ou trocado precisa estar ativo e disponivel na entidade
+         // do chamado, como no formulario nativo. Um vinculo ja existente que
+         // nao muda nao e revalidado.
+         $currentId = (int) ($selections[$source]['plugin_maintenancecosts_costcenters_id'] ?? 0);
+         if ($costcenter_id > 0 && $costcenter_id !== $currentId
+            && !Config::isCostCenterSelectable($costcenter_id, $source, $entities_id)) {
+            Session::addMessageAfterRedirect(
+               __('Centro de custo inativo ou indisponível para a entidade do chamado.', 'maintenancecosts'),
+               false,
+               ERROR
+            );
+            return false;
+         }
 
          if (!self::validateSelectionChange($tickets_id, $costcenter_id, $source)) {
             return false;
@@ -509,7 +550,10 @@ class TicketCostCenter extends CommonDBTM
 
    public static function displayTabContentForItem(\CommonGLPI $item, $tabnum = 1, $withtemplate = 0): bool
    {
-      if ($item instanceof Ticket && Config::isEnabledForEntity((int) $item->getEntityID())) {
+      if ($item instanceof Ticket
+         && Config::isEnabledForEntity((int) $item->getEntityID())
+         && Config::canViewConsumption()
+      ) {
          TicketMaterial::showTicketCostCenterForm($item);
       }
 

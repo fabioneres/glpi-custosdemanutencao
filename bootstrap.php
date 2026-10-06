@@ -13,7 +13,7 @@ if (!defined('GLPI_ROOT')) {
 }
 
 if (!defined('PLUGIN_MAINTENANCECOSTS_VERSION')) {
-   define('PLUGIN_MAINTENANCECOSTS_VERSION', '2.0.0-alpha.1');
+   define('PLUGIN_MAINTENANCECOSTS_VERSION', '2.0.0');
 }
 
 if (!defined('PLUGIN_MAINTENANCECOSTS_SCHEMA_VERSION')) {

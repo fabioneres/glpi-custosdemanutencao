@@ -27,10 +27,32 @@ class Exporter
       fwrite($out, "\xEF\xBB\xBF");
       fputcsv($out, $headers, ';');
       foreach ($rows as $row) {
-         fputcsv($out, $row, ';');
+         fputcsv($out, array_map([self::class, 'neutralizeCsvCell'], $row), ';');
       }
       fclose($out);
       exit;
+   }
+
+   /**
+    * Impede que o Excel/LibreOffice execute como formula uma celula de texto
+    * que comece com =, +, - ou @ (CSV injection). Numeros negativos legitimos
+    * (ex.: -12,50) passam sem alteracao.
+    */
+   public static function neutralizeCsvCell($value)
+   {
+      if (!is_string($value) || $value === '') {
+         return $value;
+      }
+
+      $first = $value[0];
+      if (in_array($first, ['=', '+', '@', "\t", "\r"], true)) {
+         return "'" . $value;
+      }
+      if ($first === '-' && !preg_match('/^-\s*[\d.,]+$/', $value)) {
+         return "'" . $value;
+      }
+
+      return $value;
    }
 
    public static function sendPdf(string $filename, array $headers, array $rows): void
@@ -98,7 +120,8 @@ class Exporter
       Config::checkRight(Config::RIGHT_MATERIALS, READ);
 
       $rows = [];
-      $iterator = $DB->request(['FROM' => Material::getTable(), 'ORDER' => 'name ASC']);
+      // Exportacao segue a mesma restricao de entidade da tela (A1/A16).
+      $iterator = $DB->request(['FROM' => Material::getTable(), 'WHERE' => getEntitiesRestrictCriteria(Material::getTable(), 'entities_id', '', true), 'ORDER' => 'name ASC']);
       foreach ($iterator as $row) {
          $rows[] = [$row['code'], $row['name'], $row['unit'], $row['category'], (int) $row['is_active']];
       }
@@ -110,13 +133,27 @@ class Exporter
       global $DB;
       Config::checkRight(Config::RIGHT_PRICES, READ);
 
-      $criteria = ['FROM' => Price::getTable(), 'ORDER' => 'competence DESC, id DESC'];
+      // Preco nao tem entidade propria: restringe pela entidade do material (A1).
+      $criteria = [
+         'SELECT'     => [Price::getTable() . '.*'],
+         'FROM'       => Price::getTable(),
+         'INNER JOIN' => [
+            Material::getTable() => [
+               'FKEY' => [Price::getTable() => 'plugin_maintenancecosts_materials_id', Material::getTable() => 'id'],
+            ],
+         ],
+         'ORDER'      => [Price::getTable() . '.competence DESC', Price::getTable() . '.id DESC'],
+      ];
       $where = [];
+      $entityCriteria = getEntitiesRestrictCriteria(Material::getTable(), 'entities_id', '', true);
+      if (count($entityCriteria)) {
+         $where[] = $entityCriteria;
+      }
       if ($materials_id > 0) {
-         $where['plugin_maintenancecosts_materials_id'] = $materials_id;
+         $where[Price::getTable() . '.plugin_maintenancecosts_materials_id'] = $materials_id;
       }
       if ($priceType !== 'all' && $priceType !== '') {
-         $where['price_type'] = Config::normalizePriceType($priceType);
+         $where[Price::getTable() . '.price_type'] = Config::normalizePriceType($priceType);
       }
       if (count($where)) {
          $criteria['WHERE'] = $where;
@@ -172,7 +209,7 @@ class Exporter
       Config::checkRight(Config::RIGHT_COSTCENTERS, READ);
 
       $rows = [];
-      $iterator = $DB->request(['FROM' => CostCenter::getTable(), 'ORDER' => 'code ASC']);
+      $iterator = $DB->request(['FROM' => CostCenter::getTable(), 'WHERE' => getEntitiesRestrictCriteria(CostCenter::getTable(), 'entities_id', '', true), 'ORDER' => 'code ASC']);
       foreach ($iterator as $row) {
          $rows[] = [
             $row['code'],
@@ -202,7 +239,7 @@ class Exporter
       Config::checkRight(Config::RIGHT_COSTCENTERS, READ);
 
       $rows = [];
-      $iterator = $DB->request(['FROM' => CostCenterLegacy::getTable(), 'ORDER' => 'code ASC']);
+      $iterator = $DB->request(['FROM' => CostCenterLegacy::getTable(), 'WHERE' => getEntitiesRestrictCriteria(CostCenterLegacy::getTable(), 'entities_id', '', true), 'ORDER' => 'code ASC']);
       foreach ($iterator as $row) {
          $rows[] = [
             $row['code'],

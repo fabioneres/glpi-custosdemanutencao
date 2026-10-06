@@ -98,7 +98,15 @@ class CostCenter extends CommonDBTM
 
    public function prepareInputForAdd($input)
    {
+      if (isset($input['entities_id']) && !Config::canAccessEntity((int) $input['entities_id'])) {
+         Session::addMessageAfterRedirect(__('Você não tem acesso à entidade de destino.', 'maintenancecosts'), false, ERROR);
+         return false;
+      }
       $input = $this->normalizeInput($input);
+      if (isset($input['code']) && Config::isCodeTaken(static::getTable(), (string) $input['code'])) {
+         Session::addMessageAfterRedirect(__('Já existe um centro de custo com este código.', 'maintenancecosts'), false, ERROR);
+         return false;
+      }
       if (!isset($input['is_active'])) {
          $input['is_active'] = 1;
       }
@@ -113,10 +121,19 @@ class CostCenter extends CommonDBTM
 
    public function prepareInputForUpdate($input)
    {
+      if (isset($input['entities_id']) && !Config::canAccessEntity((int) $input['entities_id'])) {
+         Session::addMessageAfterRedirect(__('Você não tem acesso à entidade de destino.', 'maintenancecosts'), false, ERROR);
+         return false;
+      }
       // O registro atual entra na normalizacao porque o rotulo e recomposto a
       // partir de codigo e campos organizacionais. Sem ele, uma atualizacao
       // parcial recomporia o rotulo a partir de um input incompleto.
-      return $this->normalizeInput($input, $this->fields);
+      $input = $this->normalizeInput($input, $this->fields);
+      if (isset($input['code']) && Config::isCodeTaken(static::getTable(), (string) $input['code'], (int) ($this->fields['id'] ?? 0))) {
+         Session::addMessageAfterRedirect(__('Já existe um centro de custo com este código.', 'maintenancecosts'), false, ERROR);
+         return false;
+      }
+      return $input;
    }
 
    public function post_addItem()
@@ -155,6 +172,11 @@ class CostCenter extends CommonDBTM
          if (isset($input[$field])) {
             $input[$field] = (int) $input[$field];
          }
+      }
+
+      // Local de entidade sem acesso nao vira rotulo de campus.
+      if (!empty($input['locations_id']) && !self::isLocationAccessible((int) $input['locations_id'])) {
+         unset($input['locations_id']);
       }
 
       if (isset($input['locations_id'])) {
@@ -451,7 +473,7 @@ class CostCenter extends CommonDBTM
       foreach ($DB->request([
          'SELECT' => ['id', 'name', 'completename'],
          'FROM'   => 'glpi_locations',
-         'WHERE'  => ['locations_id' => 0],
+         'WHERE'  => ['locations_id' => 0] + getEntitiesRestrictCriteria('glpi_locations', '', '', true),
          'ORDER'  => 'name ASC',
       ]) as $row) {
          $label = self::locationLabelFromRow($row);
@@ -469,6 +491,25 @@ class CostCenter extends CommonDBTM
       }
 
       return $options;
+   }
+
+   private static function isLocationAccessible(int $locationsId): bool
+   {
+      global $DB;
+
+      if (!Config::hasUserSession() || $locationsId <= 0 || !$DB->tableExists('glpi_locations')) {
+         return true;
+      }
+
+      $row = $DB->request([
+         'SELECT' => ['entities_id', 'is_recursive'],
+         'FROM'   => 'glpi_locations',
+         'WHERE'  => ['id' => $locationsId],
+         'LIMIT'  => 1,
+      ])->current();
+
+      return is_array($row)
+         && \Session::haveAccessToEntity((int) $row['entities_id'], (bool) $row['is_recursive']);
    }
 
    private static function getRootLocationId(int $locationsId): int

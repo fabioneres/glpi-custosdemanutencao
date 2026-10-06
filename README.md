@@ -5,7 +5,7 @@
 </p>
 
 [![Licenca](https://img.shields.io/badge/Licenca-GPLv3%2B-orange)](https://www.gnu.org/licenses/gpl-3.0.html)
-[![Versao](https://img.shields.io/badge/Versao-2.0.0--alpha.1-blue)](CHANGELOG.md)
+[![Versao](https://img.shields.io/badge/Versao-2.0.0-blue)](CHANGELOG.md)
 [![GLPI](https://img.shields.io/badge/GLPI-11.0.x-green)](#compatibilidade)
 [![PHP](https://img.shields.io/badge/PHP-8.2%2B-777bb4)](#compatibilidade)
 

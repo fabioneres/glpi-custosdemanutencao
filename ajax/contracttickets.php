@@ -24,11 +24,14 @@ $where = [
 
 $active_entities = $_SESSION['glpiactiveentities'] ?? [];
 if (!empty($active_entities)) {
+   // Chamado nao tem is_recursive: com true o criterio usava a coluna
+   // inexistente glpi_tickets.is_recursive (erro SQL; HTTP 500 no GLPI 11).
+   // As entidades ativas ja incluem as filhas (A17).
    $entity_criteria = getEntitiesRestrictCriteria(
       'glpi_tickets',
       'entities_id',
       $active_entities,
-      true
+      false
    );
    if (count($entity_criteria)) {
       $where[] = $entity_criteria;

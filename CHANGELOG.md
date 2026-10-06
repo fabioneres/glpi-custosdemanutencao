@@ -1,5 +1,29 @@
 # Changelog
 
+## [2.0.0] - 2026-10-06
+
+Primeira versao estavel da linha GLPI 11, com a base funcional da 1.1.x e as
+correcoes da bateria de paridade.
+
+
+- GLPI 11: a importacao com falha de gravacao volta a ser revertida com mensagem e lote `failed` (antes gerava erro 500).
+- GLPI 11: os formularios de configuracao, importacao de centros de custo e importacao SINAPI/Cotacao voltam a enviar para a propria pagina (antes caiam na raiz do GLPI), e o lancamento no chamado deixa de gerar aviso no log.
+- GLPI 11: a lista de precos aplica a restricao por entidade sem erro de SQL.
+- GLPI 11: o nome do usuario deixa de ser impresso sem escape nas telas de importacao e historico de precos, o botao Filtrar do relatorio volta a enviar para o proprio relatorio e a classe de lote de importacao declara as opcoes de busca no formato do GLPI 11.
+- Seguranca: o controle de acesso por entidade passa a valer tambem nos proprios registros do plugin, e nao so nas telas. Isso cobre formularios, acoes em massa e a API. O lancamento de material so grava em chamado ao qual o usuario tem acesso; o contrato do lancamento precisa pertencer a entidade do chamado, e as listas de contratos, materiais, centros de custo, entidades, categorias e locais do relatorio mostram apenas o que o usuario enxerga. Os vinculos com o custo nativo do chamado e do contrato sao controlados pelo plugin e deixam de aceitar valores vindos do formulario.
+- Seguranca: historico de precos, lotes de importacao, auditoria, vinculo de centro de custo do chamado e regras de entidade passam a ser somente leitura fora do proprio plugin. Preco, material e centro de custo validam a entidade do material ou do destino em qualquer caminho de gravacao. A configuracao geral e a primeira regra de disponibilidade por entidade exigem acesso a todas as entidades, porque valem para todas.
+- A politica de preco manual do SINAPI deixa de ser contornavel: com ela desabilitada o valor unitario do preco SINAPI vem sempre do catalogo e nao ha lancamento sem material (o valor da cotacao de mercado continua digitado). Valor unitario negativo e recusado, o total e sempre calculado e a alteracao de um lancamento nao muda autoria nem chamado. O centro de custo passa a ser validado ja no primeiro lancamento do chamado, e restaurar um lancamento refaz o custo nativo.
+- Chamado transferido ou excluido: os lancamentos e vinculos do plugin acompanham a entidade do chamado ou sao removidos com ele, junto com os custos nativos que criaram. Excluir ou apagar um lancamento remove o custo nativo correspondente. Salvar ou remover o centro de custo do chamado e desvincular contrato exigem o plugin habilitado na entidade do chamado, e a aba de centro de custo exige o direito de consumo.
+- A origem de material e um cadastro global e so e alterada por quem tem acesso a todas as entidades. Remover a ultima regra de disponibilidade por entidade (que habilitaria o plugin em todas) tambem exige esse acesso. Corrige o relatorio, a exportacao e o historico de precos, que ficavam vazios para quem ve todas as entidades.
+- A exportacao CSV neutraliza celulas de texto que comecam com `=`, `+`, `-` ou `@` (numeros negativos nao sao alterados). O script de apoio da lista de chamados por contrato passa a exigir a mesma permissao do endpoint principal, a autoria de lancamentos e precos vem da sessao e a leitura de planilha XLSX tem limite de colunas.
+- Seguranca: reforca o controle de acesso entre entidades. Precos passam a seguir a entidade do material; alteracoes que mudam a entidade ou o chamado de um registro exigem acesso ao destino; o relatorio, as exportacoes CSV/PDF, a lista e o historico de precos e o seletor de materiais mostram apenas dados das entidades do usuario.
+- O lancamento de material e o vinculo de centro de custo passam a gravar a entidade do chamado. Na atualizacao, uma unica vez, os registros antigos gravados com outra entidade sao realinhados; os valores anteriores ficam em tabela auxiliar e o resumo vai para a auditoria.
+- A habilitacao do plugin passa a ser conferida na entidade do chamado. **Antes de atualizar**, confira a habilitacao por entidade: se apenas a raiz estiver habilitada sem recursividade, habilite a raiz com recursividade ou as entidades que usam o plugin, pois os chamados das entidades filhas deixam de aceitar lancamentos.
+- O servidor recusa material inativo ou de outra entidade no lancamento, centro de custo inativo ou de outra entidade no vinculo manual, quantidade zero ou negativa, preco negativo ou nao numerico (zero continua permitido), codigo duplicado de material ou centro de custo e arquivo de importacao que nao seja CSV ou XLSX, sempre com mensagem.
+- O relatorio deixa de limitar o resultado a 5000 lancamentos, o filtro por centro de custo considera a tabela (Novo) e o CSV do relatorio passa a trazer codigo e nome do centro de custo.
+- Corrige a lista de chamados por contrato para usuarios fora da entidade raiz.
+- Origem de material nova passa a nascer ativa.
+
 ## [2.0.0-alpha.1] - 2026-09-30
 
 Prerelease alpha para teste tecnico em ambiente de teste. Nao instale em

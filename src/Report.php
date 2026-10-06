@@ -83,7 +83,8 @@ class Report extends CommonDBTM
    private static function showFilters(array $filters): void
    {
       echo "<div class='spaced'>";
-      echo "<form method='get' action='" . \htmlescape($_SERVER['PHP_SELF']) . "'>";
+      // No GLPI 11 PHP_SELF aponta para /index.php (public/): o filtro nao chegava ao relatorio.
+      echo "<form method='get' action='" . \htmlescape(Config::pluginUrl('/front/report.php')) . "'>";
       echo "<table class='tab_cadre_fixe'>";
       echo "<tr class='tab_bg_2'><th colspan='4'>" . __('Filtros', 'maintenancecosts') . "</th></tr>";
       echo "<tr class='tab_bg_1'><td>" . __('Data inicial', 'maintenancecosts') . "</td><td><input type='date' name='date_start' value='" . Html::cleanInputText($filters['date_start'] ?? '') . "' class='form-control'></td>";
@@ -99,7 +100,7 @@ class Report extends CommonDBTM
       echo "<tr class='tab_bg_1'><td>" . \Entity::getTypeName(1) . "</td><td>";
       self::showLocalSelect('entities_id', self::entityOptions(), (int) ($filters['entities_id'] ?? -1), __('All'));
       echo "</td><td>" . \ITILCategory::getTypeName(1) . "</td><td>";
-      self::showLocalSelect('itilcategories_id', self::simpleOptions('glpi_itilcategories', 'completename'), (int) ($filters['itilcategories_id'] ?? 0));
+      self::showLocalSelect('itilcategories_id', self::simpleOptions('glpi_itilcategories', 'completename', true), (int) ($filters['itilcategories_id'] ?? 0));
       echo "</td></tr>";
       echo "<tr class='tab_bg_1'><td>" . CostCenter::getTypeName(1) . "</td><td>";
       self::showAsyncSelect('costcenters_id', 'costcenter', (int) ($filters['costcenters_id'] ?? 0));
@@ -247,23 +248,28 @@ class Report extends CommonDBTM
          return '';
       }
 
+      // O rotulo so e resolvido para registro de entidade acessivel (F10).
+      $visible = static function ($item): bool {
+         return \Session::haveAccessToEntity((int) ($item->fields['entities_id'] ?? 0), (bool) ($item->fields['is_recursive'] ?? false));
+      };
+
       if ($type === 'material') {
          $item = new Material();
-         if ($item->getFromDB($id)) {
+         if ($item->getFromDB($id) && $visible($item)) {
             return self::labelWithCode($item->fields['code'] ?? '', $item->fields['name'] ?? '');
          }
       }
 
       if ($type === 'costcenter') {
          $item = new CostCenter();
-         if ($item->getFromDB($id)) {
+         if ($item->getFromDB($id) && $visible($item)) {
             return self::labelWithCode($item->fields['code'] ?? '', $item->fields['name'] ?? '');
          }
       }
 
       if ($type === 'contract') {
          $item = new \Contract();
-         if ($item->getFromDB($id)) {
+         if ($item->getFromDB($id) && $visible($item)) {
             return self::labelWithCode($item->fields['num'] ?: $id, $item->fields['name'] ?? '');
          }
       }
@@ -271,15 +277,20 @@ class Report extends CommonDBTM
       return '';
    }
 
-   private static function simpleOptions(string $table, string $labelField): array
+   private static function simpleOptions(string $table, string $labelField, bool $entityAssigned = false): array
    {
       global $DB;
       if (!$DB->tableExists($table)) {
          return [];
       }
 
+      $query = ['SELECT' => ['id', $labelField], 'FROM' => $table, 'ORDER' => $labelField . ' ASC'];
+      if ($entityAssigned) {
+         $query['WHERE'] = getEntitiesRestrictCriteria($table, '', '', true);
+      }
+
       $options = [];
-      foreach ($DB->request(['SELECT' => ['id', $labelField], 'FROM' => $table, 'ORDER' => $labelField . ' ASC']) as $row) {
+      foreach ($DB->request($query) as $row) {
          $label = trim((string) ($row[$labelField] ?? ''));
          if ($label !== '') {
             $options[(int) $row['id']] = $label;
@@ -299,7 +310,7 @@ class Report extends CommonDBTM
       foreach ($DB->request([
          'SELECT' => ['id', 'name', 'completename'],
          'FROM'   => 'glpi_locations',
-         'WHERE'  => ['locations_id' => 0],
+         'WHERE'  => ['locations_id' => 0] + getEntitiesRestrictCriteria('glpi_locations', '', '', true),
          'ORDER'  => 'name ASC',
       ]) as $row) {
          $label = trim((string) ($row['name'] ?? ''));
@@ -315,14 +326,29 @@ class Report extends CommonDBTM
 
    private static function entityOptions(): array
    {
-      return [-1 => __('All')] + self::simpleOptions('glpi_entities', 'completename');
+      global $DB;
+
+      $options = [-1 => __('All')];
+      $accessible = array_map('intval', $_SESSION['glpiactiveentities'] ?? []);
+      if (!count($accessible)) {
+         return $options;
+      }
+
+      foreach ($DB->request(['SELECT' => ['id', 'completename'], 'FROM' => 'glpi_entities', 'WHERE' => ['id' => $accessible], 'ORDER' => 'completename ASC']) as $row) {
+         $label = trim((string) ($row['completename'] ?? ''));
+         if ($label !== '') {
+            $options[(int) $row['id']] = $label;
+         }
+      }
+
+      return $options;
    }
 
    private static function costCenterOptions(): array
    {
       global $DB;
       $options = [];
-      foreach ($DB->request(['SELECT' => ['id', 'code', 'name'], 'FROM' => CostCenter::getTable(), 'WHERE' => ['is_active' => 1], 'ORDER' => 'name ASC']) as $row) {
+      foreach ($DB->request(['SELECT' => ['id', 'code', 'name'], 'FROM' => CostCenter::getTable(), 'WHERE' => ['is_active' => 1] + getEntitiesRestrictCriteria(CostCenter::getTable(), '', '', true), 'ORDER' => 'name ASC']) as $row) {
          $options[(int) $row['id']] = self::labelWithCode($row['code'] ?? '', $row['name'] ?? '');
       }
       return $options;
@@ -332,7 +358,7 @@ class Report extends CommonDBTM
    {
       global $DB;
       $options = [];
-      foreach ($DB->request(['SELECT' => ['id', 'code', 'name'], 'FROM' => Material::getTable(), 'WHERE' => ['is_active' => 1], 'ORDER' => ['code ASC', 'name ASC']]) as $row) {
+      foreach ($DB->request(['SELECT' => ['id', 'code', 'name'], 'FROM' => Material::getTable(), 'WHERE' => ['is_active' => 1] + getEntitiesRestrictCriteria(Material::getTable(), '', '', true), 'ORDER' => ['code ASC', 'name ASC']]) as $row) {
          $options[(int) $row['id']] = self::labelWithCode($row['code'] ?? '', $row['name'] ?? '');
       }
       return $options;
@@ -356,7 +382,7 @@ class Report extends CommonDBTM
       }
 
       $options = [];
-      foreach ($DB->request(['SELECT' => ['id', 'name', 'num'], 'FROM' => 'glpi_contracts', 'WHERE' => ['is_deleted' => 0], 'ORDER' => 'name ASC']) as $row) {
+      foreach ($DB->request(['SELECT' => ['id', 'name', 'num'], 'FROM' => 'glpi_contracts', 'WHERE' => ['is_deleted' => 0] + getEntitiesRestrictCriteria('glpi_contracts', '', '', true), 'ORDER' => 'name ASC']) as $row) {
          $options[(int) $row['id']] = self::labelWithCode($row['num'] ?: $row['id'], $row['name'] ?? '');
       }
       return $options;
@@ -374,7 +400,6 @@ class Report extends CommonDBTM
          $where[] = [TicketMaterial::getTable() . '.consumption_date' => ['<=', $filters['date_end']]];
       }
       foreach ([
-         'costcenters_id' => 'plugin_maintenancecosts_costcenters_id',
          'materials_id' => 'plugin_maintenancecosts_materials_id',
          'materialorigins_id' => 'plugin_maintenancecosts_materialorigins_id',
          'contracts_id' => 'contracts_id',
@@ -386,8 +411,21 @@ class Report extends CommonDBTM
       if (!empty($filters['price_type']) && array_key_exists((string) $filters['price_type'], Config::getPriceTypes())) {
          $where[TicketMaterial::getTable() . '.price_type'] = (string) $filters['price_type'];
       }
+      // O filtro de centro e do Centro de Custos Novo: id e origem juntos, para
+      // nao misturar com o Antigo de mesmo id (A13). 'novo' e grafia antiga.
+      if (!empty($filters['costcenters_id'])) {
+         $where[TicketMaterial::getTable() . '.plugin_maintenancecosts_costcenters_id'] = (int) $filters['costcenters_id'];
+         $where[TicketMaterial::getTable() . '.costcenter_source'] = ['new', 'novo'];
+      }
+      // Entidade pela do chamado, que e a fonte verdadeira (A12).
       if (isset($filters['entities_id']) && (int) $filters['entities_id'] >= 0) {
-         $where[TicketMaterial::getTable() . '.entities_id'] = (int) $filters['entities_id'];
+         $where['glpi_tickets.entities_id'] = (int) $filters['entities_id'];
+      }
+      // So as entidades ativas do usuario: sem isto o relatorio, o CSV e o PDF
+      // mostravam todas as entidades (A16).
+      $entityCriteria = getEntitiesRestrictCriteria('glpi_tickets', 'entities_id', '', false);
+      if (count($entityCriteria)) {
+         $where[] = $entityCriteria;
       }
 
       $iterator = $DB->request([
@@ -422,7 +460,8 @@ class Report extends CommonDBTM
          ],
          'WHERE' => $where,
          'ORDER' => TicketMaterial::getTable() . '.consumption_date DESC, ' . TicketMaterial::getTable() . '.id DESC',
-         'LIMIT' => 5000,
+         // Sem LIMIT: totais e exportacoes precisam de todas as linhas do
+         // filtro (A14). As tabelas da tela ja limitam a exibicao.
       ]);
 
       $rows = [];
@@ -433,19 +472,20 @@ class Report extends CommonDBTM
          if (!empty($filters['itilcategories_id']) && (int) ($row['itilcategories_id'] ?? 0) !== (int) $filters['itilcategories_id']) {
             continue;
          }
-         $row['costcenter_label'] = TicketMaterial::getCostCenterDisplayName(
+         $costcenter = self::getCostCenterParts(
             (int) ($row['plugin_maintenancecosts_costcenters_id'] ?? 0),
             (string) ($row['costcenter_source'] ?? 'new')
          );
+         $row['costcenter_label'] = $costcenter['label'];
+         // Colunas do CSV de relatorio (A15).
+         $row['costcenter_code'] = $costcenter['code'];
+         $row['costcenter_name'] = $costcenter['name'];
          $row['material_label'] = self::labelWithCode(
             (string) ($row['material_code'] ?? ''),
             (string) ($row['material_name'] ?? '')
          );
          $row['price_type_label'] = Config::getPriceTypeLabel((string) ($row['price_type'] ?? 'sinapi'));
          $row['contract_label'] = self::getContractLabel((int) ($row['contracts_id'] ?? 0), (int) $row['tickets_id']);
-         if (!empty($filters['costcenters_id']) && (int) ($row['plugin_maintenancecosts_costcenters_id'] ?? 0) !== (int) $filters['costcenters_id']) {
-            continue;
-         }
          $rows[] = $row;
       }
 
@@ -486,7 +526,44 @@ class Report extends CommonDBTM
       return false;
    }
 
+   /**
+    * Rotulo, codigo e nome do centro de custo, com cache por requisicao (o
+    * relatorio sem LIMIT nao pode consultar o banco linha a linha).
+    */
+   private static function getCostCenterParts(int $id, string $source): array
+   {
+      static $cache = [];
+      $source = TicketMaterial::normalizeCostCenterSource($source);
+      $key = $source . ':' . $id;
+      if (isset($cache[$key])) {
+         return $cache[$key];
+      }
+
+      $parts = ['label' => '', 'code' => '', 'name' => ''];
+      if ($id > 0) {
+         $class = $source === 'legacy' ? CostCenterLegacy::class : CostCenter::class;
+         $item = new $class();
+         if ($item->getFromDB($id)) {
+            $parts['code'] = (string) ($item->fields['code'] ?? '');
+            $parts['name'] = (string) ($item->fields['name'] ?? '');
+         }
+         $parts['label'] = TicketMaterial::getCostCenterDisplayName($id, $source);
+      }
+
+      return $cache[$key] = $parts;
+   }
+
    private static function getContractLabel(int $contracts_id, int $tickets_id): string
+   {
+      static $cache = [];
+      if (array_key_exists($contracts_id, $cache)) {
+         return $cache[$contracts_id];
+      }
+      $cache[$contracts_id] = self::buildContractLabel($contracts_id);
+      return $cache[$contracts_id];
+   }
+
+   private static function buildContractLabel(int $contracts_id): string
    {
       $contract = new \Contract();
       if ($contracts_id <= 0 || !$contract->getFromDB($contracts_id)) {

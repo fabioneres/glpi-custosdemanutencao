@@ -52,6 +52,32 @@ class Config extends CommonDBTM
       return 'glpi_plugin_maintenancecosts_configs';
    }
 
+   /**
+    * A configuracao e um registro unico que vale para todas as entidades: nao
+    * se cria, altera nem apaga por formulario generico, acao em massa ou API. A
+    * alteracao passa por saveSettings(), que valida, audita e (na tela) exige
+    * acesso a todas as entidades (F12).
+    */
+   public function canCreateItem(): bool
+   {
+      return false;
+   }
+
+   public function canUpdateItem(): bool
+   {
+      return false;
+   }
+
+   public function canDeleteItem(): bool
+   {
+      return false;
+   }
+
+   public function canPurgeItem(): bool
+   {
+      return false;
+   }
+
    public static function getDefaultSettings(): array
    {
       return [
@@ -224,6 +250,21 @@ class Config extends CommonDBTM
 
       $old = self::getEntityRule($entities_id);
       $enabled = (int) ($input['plugin_maintenancecosts_entity_enabled'] ?? 0) === 1;
+
+      // Sem nenhuma regra o plugin vale para todas as entidades: remover a ultima
+      // regra reabre a todas e so cabe a quem alcanca todas elas (F12).
+      if (!$enabled
+         && self::hasUserSession()
+         && !self::canManageAllEntities()
+         && countElementsInTable(ConfigEntity::getTable(), ['NOT' => ['entities_id' => $entities_id]]) === 0
+      ) {
+         Session::addMessageAfterRedirect(
+            __('Esta e a unica regra de disponibilidade: removê-la habilita o plugin em todas as entidades e so pode ser feito por quem tem acesso a todas elas.', 'maintenancecosts'),
+            false,
+            ERROR
+         );
+         return false;
+      }
       $recursive = (int) ($input['plugin_maintenancecosts_entity_recursive'] ?? 0) === 1;
       $now = date('Y-m-d H:i:s');
       $userId = (int) Session::getLoginUserID();
@@ -248,9 +289,7 @@ class Config extends CommonDBTM
 
          $DB->commit();
       } catch (\Throwable $e) {
-         if ($DB->inTransaction()) {
-            $DB->rollBack();
-         }
+         self::rollbackTransaction();
          Session::addMessageAfterRedirect(
             __('Não foi possível salvar a regra da entidade. Nenhuma alteração foi aplicada.', 'maintenancecosts'),
             false,
@@ -320,9 +359,7 @@ class Config extends CommonDBTM
 
          $DB->commit();
       } catch (\Throwable $e) {
-         if ($DB->inTransaction()) {
-            $DB->rollBack();
-         }
+         self::rollbackTransaction();
          Session::addMessageAfterRedirect(
             __('Não foi possível salvar a configuração de entidades. Nenhuma alteração foi aplicada.', 'maintenancecosts'),
             false,
@@ -503,6 +540,115 @@ class Config extends CommonDBTM
       unset($_SESSION['glpimenu']);
    }
 
+   /**
+    * Um registro da entidade $ownerEntity (recursivo ou nao) pode ser usado na
+    * entidade $targetEntity? Mesma entidade, ou recursivo de entidade ancestral.
+    */
+   public static function isAvailableInEntity(int $ownerEntity, bool $ownerRecursive, int $targetEntity): bool
+   {
+      if ($ownerEntity === $targetEntity) {
+         return true;
+      }
+      if (!$ownerRecursive) {
+         return false;
+      }
+
+      return in_array($targetEntity, array_map('intval', getSonsOf(Entity::getTable(), $ownerEntity)), true);
+   }
+
+   /**
+    * Contrato existente e disponivel na entidade informada (a do chamado).
+    */
+   public static function isContractSelectable(int $contracts_id, int $targetEntity): bool
+   {
+      $contract = new \Contract();
+      if ($contracts_id <= 0 || !$contract->getFromDB($contracts_id) || (int) ($contract->fields['is_deleted'] ?? 0) === 1) {
+         return false;
+      }
+
+      return self::isAvailableInEntity(
+         (int) ($contract->fields['entities_id'] ?? 0),
+         (bool) ($contract->fields['is_recursive'] ?? false),
+         $targetEntity
+      );
+   }
+
+   /**
+    * Centro de custo ativo e utilizavel na entidade informada (vinculo manual,
+    * lancamento e formulario nativo seguem a mesma regra).
+    */
+   public static function isCostCenterSelectable(int $costcenters_id, string $source, int $targetEntity): bool
+   {
+      $class = $source === 'legacy' ? CostCenterLegacy::class : CostCenter::class;
+      $item = new $class();
+      if ($costcenters_id <= 0 || !$item->getFromDB($costcenters_id) || (int) ($item->fields['is_active'] ?? 0) !== 1) {
+         return false;
+      }
+
+      return self::isAvailableInEntity(
+         (int) ($item->fields['entities_id'] ?? 0),
+         (int) ($item->fields['is_recursive'] ?? 0) === 1,
+         $targetEntity
+      );
+   }
+
+   /**
+    * Codigo ja usado por outro registro da tabela? O indice unico e global;
+    * a mensagem ao usuario nao revela a entidade dona do codigo (A4).
+    */
+   public static function isCodeTaken(string $table, string $code, int $exceptId = 0): bool
+   {
+      $code = trim($code);
+      if ($code === '') {
+         return false;
+      }
+      $where = ['code' => $code];
+      if ($exceptId > 0) {
+         $where['id'] = ['<>', $exceptId];
+      }
+
+      return countElementsInTable($table, $where) > 0;
+   }
+
+   /**
+    * Material ativo e utilizavel na entidade informada.
+    */
+   public static function isMaterialSelectable(int $materials_id, int $targetEntity): bool
+   {
+      $item = new Material();
+      if ($materials_id <= 0 || !$item->getFromDB($materials_id) || (int) ($item->fields['is_active'] ?? 0) !== 1) {
+         return false;
+      }
+
+      return self::isAvailableInEntity(
+         (int) ($item->fields['entities_id'] ?? 0),
+         (int) ($item->fields['is_recursive'] ?? 0) === 1,
+         $targetEntity
+      );
+   }
+
+   /**
+    * Desfaz a transacao aberta pelo plugin, se houver, sem lancar excecao.
+    *
+    * O GLPI 10 expoe DBmysql::inTransaction(); o GLPI 11 o tornou privado
+    * (isInTransaction) e passou a lancar RuntimeException em rollBack() quando
+    * nao ha transacao. Usar so no caminho de erro.
+    */
+   public static function rollbackTransaction(): void
+   {
+      global $DB;
+
+      if (method_exists($DB, 'inTransaction') && !$DB->inTransaction()) {
+         return;
+      }
+
+      try {
+         $DB->rollBack();
+      } catch (\Throwable $e) {
+         // Nenhuma transacao aberta: nada a desfazer.
+      }
+   }
+
    public static function checkRight(string $right, int $level): void
    {
       Session::checkLoginUser();
@@ -521,7 +667,7 @@ class Config extends CommonDBTM
     * habilitado na entidade ativa. Sem esta verificacao, quem tem o direito em
     * uma entidade alcanca registro de outra apenas postando o id.
     */
-   public static function checkItemAccess(CommonDBTM $item, int $id, bool $allowInherited = true): void
+   public static function checkItemAccess(CommonDBTM $item, int $id, bool $allowInherited = true, array $input = []): void
    {
       if ($id <= 0) {
          return;
@@ -531,8 +677,26 @@ class Config extends CommonDBTM
          Html::displayRightError();
       }
 
+      // Preco nao tem entidade propria: herda a do material (A1).
+      if ($item instanceof Price) {
+         self::checkMaterialAccess((int) ($item->fields['plugin_maintenancecosts_materials_id'] ?? 0), $allowInherited);
+         if (isset($input['plugin_maintenancecosts_materials_id'])
+            && (int) $input['plugin_maintenancecosts_materials_id'] !== (int) $item->fields['plugin_maintenancecosts_materials_id']) {
+            self::checkMaterialAccess((int) $input['plugin_maintenancecosts_materials_id'], true);
+         }
+         return;
+      }
+
       if (!$item->isEntityAssign()) {
          return;
+      }
+
+      // Valores de destino do POST tambem sao autorizados: mover o registro para
+      // uma entidade exige acesso a ela (AP-029, A1).
+      if (isset($input['entities_id'])
+         && (int) $input['entities_id'] !== (int) ($item->fields['entities_id'] ?? 0)
+         && !Session::haveAccessToEntity((int) $input['entities_id'])) {
+         Html::displayRightError();
       }
 
       // Em alteracao a recursividade e aceita de proposito: o catalogo deste
@@ -563,6 +727,75 @@ class Config extends CommonDBTM
       if (!Session::haveAccessToEntity($entity)) {
          Html::displayRightError();
       }
+
+      // Preco e lancamento apontam para um material: ele precisa ser acessivel (A1).
+      if (!empty($input['plugin_maintenancecosts_materials_id'])) {
+         self::checkMaterialAccess((int) $input['plugin_maintenancecosts_materials_id'], true);
+      }
+   }
+
+   /**
+    * O material existe e o usuario tem acesso a entidade dele (recursivo
+    * aceito em alteracao; estrito em exclusao).
+    */
+   public static function checkMaterialAccess(int $materials_id, bool $allowInherited = true): void
+   {
+      if (!self::canAccessMaterial($materials_id, $allowInherited)) {
+         Html::displayRightError();
+      }
+   }
+
+   /**
+    * Versao booleana de checkMaterialAccess, para uso dentro dos modelos: a
+    * autorizacao precisa valer em qualquer ponto de entrada (formulario, acao
+    * em massa, API), nao so nas telas do plugin.
+    */
+   public static function canAccessMaterial(int $materials_id, bool $allowInherited = true): bool
+   {
+      $material = new Material();
+      if ($materials_id <= 0 || !$material->getFromDB($materials_id)) {
+         return false;
+      }
+
+      $inherited = $allowInherited && (int) ($material->fields['is_recursive'] ?? 0) === 1;
+
+      return Session::haveAccessToEntity((int) ($material->fields['entities_id'] ?? 0), $inherited);
+   }
+
+   /**
+    * Ha um usuario autenticado? Em CLI, cron e instalacao nao ha sessao e,
+    * portanto, nada a autorizar por entidade.
+    */
+   public static function hasUserSession(): bool
+   {
+      return (int) Session::getLoginUserID() > 0;
+   }
+
+   /**
+    * O plugin precisa estar habilitado na entidade informada (a do chamado).
+    */
+   public static function checkEnabledForEntity(int $entity): void
+   {
+      if (!self::isEnabledForEntity($entity)) {
+         Html::displayRightError();
+      }
+   }
+
+   /**
+    * Entidade acessivel ao usuario da sessao (sempre verdadeiro sem sessao).
+    */
+   public static function canAccessEntity(int $entity): bool
+   {
+      return !self::hasUserSession() || Session::haveAccessToEntity($entity);
+   }
+
+   /**
+    * Usuario com acesso recursivo a raiz: pode alterar o que vale para todas
+    * as entidades (configuracao global, primeira regra de disponibilidade).
+    */
+   public static function canManageAllEntities(): bool
+   {
+      return Session::haveRecursiveAccessToEntity(0);
    }
 
    /**
